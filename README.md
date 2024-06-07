@@ -78,7 +78,7 @@ k8s-node1     Ready    <none>   9h    v1.24.2
 # vi hosts
 ...
 [newnode]
-192.168.114.75 node_name=k8s-node3
+192.168.114.75 node_name=k8s-node2
 ```
 2）执行部署
 ```
