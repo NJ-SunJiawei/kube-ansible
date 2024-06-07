@@ -2,20 +2,17 @@
 ```
 # yum install epel-release -y
 # yum install ansible -y
+# yum install expect ssh sshpass -y
+
+注：做好机器的时间同步
 ```
 ### 2、下载所需文件
-
-下载Ansible部署文件：
-
-```
-# git clone https://github.com/lizhenliang/ansible-install-k8s
-# cd ansible-install-k8s
-```
 
 下载准备好软件包（包含所有涉及文件和镜像，比较大），解压到指定目录：
 
 ```
-# tar zxf binary_pkg.tar.gz
+链接：https://pan.baidu.com/s/1UUtxn6_MjOv6eOTyE5Uoeg 
+提取码：drse
 ```
 ### 3、修改Ansible文件
 
@@ -23,13 +20,14 @@
 
 ```
 # vi hosts
+# 根据管理机器架构，选择cfssl tar包版本（x86/arm）
 ...
 ```
 修改group_vars/all.yml文件，修改软件包目录和证书可信任IP。
 
 ```
 # vim group_vars/all.yml
-software_dir: '/root/binary_pkg'
+software_dir: '/~/k8s_1.24.2'
 ...
 cert_hosts:
   k8s:
@@ -59,7 +57,6 @@ cert_hosts:
 NAME          STATUS   ROLES    AGE   VERSION
 k8s-master1   Ready    <none>   9h    v1.24.2
 k8s-node1     Ready    <none>   9h    v1.24.2
-k8s-node2     Ready    <none>   9h    v1.24.2
 ```
 
 ## 6、其他
