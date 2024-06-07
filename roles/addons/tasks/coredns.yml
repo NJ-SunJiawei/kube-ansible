@@ -1,0 +1,12 @@
+---
+- name: 准备DNS的部署文件
+  copy: src=dns dest={{ tmp_dir }}
+
+#- name: 准备DNS的部署文件
+#  template: src=coredns.yaml.j2 dest={{ tmp_dir }}/coredns.yaml
+
+- name: 删除coredns部署
+  shell: "kubectl delete -f {{ tmp_dir }}/dns/ || echo true; sleep 3"
+
+- name: 创建coredns部署
+  shell: "kubectl apply -f {{ tmp_dir }}/dns/"

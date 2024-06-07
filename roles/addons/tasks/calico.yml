@@ -1,0 +1,10 @@
+---
+- name: 准备calico的部署文件
+  copy: src=calico dest={{ tmp_dir }}
+
+
+- name: 删除calico部署
+  shell: "kubectl delete -f {{ tmp_dir }}/calico/ || echo true; sleep 3"
+
+- name: 创建calico部署
+  shell: "kubectl apply -f {{ tmp_dir }}/calico/"

@@ -1,0 +1,71 @@
+---
+# 这个剧本在所有节点上运行
+
+- name: 创建临时目录
+  file: dest={{ tmp_dir }} state=directory
+
+- name: 分发依赖包
+  copy: src={{ software_dir }}/{{ item }} dest={{ tmp_dir }}
+  with_items:
+    - rpm-k8s
+
+- name: 安装rpm-k8s包
+  shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
+  with_items:
+    - rpm-k8s
+
+#- name: 禁用防火墙
+#  shell: systemctl stop firewalld
+#  ignore_errors: true
+
+#- name: 禁止启动防火墙
+#  shell: systemctl disable firewalld
+#  ignore_errors: true
+    
+- name: 关闭firewalld
+  service: name=firewalld state=stopped enabled=no
+  ignore_errors: true
+
+#- name: 禁用selinux
+#  shell: sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+#  ignore_errors: true
+  
+- name: 关闭selinux
+  lineinfile:
+    dest: /etc/selinux/config
+    regexp: "^SELINUX="
+    line: "SELINUX=disabled"
+  ignore_errors: true
+
+- name: 即时生效
+  shell: setenforce 0 ; swapoff -a
+
+- name: 把禁用swap的命令加入到开机自启里
+  shell: echo 'swapoff -a' >>/etc/rc.d/rc.local
+
+- name: 给rc.local文件加可执行权限
+  shell: chmod a+x  /etc/rc.d/rc.local
+
+#- name: 在/etc/fstab禁用swap分区
+#  shell: sed -i 's/^[^#].*swap*/#&/g' /etc/fstab
+
+- name: 在/etc/fstab禁用swap分区
+  lineinfile:
+    dest: /etc/fstab
+    regexp: ".*swap"
+    line: ""
+
+- name: 添加hosts
+  template: src=hosts.j2 dest=/etc/hosts
+
+- name: 复制环境变量文件
+  copy: src={{ item }} dest=/etc/sysctl.d/
+  with_items:
+    - k8s.conf
+
+- name: 加载br_netfilter模块
+  shell: modprobe br_netfilter
+  ignore_errors: true
+
+- name: 生效环境变量
+  shell: sysctl -p /etc/sysctl.d/k8s.conf

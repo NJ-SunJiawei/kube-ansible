@@ -1,0 +1,44 @@
+---
+#- name: 允许Node加入集群
+#  ignore_errors: yes
+#  shell: kubectl certificate approve $(kubectl get csr |awk 'NR!=1{print $1}')
+
+#- name: 拷贝YAML文件到Master
+#  copy: src={{ item }} dest={{ tmp_dir }}
+#  with_items:
+#    - calico
+#    - dashboard
+#    - dns
+#    - metrics-server
+
+#- name: 部署Calico,Dashboard,CoreDNS等插件
+#  ignore_errors: yes
+#  shell: |
+#         cd {{ tmp_dir }}
+#         for yaml in $(ls *.yaml);do kubectl apply -f $yaml;done
+
+- name: 查看Pod状态
+  shell: kubectl get all --all-namespaces
+  register: pod_info
+- debug: var=pod_info.stdout_lines
+
+- import_tasks: coredns.yml
+  when: '"coredns" not in pod_info.stdout or CHANGE_CA|bool'
+
+- import_tasks: calico.yml
+  when: '"calico" not in pod_info.stdout or CHANGE_CA|bool'
+
+- import_tasks: metrics-server.yml
+  when: '"metrics-server" not in pod_info.stdout or CHANGE_CA|bool'
+
+- import_tasks: dashboard.yml
+  when: '"kubernetes-dashboard" not in pod_info.stdout or CHANGE_CA|bool'
+
+#- import_tasks: kuboard.yml
+#  when: '"kuboard" not in pod_info.stdout or CHANGE_CA|bool'
+
+- name: 查看Pod状态
+  shell: kubectl get all --all-namespaces
+  register: getall
+- debug: var=getall.stdout_lines
+

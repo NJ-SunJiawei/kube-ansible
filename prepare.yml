@@ -1,0 +1,8 @@
+---
+- name: 0.vbbu内核补丁安装
+  gather_facts: false
+  hosts: 
+    - k8s
+  roles:
+    - prepare
+  tags: prepare

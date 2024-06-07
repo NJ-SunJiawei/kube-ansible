@@ -1,0 +1,58 @@
+---
+# 这个剧本在所有节点上运行
+
+- name: 设置时区
+  shell: timedatectl set-timezone Asia/Shanghai
+
+- name: 设置RTC
+  shell: timedatectl set-local-rtc 0
+
+# 服务器可联网，可以开启以下字段，自动同步网络时间，否则同步自身时间服务器
+#- name: 同步系统时间
+#  yum: name=ntpdate state=present
+#- name: 同步系统时间
+#  shell: ntpdate time.windows.com
+
+#- name: 创建临时目录
+#  file: dest={{ tmp_dir }} state=directory
+
+#- name: 分发依赖包
+#  copy: src={{ software_dir }}/{{ item }} dest={{ tmp_dir }}
+#  with_items:
+#    - rpm-tools
+#    - vbbu
+
+#- name: 安装rpm-tools包
+#  shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
+#  with_items:
+#    - rpm-tools
+#  ignore_errors: true
+
+#- name: 安装vbbu包
+#  shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
+#  with_items:
+#    - vbbu
+    
+#- name: 分发vbbu快捷脚本
+#  copy: src={{ software_dir }}/vbbu/sh/{{ item }} dest=/usr/bin mode=u+x
+#  with_items:
+#    - vbbu_init
+#    - vbbu_attach
+#    - vbbu_list
+#    - dpdk-devbind.py
+
+
+- name: test
+  debug:
+    msg:
+      - "{{ node_name }}"
+
+- name: 设置主机名
+  shell: hostnamectl set-hostname {{ node_name }}
+
+
+- name: 重启机器
+#  reboot: 
+#    reboot_timeout: 360
+  shell: reboot
+  ignore_errors: true

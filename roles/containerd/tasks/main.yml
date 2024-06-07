@@ -1,0 +1,39 @@
+---
+- name: 创建临时目录
+  file: dest={{ tmp_dir }}/containerd state=directory
+
+- name: 分发并解压containerd二进制包
+  unarchive: src={{ item }} dest={{ tmp_dir }}/containerd
+  with_fileglob:
+    - "{{ software_dir }}/cri-containerd-*.tar.gz"
+
+- name: 移动containerd二进制文件
+  shell: cp -rf {{ tmp_dir }}/containerd/* /
+
+- name: 创建containerd配置文件夹
+  shell: mkdir -p /etc/containerd
+
+- name: 生成containerd默认配置文件
+  shell: containerd   config  default  > /etc/containerd/config.toml
+
+- name: 启动containerd
+  shell: systemctl start containerd
+
+- name: 设置开机自启containerd
+  shell: systemctl enable containerd
+
+#- name: 启动cri-dockerd
+#  systemd: name=containerd state=restarted enabled=yes daemon_reload=yes
+
+#取决于kubelet配置---cgroupDriver: systemd #cgroupfs
+- name: 修改SystemdCgroup配置
+  shell: sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+
+- name: 修改pause配置
+  shell: sed -i 's/sandbox_image = \"k8s.gcr.io\/pause:3.6\"/sandbox_image = \"registry.aliyuncs.com\/google_containers\/pause:3.7\"/g' /etc/containerd/config.toml
+
+- name: 修改disable_apparmor配置
+  shell: sed -i 's/disable_apparmor = false/disable_apparmor = true/g' /etc/containerd/config.toml
+
+- name: 重启containerd
+  shell: systemctl restart containerd  
