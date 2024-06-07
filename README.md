@@ -42,6 +42,11 @@ cert_hosts:
 # sh setup_ssh_keys.sh
 ```
 
+前期准备工作：
+```
+# ansible-playbook -i hosts prepare.yml -uroot
+```
+
 单Master版：
 ```
 # ansible-playbook -i hosts single-master-deploy.yml -uroot

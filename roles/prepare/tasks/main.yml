@@ -41,6 +41,14 @@
 #    - vbbu_list
 #    - dpdk-devbind.py
 
+- name: 查看Pod状态
+  shell: ls /etc/
+  register: etc_info
+- debug: var=etc_info.stdout_lines
+
+- name: 分发resolv.conf文件
+  copy: src=resolv.conf dest=/etc/
+  when: '"resolv.conf" not in etc_info.stdout'
 
 - name: test
   debug:

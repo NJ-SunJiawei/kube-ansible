@@ -23,19 +23,20 @@
 - debug: var=pod_info.stdout_lines
 
 - import_tasks: coredns.yml
-  when: '"coredns" not in pod_info.stdout or CHANGE_CA|bool'
+  when: '"coredns" not in pod_info.stdout'
 
 - import_tasks: calico.yml
-  when: '"calico" not in pod_info.stdout or CHANGE_CA|bool'
+  when: '"calico" not in pod_info.stdout'
 
 - import_tasks: metrics-server.yml
-  when: '"metrics-server" not in pod_info.stdout or CHANGE_CA|bool'
+  when: '"metrics-server" not in pod_info.stdout'
 
 - import_tasks: dashboard.yml
-  when: '"kubernetes-dashboard" not in pod_info.stdout or CHANGE_CA|bool'
+  tags: addons_dashboard
+#  when: '"dashboard" not in pod_info.stdou'
 
 #- import_tasks: kuboard.yml
-#  when: '"kuboard" not in pod_info.stdout or CHANGE_CA|bool'
+#  when: '"kuboard" not in pod_info.stdout'
 
 - name: 查看Pod状态
   shell: kubectl get all --all-namespaces

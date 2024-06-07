@@ -2,19 +2,19 @@
 - name: 准备dashboard的部署文件
   copy: src=dashboard dest={{ tmp_dir }}
 
+- name: 删除dashboard部署
+  shell: "kubectl delete -f {{ tmp_dir }}/dashboard/ || echo true; sleep 10"
 
-- name: 删除coredns部署
-  shell: "kubectl delete -f {{ tmp_dir }}/dashboard/ || echo true; sleep 3"
+- name: 创建dashboard部署
+  shell: "kubectl apply -f {{ tmp_dir }}/dashboard/ ; sleep 10"
+  ignore_errors: true
 
-- name: 创建coredns部署
-  shell: "kubectl apply -f {{ tmp_dir }}/dashboard/"
-
-- name: 获取Dashboard管理员令牌
+- name: 获取dashboard管理员令牌
   ignore_errors: yes
   shell: |
          web='https://NodeIP:30001'
-         token1=$(kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep admin-user | awk '{print $1}'))
-         token2=$(kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep dashboard-read-user | awk '{print $1}'))
+         token1=$(kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}'))
+         token2=$(kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep dashboard-read-user | awk '{print $1}'))
          echo "访问地址--->$web"
          echo "admin-user令牌内容--->$token1"
          echo "///////////////分隔符//////////////////////"
