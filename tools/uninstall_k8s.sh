@@ -11,8 +11,8 @@ echo "remove kubernetes master OK <<<"
 
 #remove etced
 ansible -i ../hosts etcd   -m systemd -a 'name=etcd state=stopped enabled=no' || exit 1
-ansible -i ../hosts etcd   -m systemd -a 'rm -rf {{ etcd_work_dir }}' || exit 1
-ansible -i ../hosts etcd   -m systemd -a 'rm -rf /usr/lib/systemd/system/etcd.service' || exit 1
+ansible -i ../hosts etcd   -m shell   -a 'rm -rf {{ etcd_work_dir }}' || exit 1
+ansible -i ../hosts etcd   -m shell   -a 'rm -rf /usr/lib/systemd/system/etcd.service' || exit 1
 echo "remove kubernetes etced OK <<<"
 
 #remove worker
