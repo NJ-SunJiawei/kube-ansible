@@ -101,7 +101,7 @@ k8s-node1     Ready    <none>   9h    v1.24.2
 ### 6.3 所有HTTPS证书存放路径
 部署产生的证书都会存放到目录“kube-ansible/ssl”，一定要保存好，后面还会用到~
 
-### 6.4卸载k8s
+### 6.4 卸载k8s
 ```
 # sh tools/unsintall_k8s.sh
 ```
