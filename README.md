@@ -1,3 +1,11 @@
+### 0、安装环境
+```
+集群服务器架构：arm64
+集群操作系统：openeuler22.03
+k8s版本：1.24.2
+containerd版本：1.6.6
+```
+
 ### 1、找一台服务器安装Ansible
 ```
 # yum install epel-release -y
