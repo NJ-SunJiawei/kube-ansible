@@ -1,0 +1,14 @@
+---
+- name: 0.自签证书 
+  gather_facts: false
+  hosts: localhost 
+  roles:
+    - tls
+  tags: tls
+
+- name: 1.部署插件
+  gather_facts: false
+  hosts: master
+  roles:
+    - addons
+  tags: addons
