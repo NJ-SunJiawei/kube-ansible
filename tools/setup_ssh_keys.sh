@@ -32,7 +32,7 @@ while IFS=' ' read -r ip password; do
 	#ssh-copy-id -i $KEY_PATH.pub $USER@$ip
 	expect << EOF
 		set timeout 5
-		spawn ssh-copy-id $USER@$ip
+		spawn ssh-copy-id -f $USER@$ip
 		expect "(yes/no)?" 
 		send "yes\r"
 		expect "password:" 
