@@ -23,6 +23,7 @@
     - ca.pem
     - server.pem
     - server-key.pem
+  tags: etcd_ssl_dist
 
 - name: 分发etcd配置文件
   template: src=etcd.conf.j2 dest={{ etcd_work_dir }}/cfg/etcd.conf

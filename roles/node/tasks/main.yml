@@ -36,6 +36,7 @@
     - ca.pem
     - kube-proxy.pem
     - kube-proxy-key.pem
+  tags: node_k8s_dist
 
 - name: 分发k8s配置文件
   template: src={{ item }} dest={{ k8s_work_dir }}/cfg/{{ item.split('.')[:-1]|join('.') }}

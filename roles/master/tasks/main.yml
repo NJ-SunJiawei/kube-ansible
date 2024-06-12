@@ -35,6 +35,7 @@
     - kube-scheduler-key.pem
     - admin.pem
     - admin-key.pem
+  tags: master_k8s_dist
 
 - name: 分发etcd证书
   copy: src=etcd_cert/{{ item }} dest={{ k8s_work_dir }}/ssl/etcd
@@ -42,6 +43,7 @@
     - ca.pem
     - server.pem
     - server-key.pem
+  tags: master_etcd_dist
 
 - name: 分发token文件
   copy: src=token.csv dest={{ k8s_work_dir }}/cfg

@@ -18,16 +18,14 @@ echo "play tls OK >>>"
 
 #etcd restarted
 ansible -i ../hosts etcd   -m shell   -a 'rm -rf {{ etcd_work_dir }}/ssl/*.pem' || exit 1
-ansible -i ../hosts etcd   -m copy    -a "src=$etcd_cert_dir/*.pem  dest={{ etcd_work_dir }}/ssl" || exit 1
+ansible-playbook -i ../hosts ../update_tls.yml -uroot -t etcd_ssl_dist || exit 1
 ansible -i ../hosts etcd   -m systemd -a "name=etcd state=restarted" || exit 1
 echo "restart etcd OK >>>"
 
 #kube restarted
 ansible -i ../hosts master   -m shell   -a 'rm -rf {{ k8s_work_dir }}/ssl/*.pem' || exit 1
 ansible -i ../hosts master   -m shell   -a 'rm -rf {{ k8s_work_dir }}/ssl/etcd/*.pem' || exit 1
-ansible -i ../hosts master   -m copy    -a "src=$apiserver_kcert_dir/*.pem  dest={{ k8s_work_dir }}/ssl" || exit 1
-ansible -i ../hosts master   -m copy    -a "src=$apiserver_ecert_dir/*.pem  dest={{ k8s_work_dir }}/ssl/etcd" || exit 1
-ansible -i ../hosts k8s      -m copy    -a "src=$node_cert_dir/*.pem  dest={{ k8s_work_dir }}/ssl" || exit 1
+ansible-playbook -i ../hosts ../update_tls.yml -uroot -t master_k8s_dist,master_etcd_dist,node_k8s_dist  || exit 1
 ansible -i ../hosts master   -m systemd -a "name=kube-apiserver state=restarted" || exit 1
 ansible -i ../hosts master   -m systemd -a "name=kube-controller-manager state=restarted" || exit 1
 ansible -i ../hosts master   -m systemd -a "name=kube-scheduler state=restarted" || exit 1
