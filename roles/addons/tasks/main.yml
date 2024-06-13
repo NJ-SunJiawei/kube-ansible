@@ -23,13 +23,13 @@
 - debug: var=pod_info.stdout_lines
 
 - import_tasks: coredns.yml
-  when: '"coredns" not in pod_info.stdout'
+#  when: '"coredns" not in pod_info.stdout'
 
 - import_tasks: calico.yml
-  when: '"calico" not in pod_info.stdout'
+#  when: '"calico" not in pod_info.stdout'
 
 - import_tasks: metrics-server.yml
-  when: '"metrics-server" not in pod_info.stdout'
+#  when: '"metrics-server" not in pod_info.stdout'
 
 - import_tasks: dashboard.yml
   tags: addons_dashboard
