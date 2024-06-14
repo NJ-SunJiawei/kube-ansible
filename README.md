@@ -60,7 +60,7 @@ cert_hosts:
 ```
 # ansible-playbook -i hosts single-master-deploy.yml -uroot
 ```
-多Master版(未开发)：
+多Master版(没测试过，别用)：
 ```
 # ansible-playbook -i hosts multi-master-deploy.yml -uroot
 ```
@@ -96,6 +96,9 @@ k8s-node1     Ready    <none>   9h    v1.24.2
 ```
 2）执行部署
 ```
+# prepare.yml中hosts修改为newnode
+# ansible-playbook -i hosts prepare.yml -uroot
+
 # ansible-playbook -i hosts add-node.yml -uroot
 ```
 ### 6.3 所有HTTPS证书存放路径

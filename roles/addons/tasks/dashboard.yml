@@ -1,9 +1,11 @@
 ---
 - name: 准备dashboard的部署文件
   copy: src=dashboard dest={{ tmp_dir }}
+  tags: addons_delete
 
 - name: 删除dashboard部署
   shell: "kubectl delete -f {{ tmp_dir }}/dashboard/ || echo true; sleep 10"
+  tags: addons_delete
 
 - name: 创建dashboard部署
   shell: "kubectl apply -f {{ tmp_dir }}/dashboard/ ; sleep 10"

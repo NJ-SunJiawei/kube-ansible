@@ -1,0 +1,9 @@
+#!/bin/sh
+
+{% for host in groups['k8s'] %}
+kubectl label nodes {{ hostvars[host].node_name }} model={{ hostvars[host].node_label }} --overwrite
+{% endfor %}
+
+{% for host in groups['newnode'] %}
+kubectl label nodes {{ hostvars[host].node_name }} model={{ hostvars[host].node_label }} --overwrite
+{% endfor %} 

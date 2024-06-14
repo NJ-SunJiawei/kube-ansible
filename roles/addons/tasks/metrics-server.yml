@@ -1,9 +1,11 @@
 ---
 - name: 准备metrics-server的部署文件
   copy: src=metrics-server dest={{ tmp_dir }}
+  tags: addons_delete
 
 - name: 删除metrics-server部署
   shell: "kubectl delete -f {{ tmp_dir }}/metrics-server/ || echo true; sleep 3"
+  tags: addons_delete
 
 - name: 创建metrics-server部署
   shell: "kubectl apply -f {{ tmp_dir }}/metrics-server/"
