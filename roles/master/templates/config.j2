@@ -1,4 +1,11 @@
-{% set local_ip = inventory_hostname + ':' + '6443' %}
+#{% set local_ip = inventory_hostname + ':' + '6443' %}
+
+{% if groups['master'] | length == 1 %}
+    {% set local_ip = groups['master'][0] + ':' + '6443' %}
+{% elif groups['master'] | length > 1 %}
+    {% set local_ip = vip + ':' + '16443' %}
+{% endif %}
+
 apiVersion: v1
 clusters:
 - cluster:
