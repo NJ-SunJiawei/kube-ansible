@@ -29,19 +29,19 @@
     -  etcd
   tags: etcd
 
-- name: 4.部署K8S Master
-  gather_facts: false
-  hosts: master
-  roles:
-    - master
-  tags: master
-
-- name: 5. 部署Nginx负载均衡并高可用
+- name: 4. 部署Nginx负载均衡并高可用
   gather_facts: false
   hosts: lb
   roles:
     - ha
   tags: ha
+
+- name: 5.部署K8S Master
+  gather_facts: false
+  hosts: master
+  roles:
+    - master
+  tags: master
 
 - name: 6.部署K8S Node
   gather_facts: false

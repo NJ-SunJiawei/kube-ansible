@@ -12,7 +12,7 @@ containerd版本：1.6.6
 # yum install epel-release -y
 # yum install ansible -y
 # yum install expect ssh sshpass -y
-
+# yum install unzip zip tar -y
 注：做好机器的时间同步
 ```
 ### 2、下载所需文件
