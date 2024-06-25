@@ -7,3 +7,4 @@ KUBELET_OPTS="--logtostderr=false \
 --config={{ k8s_work_dir }}/cfg/kubelet-config.yml \
 --cert-dir={{ k8s_work_dir }}/ssl \
 --container-runtime-endpoint=unix:///run/containerd/containerd.sock"
+--feature-gates=HugePages=true
