@@ -60,7 +60,7 @@ cert_hosts:
 ```
 # ansible-playbook -i hosts single-master-deploy.yml -uroot
 ```
-多Master版(没测试过，别用)：
+多Master版：
 ```
 # ansible-playbook -i hosts multi-master-deploy.yml -uroot
 ```
