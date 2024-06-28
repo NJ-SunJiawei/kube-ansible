@@ -20,6 +20,10 @@
 #192.168.114.71 lb_name=lb-master
 #192.168.114.72 lb_name=lb-backup
 
+[harbor]
+#'NEW_INSTALL': 'true' to install a harbor server; 'false' to integrate with existed one
+192.168.1.30 NEW_INSTALL=true
+
 [k8s:children]
 master
 node
