@@ -21,15 +21,15 @@
   register: result
 
 - block:
-  - name: 生成 harbor 随机密码
-    shell: < /dev/urandom tr -dc 0-9A-Za-z-_ | head -c 16
-    register: harbor_password_gen
-  - debug: var="harbor_password_gen.stdout"
+#  - name: 生成 harbor 随机密码
+#    shell: < /dev/urandom tr -dc 0-9A-Za-z-_ | head -c 16
+#    register: harbor_password_gen
+#  - debug: var="harbor_password_gen.stdout"
   
-  - name: 生成 DB 随机密码
-    shell: < /dev/urandom tr -dc 0-9A-Za-z-_ | head -c 16
-    register: db_password_gen
-  - debug: var="db_password_gen.stdout"
+#  - name: 生成 DB 随机密码
+#    shell: < /dev/urandom tr -dc 0-9A-Za-z-_ | head -c 16
+#    register: db_password_gen
+#  - debug: var="db_password_gen.stdout"
 
   - name: 下发 harbor 离线安装包
     copy:
@@ -47,12 +47,10 @@
 
   - set_fact: HARBOR_INST_OPS="{{ HARBOR_INST_OPS }} --with-trivy"
     when: "HARBOR_WITH_TRIVY|bool"
-
   - debug: var="HARBOR_INST_OPS"
 
   - name: 安装 harbor
     shell: "cd {{ HARBOR_PATH }}/harbor && \
-            export PATH={{ bin_dir }}:$PATH && \
             ./install.sh {{ HARBOR_INST_OPS }} >> {{ tmp_dir }}/harbor-`date +'%Y%m%d%H%M%S'`.log 2>&1"
   when: '"registry" not in result.stdout'
 
@@ -62,11 +60,3 @@
     port: "{{ HARBOR_TLS_PORT }}"
     timeout: 60
   run_once: true
-
-#\-------------------------------------------------------------------------------------------------\
-#\-------------------------------------------------------------------------------------------------\
-- name: 重配 containerd 文件
-  template: src=config.toml.j2 dest=/etc/containerd/config.toml
-
-- name: 重启 containerd 服务
-  shell: systemctl daemon-reload && systemctl restart containerd

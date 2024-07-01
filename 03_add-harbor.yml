@@ -1,3 +1,4 @@
+---
 #- name: test
 #  gather_facts: false
 #  hosts: harbor
@@ -30,13 +31,42 @@
     - harbor
   tags: harbor
 
+- name: 02 docker登录harbor
+  gather_facts: false
+  hosts: 
+    - harbor
+  tasks:
+    - name: docker登录harbor
+      shell: echo {{ HARBOR_PASSWORD }} | docker login -u admin --password-stdin https://{{ HARBOR_REGISTRY }}
 
-- name: 02节点添加k8s DNS
+
+- name: 03节点更新containerd
   gather_facts: false
   hosts: 
     - k8s
   tasks:
-    # [optional] if you have a DNS server, add an 'A record' instead
+    - name: 创建containerd证书目录
+      file: dest=/etc/containerd/certs.d/{{ HARBOR_REGISTRY }} state=directory
+
+    - name: 分发containerd证书
+      copy: src=harbor_cert/{{ item }} dest=/etc/containerd/certs.d/{{ HARBOR_REGISTRY }}
+      with_items:
+        - ca.pem
+        - harbor.pem
+        - harbor-key.pem
+
+    - name: 重配 containerd 文件
+      template: src=config.toml.j2 dest=/etc/containerd/config.toml
+
+    - name: 重启 containerd 服务
+      shell: systemctl daemon-reload && systemctl restart containerd
+
+- name: 04更新harbor dns
+  gather_facts: false
+  hosts: 
+    - harbor
+    - k8s
+  tasks:
     - name: /etc/hosts添加DNS
       lineinfile:
         dest: /etc/hosts

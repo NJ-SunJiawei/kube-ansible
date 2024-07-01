@@ -164,6 +164,13 @@ version = 2
       [plugins."io.containerd.grpc.v1.cri".registry.configs]
         [plugins."io.containerd.grpc.v1.cri".registry.configs."{{ HARBOR_REGISTRY }}".tls]
           insecure_skip_verify = true
+          #ca_file = "/etc/containerd/certs.d/{{ HARBOR_REGISTRY }}/ca.pem"
+          #cert_file = "/etc/containerd/certs.d/{{ HARBOR_REGISTRY }}/harbor.pem"
+          #key_file = "/etc/containerd/certs.d/{{ HARBOR_REGISTRY }}/harbor-key.pem"
+        [plugins."io.containerd.grpc.v1.cri".registry.configs."www.myharbor.com".auth]
+          username = "admin"
+          password = "{{ HARBOR_PASSWORD }}"
+
 {% for reg in INSECURE_REG %}
         [plugins."io.containerd.grpc.v1.cri".registry.configs."{{ reg.split('/')[2] }}".tls]
           insecure_skip_verify = true
@@ -172,6 +179,8 @@ version = 2
       [plugins."io.containerd.grpc.v1.cri".registry.headers]
 
       [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
+        [plugins."io.containerd.grpc.v1.cri".registry.mirrors."{{ HARBOR_REGISTRY }}"]
+          endpoint = ["https://{{ HARBOR_REGISTRY }}"]
 {% for reg in INSECURE_REG %}
         [plugins."io.containerd.grpc.v1.cri".registry.mirrors."{{ reg.split('/')[2] }}"]
           endpoint = ["{{ reg }}"]

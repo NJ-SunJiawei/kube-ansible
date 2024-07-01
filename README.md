@@ -6,6 +6,7 @@ ansible管理机环境：linux(架构、版本随意)
 k8s版本：1.24.2
 containerd版本：1.6.6
 harbor版本：2.10.2
+docekr版本：24.0.7
 ```
 
 
@@ -101,14 +102,23 @@ k8s-node1     Ready    <none>   9h    v1.24.2
 2）执行部署
 ```
 # prepare.yml中hosts修改为newnode
-# ansible-playbook -i hosts prepare.yml -uroot
+# ansible-playbook -i hosts 00_prepare.yml -uroot
 
-# ansible-playbook -i hosts add-node.yml -uroot
+# ansible-playbook -i hosts 02_add-node.yml -uroot
+
+#安装harbor后需要执行：
+# ansible-playbook -i hosts 02_update-harbor-node.yml -uroot
 ```
-### 6.3 所有HTTPS证书存放路径
+
+### 6.3 安装harbor仓库
+```
+# ansible-playbook -i hosts 03_add-harbor.yml -uroot
+```
+
+### 6.4 所有HTTPS证书存放路径
 部署产生的证书都会存放到目录“kube-ansible/ssl”，一定要保存好，后面还会用到~
 
-### 6.4 卸载k8s
+### 6.5 卸载k8s
 ```
 # sh tools/unsintall_k8s.sh
 ```

@@ -2,6 +2,16 @@
 - name: 创建临时目录
   file: dest={{ tmp_dir }} state=directory
 
+- name: 创建docker证书目录
+  file: dest=/etc/docker/certs.d/{{ HARBOR_REGISTRY }} state=directory
+
+- name: 分发docker-harbor证书
+  copy: src=harbor_cert/{{ item }} dest=/etc/docker/certs.d/{{ HARBOR_REGISTRY }}
+  with_items:
+    - ca.pem
+    - harbor.pem
+    - harbor-key.pem
+
 - name: 分发并解压docker二进制包
   unarchive: src={{ item }} dest={{ tmp_dir }} mode=u+x
   with_fileglob:
