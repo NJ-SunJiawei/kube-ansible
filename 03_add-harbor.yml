@@ -18,7 +18,7 @@
   gather_facts: false
   hosts: localhost
   roles:
-    - { role: tls,    when: "NEW_INSTALL|bool" }
+    - tls
   tags: harbor
 
 
@@ -26,9 +26,8 @@
   gather_facts: false
   hosts: harbor
   roles:
-    - { role: docker, when: "NEW_INSTALL|bool" }
-    - { role: tls,    when: "NEW_INSTALL|bool" }
-    - { role: harbor, when: "NEW_INSTALL|bool" }
+    - docker
+    - harbor
   tags: harbor
 
 
