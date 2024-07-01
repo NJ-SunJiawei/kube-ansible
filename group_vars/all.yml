@@ -70,19 +70,36 @@ cert_hosts:
 #    - 192.168.114.34
 #    - 192.168.114.35
 
-
 ############################
 # harbor
 ############################
 # harbor version，完整版本号
 HARBOR_VER: "v2.10.2"
-HARBOR_DOMAIN: "harbor.yourdomain.com"
+HARBOR_DOMAIN: "registry.zjy.com"
 HARBOR_PATH: /var/data
 HARBOR_TLS_PORT: 8443
 HARBOR_REGISTRY: "{{ HARBOR_DOMAIN }}:{{ HARBOR_TLS_PORT }}"
 
-# if set 'false', you need to put certs named harbor.pem and harbor-key.pem in directory 'down'
-HARBOR_SELF_SIGNED_CERT: true
-
 # install extra component
 HARBOR_WITH_TRIVY: false
+
+############################
+# role:runtime [containerd,docker]
+############################
+# [.]docker启用拉取加速镜像仓库
+ENABLE_MIRROR_REGISTRY: true
+
+# [.]添加信任的私有仓库
+# 必须按照如下示例格式，协议头'http://'和'https://'不能省略
+INSECURE_REG:
+  - "https://{{ HARBOR_DOMAIN }}"
+  - "http://{{ groups['harbor'][0] }}:80"
+
+# [containerd]容器持久化存储目录
+CONTAINERD_STORAGE_DIR: "/var/lib/containerd"
+
+# [docker]容器存储目录
+DOCKER_STORAGE_DIR: "/var/lib/docker"
+
+# [docker]开启Restful API
+DOCKER_ENABLE_REMOTE_API: false

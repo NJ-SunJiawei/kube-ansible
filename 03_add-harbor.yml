@@ -1,0 +1,39 @@
+#- name: test
+#  gather_facts: false
+#  hosts: harbor
+#  tasks:
+#    - name: test
+#      debug:
+#        msg:
+#          - "{{ NEW_INSTALL }}"
+#          - "NEW_INSTALL"
+#          - "{{ groups['harbor'][0] }}"
+#          - "{{ groups['harbor'] }}"
+#          - "{{ groups['k8s'] }}"
+#          - "{{ inventory_hostname }}"
+#          - "{{ hostvars[inventory_hostname] }}"
+
+
+- name: 01安装harbor
+  gather_facts: false
+  hosts: harbor
+  roles:
+    - { role: docker, when: "NEW_INSTALL|bool" }
+    - { role: tls,    when: "NEW_INSTALL|bool" }
+    - { role: harbor, when: "NEW_INSTALL|bool" }
+  tags: harbor
+
+
+- name: 02节点添加k8s DNS
+  gather_facts: false
+  hosts: 
+    - k8s
+  tasks:
+    # [optional] if you have a DNS server, add an 'A record' instead
+    - name: /etc/hosts添加DNS
+      lineinfile:
+        dest: /etc/hosts
+        state: present
+        regexp: '{{ HARBOR_DOMAIN }}'
+        line: "{{ groups['harbor'][0] }} {{ HARBOR_DOMAIN }}"
+      when: " [groups.harbor[0]]['HARBOR_DOMAIN'] != ''"

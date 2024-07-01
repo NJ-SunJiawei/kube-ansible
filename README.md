@@ -8,12 +8,15 @@ containerd版本：1.6.6
 harbor版本：2.10.2
 ```
 
+
 ### 1、找一台服务器安装Ansible
 ```
 # yum install epel-release -y
 # yum install ansible -y
 # yum install expect ssh sshpass -y
-# yum install unzip zip tar -y
+
+集群机器需要安装:
+# yum install unzip zip tar iptables -y
 注：做好机器的时间同步
 ```
 ### 2、下载所需文件

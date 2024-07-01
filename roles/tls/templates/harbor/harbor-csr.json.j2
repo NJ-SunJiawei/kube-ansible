@@ -2,7 +2,7 @@
   "CN": "harbor",
   "hosts": [
     "127.0.0.1",
-    "{{ inventory_hostname }}",
+    "{{ groups['harbor'][0] }}",
     "{{ HARBOR_DOMAIN }}"
   ],
   "key": {
@@ -12,8 +12,8 @@
   "names": [
     {
       "C": "CN",
-      "ST": "HangZhou",
-      "L": "XS",
+      "ST": "BeiJing",
+      "L": "BeiJing",
       "O": "k8s",
       "OU": "System"
     }

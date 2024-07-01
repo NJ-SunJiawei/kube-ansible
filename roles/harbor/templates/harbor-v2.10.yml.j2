@@ -14,8 +14,8 @@ https:
   # https port for harbor, default is 443
   port: {{ HARBOR_TLS_PORT }}
   # The path of cert and key files for nginx
-  certificate: {{ ca_dir }}/harbor.pem
-  private_key: {{ ca_dir }}/harbor-key.pem
+  certificate: {{ k8s_work_dir }}/ssl/harbor/harbor.pem
+  private_key: {{ k8s_work_dir }}/ssl/harbor/harbor-key.pem
   # enable strong ssl ciphers (default: false)
   # strong_ssl_ciphers: false
 

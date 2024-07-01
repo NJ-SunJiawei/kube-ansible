@@ -1,3 +1,14 @@
+- name: 创建harbor证书目录
+  file: dest={{ k8s_work_dir }}/ssl/harbor state=directory
+
+- name: 分发自签名证书
+  copy: src=harbor_cert/{{ item }} dest={{ k8s_work_dir }}/ssl/harbor
+  with_items:
+  - ca.pem
+  - harbor.pem
+  - harbor-key.pem
+#\-------------------------------------------------------------------------------------------------\
+#\-------------------------------------------------------------------------------------------------\
 - name: 创建 {{ HARBOR_PATH }} 目录
   file:
     path: "{{ HARBOR_PATH }}"
@@ -13,57 +24,24 @@
   - name: 生成 harbor 随机密码
     shell: < /dev/urandom tr -dc 0-9A-Za-z-_ | head -c 16
     register: harbor_password_gen
-  
   - debug: var="harbor_password_gen.stdout"
   
   - name: 生成 DB 随机密码
     shell: < /dev/urandom tr -dc 0-9A-Za-z-_ | head -c 16
     register: db_password_gen
-  
   - debug: var="db_password_gen.stdout"
-  
-  - name: 下发 docker compose 二进制文件
-    copy: src={{ base_dir }}/bin/docker-compose dest={{ bin_dir }}/docker-compose mode=0755
 
   - name: 下发 harbor 离线安装包
     copy:
-      src: "{{ base_dir }}/down/harbor-offline-installer-{{ HARBOR_VER }}.tgz"
+      src: "{{ software_dir }}/harbor-offline-installer-{{ HARBOR_VER }}.tgz"
       dest: "{{ HARBOR_PATH }}/harbor-offline-installer-{{ HARBOR_VER }}.tgz"
 
   - name: 解压 harbor 离线安装包
     shell: "cd {{ HARBOR_PATH }} && tar zxf harbor-offline-installer-{{ HARBOR_VER }}.tgz"
 
   - name: 导入 harbor 所需 docker images
-    shell: "{{ bin_dir }}/docker load -i {{ HARBOR_PATH }}/harbor/harbor.{{ HARBOR_VER }}.tar.gz"
-  
-  - block:
-    - name: 创建 harbor 证书请求
-      template: src=harbor-csr.json.j2 dest={{ cluster_dir }}/ssl/harbor-csr.json
-      connection: local
-    
-    - name: 创建 harbor 证书和私钥
-      shell: "cd {{ cluster_dir }}/ssl && {{ base_dir }}/bin/cfssl gencert \
-            -ca=ca.pem \
-            -ca-key=ca-key.pem \
-            -config=ca-config.json \
-            -profile=kubernetes harbor-csr.json|{{ base_dir }}/bin/cfssljson -bare harbor"
-      connection: local
-    
-    - name: 分发自签名证书
-      copy: src={{ cluster_dir }}/ssl/{{ item }} dest={{ ca_dir }}/{{ item }}
-      with_items:
-      - ca.pem
-      - harbor.pem
-      - harbor-key.pem
-    when: 'HARBOR_SELF_SIGNED_CERT|bool'
+    shell: "docker load -i {{ HARBOR_PATH }}/harbor/harbor.{{ HARBOR_VER }}.tar.gz"
 
-  - name: 推送非自签名证书（需提前在{{ base_dir }}/down/ 下载好证书）
-    copy: src={{ base_dir }}/down/{{ item }} dest={{ ca_dir }}/{{ item }}
-    with_items: 
-    - harbor.pem
-    - harbor-key.pem  
-    when: 'not HARBOR_SELF_SIGNED_CERT|bool'
-  
   - name: 准备 harbor 配置文件
     template: src=harbor-{{ HARBOR_VER_MAIN }}.yml.j2 dest={{ HARBOR_PATH }}/harbor/harbor.yml
 
@@ -75,7 +53,7 @@
   - name: 安装 harbor
     shell: "cd {{ HARBOR_PATH }}/harbor && \
             export PATH={{ bin_dir }}:$PATH && \
-            ./install.sh {{ HARBOR_INST_OPS }} >> /tmp/harbor-`date +'%Y%m%d%H%M%S'`.log 2>&1"
+            ./install.sh {{ HARBOR_INST_OPS }} >> {{ tmp_dir }}/harbor-`date +'%Y%m%d%H%M%S'`.log 2>&1"
   when: '"registry" not in result.stdout'
 
 - name: 检测 harbor 端口是否正常
@@ -84,3 +62,11 @@
     port: "{{ HARBOR_TLS_PORT }}"
     timeout: 60
   run_once: true
+
+#\-------------------------------------------------------------------------------------------------\
+#\-------------------------------------------------------------------------------------------------\
+- name: 重配 containerd 文件
+  template: src=config.toml.j2 dest=/etc/containerd/config.toml
+
+- name: 重启 containerd 服务
+  shell: systemctl daemon-reload && systemctl restart containerd
