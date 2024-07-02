@@ -33,14 +33,15 @@
 
   - name: 下发 harbor 离线安装包
     copy:
-      src: "{{ software_dir }}/harbor-offline-installer-{{ HARBOR_VER }}.tgz"
-      dest: "{{ HARBOR_PATH }}/harbor-offline-installer-{{ HARBOR_VER }}.tgz"
+      src: "{{ software_dir }}/harbor-offline-installer-aarch64-{{ HARBOR_VER }}.tgz"
+      dest: "{{ HARBOR_PATH }}/harbor-offline-installer-aarch64-{{ HARBOR_VER }}.tgz"
 
   - name: 解压 harbor 离线安装包
-    shell: "cd {{ HARBOR_PATH }} && tar zxf harbor-offline-installer-{{ HARBOR_VER }}.tgz"
+    shell: "cd {{ HARBOR_PATH }} && tar zxf harbor-offline-installer-aarch64-{{ HARBOR_VER }}.tgz"
 
-  - name: 导入 harbor 所需 docker images
-    shell: "docker load -i {{ HARBOR_PATH }}/harbor/harbor.{{ HARBOR_VER }}.tar.gz"
+#harbor安装脚本会导入镜像
+#  - name: 导入 harbor 所需 docker images
+#    shell: "docker load -i {{ HARBOR_PATH }}/harbor/harbor.{{ HARBOR_VER }}.tar.gz"
 
   - name: 准备 harbor 配置文件
     template: src=harbor-{{ HARBOR_VER_MAIN }}.yml.j2 dest={{ HARBOR_PATH }}/harbor/harbor.yml
