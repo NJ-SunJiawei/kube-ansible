@@ -58,16 +58,16 @@ cert_hosts:
 
 前期准备工作：
 ```
-# ansible-playbook -i hosts prepare.yml -uroot
+# ansible-playbook -i hosts 00_prepare.yml -uroot
 ```
 
 单Master版：
 ```
-# ansible-playbook -i hosts single-master-deploy.yml -uroot
+# ansible-playbook -i hosts 01_single-master-deploy.yml -uroot
 ```
 多Master版：
 ```
-# ansible-playbook -i hosts multi-master-deploy.yml -uroot
+# ansible-playbook -i hosts 01_multi-master-deploy.yml -uroot
 ```
 
 ## 5、查看集群节点
@@ -84,7 +84,7 @@ k8s-node1     Ready    <none>   9h    v1.24.2
 
 例如：只运行部署插件
 ```
-# ansible-playbook -i hosts single-master-deploy.yml -uroot --tags addons
+# ansible-playbook -i hosts 01_single-master-deploy.yml -uroot --tags addons
 ```
 
 ### 6.2 节点扩容

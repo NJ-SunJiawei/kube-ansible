@@ -1,0 +1,22 @@
+---
+#- name: 分发安装包（需要花费一些时间...）
+#  copy: src={{ software_dir }}/multus-cni dest={{ tmp_dir }}
+#  tags: addons_delete
+
+- name: 准备multus的部署文件
+  copy: src=multus dest={{ tmp_dir }}
+  tags: addons_delete
+
+- name: 删除macvlan部署
+  shell: "kubectl delete -f {{ tmp_dir }}/macvlan-conf.yml || echo true; sleep 5"
+  tags: addons_delete
+
+- name: 删除multus部署
+  shell: "kubectl delete -f {{ tmp_dir }}/multus-daemonset.yml || echo true; sleep 5"
+  tags: addons_delete
+
+- name: 创建multus部署
+  shell: "kubectl apply -f {{ tmp_dir }}/multus-daemonset.yml"
+
+- name: 创建macvlan部署
+  shell: "kubectl apply -f {{ tmp_dir }}/macvlan-conf.yml"

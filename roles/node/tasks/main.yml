@@ -71,6 +71,6 @@
   shell: cd {{ tmp_dir }}/images/calico && \
          for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
          
-#- name: 导入multus镜像（需要花费一些时间...）
-#  shell: cd {{ tmp_dir }}/images/multus && \
-#         for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+- name: 导入multus镜像（需要花费一些时间...）
+  shell: cd {{ tmp_dir }}/images/multus && \
+         for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done

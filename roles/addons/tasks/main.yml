@@ -38,6 +38,9 @@
 #- import_tasks: kuboard.yml
 #  when: '"kuboard" not in pod_info.stdout'
 
+- import_tasks: multus.yml
+  when: '"macvlan" not in pod_info.stdout'
+
 - name: 查看Pod状态
   shell: kubectl get all --all-namespaces
   register: getall
