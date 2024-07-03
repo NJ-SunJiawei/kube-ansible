@@ -164,6 +164,7 @@ version = 2
       [plugins."io.containerd.grpc.v1.cri".registry.configs]
         [plugins."io.containerd.grpc.v1.cri".registry.configs."{{ HARBOR_REGISTRY }}".tls]
           insecure_skip_verify = true
+		  #ca_file = "/etc/pki/ca-trust/source/anchors/harbor.crt"
           #ca_file = "/etc/containerd/certs.d/{{ HARBOR_REGISTRY }}/ca.pem"
           #cert_file = "/etc/containerd/certs.d/{{ HARBOR_REGISTRY }}/harbor.pem"
           #key_file = "/etc/containerd/certs.d/{{ HARBOR_REGISTRY }}/harbor-key.pem"
