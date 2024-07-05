@@ -51,10 +51,11 @@
   tasks:
     - name: docker登录harbor
       shell: echo {{ HARBOR_PASSWORD }} | docker login -u admin --password-stdin https://{{ HARBOR_REGISTRY }}
+  tags: harbor_login
   tags: harbor
 #退出登录 rm -rf /root/.docker/config.json
 
-- name: 04更新harbor dns
+- name: 04更新node dns
   gather_facts: false
   hosts: 
     - k8s
@@ -65,6 +66,7 @@
         state: present
         regexp: '{{ HARBOR_DOMAIN }}'
         line: "{{ groups['harbor'][0] }} {{ HARBOR_DOMAIN }}"
+  tags: harbor_containerd
 
 - name: 05节点更新containerd
   gather_facts: false
@@ -90,3 +92,4 @@
 
     - name: 重启 containerd 服务
       shell: systemctl daemon-reload && systemctl restart containerd
+  tags: harbor_containerd
