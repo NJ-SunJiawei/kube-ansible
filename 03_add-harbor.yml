@@ -35,6 +35,28 @@
   gather_facts: false
   hosts: 
     - harbor
+  tasks:
+    - name: /etc/hosts添加DNS
+      lineinfile:
+        dest: /etc/hosts
+        state: present
+        regexp: '{{ HARBOR_DOMAIN }}'
+        line: "{{ groups['harbor'][0] }} {{ HARBOR_DOMAIN }}"
+  tags: harbor
+
+- name: 03 docker登录harbor
+  gather_facts: false
+  hosts: 
+    - harbor
+  tasks:
+    - name: docker登录harbor
+      shell: echo {{ HARBOR_PASSWORD }} | docker login -u admin --password-stdin https://{{ HARBOR_REGISTRY }}
+    tags: harbor
+#退出登录 rm -rf /root/.docker/config.json
+
+- name: 04更新harbor dns
+  gather_facts: false
+  hosts: 
     - k8s
   tasks:
     - name: /etc/hosts添加DNS
@@ -44,16 +66,7 @@
         regexp: '{{ HARBOR_DOMAIN }}'
         line: "{{ groups['harbor'][0] }} {{ HARBOR_DOMAIN }}"
 
-- name: 03 docker登录harbor
-  gather_facts: false
-  hosts: 
-    - harbor
-  tasks:
-    - name: docker登录harbor
-      shell: echo {{ HARBOR_PASSWORD }} | docker login -u admin --password-stdin https://{{ HARBOR_REGISTRY }}
-#退出登录 rm -rf /root/.docker/config.json
-
-- name: 04节点更新containerd
+- name: 05节点更新containerd
   gather_facts: false
   hosts: 
     - k8s
