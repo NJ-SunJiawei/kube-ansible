@@ -1,5 +1,5 @@
 # 安装目录 
-software_dir: '/data/test/k8s_1.24.2'
+software_dir: '/data/k8s_install/k8s_1.24.2'
 k8s_work_dir: '/opt/kubernetes'
 etcd_work_dir: '/opt/etcd'
 tmp_dir: '/tmp/k8s'
@@ -77,10 +77,10 @@ cert_hosts:
 HARBOR_VER: "v2.10.2"
 HARBOR_DOMAIN: "registry.zjy.com"
 HARBOR_PATH: /var/data
-HARBOR_TLS_PORT: 8443
+HARBOR_TLS_PORT: 443
 #如果端口等于443，HARBOR_REGISTRY可以不需要HARBOR_TLS_PORT
-#HARBOR_REGISTRY: "{{ HARBOR_DOMAIN }}"
-HARBOR_REGISTRY: "{{ HARBOR_DOMAIN }}:{{ HARBOR_TLS_PORT }}"
+HARBOR_REGISTRY: "{{ HARBOR_DOMAIN }}"
+#HARBOR_REGISTRY: "{{ HARBOR_DOMAIN }}:{{ HARBOR_TLS_PORT }}"
 HARBOR_PASSWORD: "zjy@123456"
 HARBOR_DB_PASSWORD: "zjydb@123456" 
 # install extra component
@@ -95,8 +95,7 @@ ENABLE_MIRROR_REGISTRY: true
 # [.]添加信任的私有仓库
 # 必须按照如下示例格式，协议头'http://'和'https://'不能省略
 INSECURE_REG:
-   - "http://easzlab.io.local:5000"
-#  - "https://{{ harbor.yourcompany.com }}"
+  - "https://harbor.yourcompany.com"
 #  - "http://{{ groups['harbor'][0] }}:8080"
 
 # [containerd]容器持久化存储目录

@@ -112,7 +112,10 @@ k8s-node1     Ready    <none>   9h    v1.24.2
 
 ### 6.3 安装harbor仓库
 ```
-# ansible-playbook -i hosts 03_add-harbor.yml -uroot
+# ansible-playbook -i hosts 03_add-harbor.yml -uroot -t harbor
+# ansible-playbook -i hosts 03_add-harbor.yml -uroot -t harbor_containerd
+
+# ansible-playbook -i hosts 03_add-harbor.yml -uroot -t harbor_login
 ```
 
 ### 6.4 所有HTTPS证书存放路径
