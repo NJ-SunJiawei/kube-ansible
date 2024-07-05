@@ -95,6 +95,7 @@ ENABLE_MIRROR_REGISTRY: true
 # [.]添加信任的私有仓库
 # 必须按照如下示例格式，协议头'http://'和'https://'不能省略
 INSECURE_REG:
+   - "http://easzlab.io.local:5000"
 #  - "https://{{ harbor.yourcompany.com }}"
 #  - "http://{{ groups['harbor'][0] }}:8080"
 

@@ -51,7 +51,7 @@
   tasks:
     - name: docker登录harbor
       shell: echo {{ HARBOR_PASSWORD }} | docker login -u admin --password-stdin https://{{ HARBOR_REGISTRY }}
-    tags: harbor
+  tags: harbor
 #退出登录 rm -rf /root/.docker/config.json
 
 - name: 04更新harbor dns
