@@ -72,4 +72,5 @@
 
     - name: 重启 containerd 服务
       shell: systemctl daemon-reload && systemctl restart containerd
-    tags: harbor_containerd
+
+  tags: harbor_containerd

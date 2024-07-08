@@ -42,7 +42,6 @@
   roles:
     - ha
   tags: ha
-  when: "HA_SUPPORT|bool"
 
 - name: 6.部署K8S Node
   gather_facts: false
