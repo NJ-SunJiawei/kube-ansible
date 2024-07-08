@@ -36,4 +36,38 @@
   shell: sed -i 's/disable_apparmor = false/disable_apparmor = true/g' /etc/containerd/config.toml
 
 - name: 重启containerd
-  shell: systemctl restart containerd  
+  shell: systemctl restart containerd
+  
+- block:
+    - name: /etc/hosts添加DNS
+      lineinfile:
+        dest: /etc/hosts
+        state: present
+        regexp: '{{ HARBOR_DOMAIN }}'
+        line: "{{ groups['harbor'][0] }} {{ HARBOR_DOMAIN }}"
+
+    #- name: 创建containerd证书目录
+    #  file: dest=/etc/containerd/certs.d/{{ HARBOR_REGISTRY }} state=directory
+
+    #好像没啥用
+    #- name: 分发containerd证书
+    #  copy: src=harbor_cert/{{ item }} dest=/etc/containerd/certs.d/{{ HARBOR_REGISTRY }}
+    #  with_items:
+    #    - ca.pem
+    #    - harbor.pem
+    #    - harbor-key.pem
+
+    - name: 分发containerd证书
+      copy: src=harbor_cert/{{ item }} dest=/etc/pki/ca-trust/source/anchors/harbor-ca.crt
+      with_items:
+      - ca.pem
+
+    - name: 信任证书
+      shell: update-ca-trust
+
+    - name: 重配 containerd 文件
+      template: src=config.toml.j2 dest=/etc/containerd/config.toml
+
+    - name: 重启 containerd 服务
+      shell: systemctl daemon-reload && systemctl restart containerd
+    tags: harbor_containerd
