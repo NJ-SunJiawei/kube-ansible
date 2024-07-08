@@ -4,15 +4,13 @@
   hosts: 
     - newnode
   tasks:
-    - name: 创建containerd证书目录
-      file: dest=/etc/containerd/certs.d/{{ HARBOR_REGISTRY }} state=directory
-
     - name: 分发containerd证书
-      copy: src=harbor_cert/{{ item }} dest=/etc/containerd/certs.d/{{ HARBOR_REGISTRY }}
+      copy: src=harbor_cert/{{ item }} dest=/etc/pki/ca-trust/source/anchors/harbor-ca.crt
       with_items:
-        - ca.pem
-        - harbor.pem
-        - harbor-key.pem
+      - ca.pem
+
+    - name: 信任证书
+      shell: update-ca-trust
 
     - name: 重配 containerd 文件
       template: src=config.toml.j2 dest=/etc/containerd/config.toml
