@@ -26,6 +26,7 @@
 #  systemd: name=containerd state=restarted enabled=yes daemon_reload=yes
 
 #取决于kubelet配置---cgroupDriver: systemd #cgroupfs
+#下面几步可以不要了#{
 - name: 修改SystemdCgroup配置
   shell: sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
 
@@ -37,7 +38,8 @@
 
 - name: 重启containerd
   shell: systemctl restart containerd
-  
+ #}
+
 - block:
     - name: /etc/hosts添加DNS
       lineinfile:

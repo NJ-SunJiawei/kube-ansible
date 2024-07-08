@@ -35,6 +35,7 @@
   tags: addons_dashboard
 #  when: '"dashboard" not in pod_info.stdou'
 
+#抛弃-不好使
 #- import_tasks: kuboard.yml
 #  when: '"kuboard" not in pod_info.stdout'
 

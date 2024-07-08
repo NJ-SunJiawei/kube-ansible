@@ -9,7 +9,6 @@ harbor版本：2.10.2
 docekr版本：24.0.7
 ```
 
-
 ### 1、找一台服务器安装Ansible
 ```
 # yum install epel-release -y
@@ -63,11 +62,13 @@ cert_hosts:
 
 单Master版：
 ```
-# ansible-playbook -i hosts 01_single-master-deploy.yml -uroot
+# ansible-playbook -i hosts 01_install.yml -uroot
 ```
 多Master版：
 ```
-# ansible-playbook -i hosts 01_multi-master-deploy.yml -uroot
+配置hosts，并且配置group_vars/all.yml HA_SUPPORT: true
+
+# ansible-playbook -i hosts 01_install.yml -uroot
 ```
 
 ## 5、查看集群节点
@@ -84,7 +85,7 @@ k8s-node1     Ready    <none>   9h    v1.24.2
 
 例如：只运行部署插件
 ```
-# ansible-playbook -i hosts 01_single-master-deploy.yml -uroot --tags addons
+# ansible-playbook -i hosts 01_install.yml -uroot --tags addons
 ```
 
 ### 6.2 节点扩容
@@ -103,18 +104,13 @@ k8s-node1     Ready    <none>   9h    v1.24.2
 ```
 # prepare.yml中hosts修改为newnode
 # ansible-playbook -i hosts 00_prepare.yml -uroot
-
 # ansible-playbook -i hosts 02_add-node.yml -uroot
-
-#安装harbor后需要执行：
-# ansible-playbook -i hosts 02_update-harbor-node.yml -uroot
 ```
 
 ### 6.3 安装harbor仓库
 ```
 # ansible-playbook -i hosts 03_add-harbor.yml -uroot -t harbor
-# ansible-playbook -i hosts 03_add-harbor.yml -uroot -t harbor_containerd
-
+若docker登录失败，再次执行
 # ansible-playbook -i hosts 03_add-harbor.yml -uroot -t harbor_login
 ```
 

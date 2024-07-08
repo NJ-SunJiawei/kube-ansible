@@ -3,6 +3,7 @@
   gather_facts: false
   hosts: 
     - k8s
+#    - newnode
   roles:
     - prepare
   tags: prepare
