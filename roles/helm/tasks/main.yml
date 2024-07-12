@@ -8,7 +8,7 @@
     - "{{ software_dir }}/helm-{{ HELM_VER }}-linux-arm64.tar.gz"
 
 - name: 部署helm二进制
-  shell: cp {{ tmp_dir }}/helm/linux-amd64/helm /usr/bin
+  shell: cp {{ tmp_dir }}/helm/linux-arm64/helm /usr/bin
 
 - name: 添加 charts 仓库
   shell: helm repo add stable http://mirror.azure.cn/kubernetes/charts
