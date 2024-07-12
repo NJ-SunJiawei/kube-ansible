@@ -1,34 +1,36 @@
 ---
-- name: 创建临时目录
-  file: dest={{ tmp_dir }} state=directory
+- block:
+  - name: 创建临时目录
+    file: dest={{ tmp_dir }} state=directory
 
-- name: 拷贝nginx,keepalived安装包
-  copy: src={{ software_dir }}/rpm-ha/{{ item }} dest={{ tmp_dir }}
-  with_items:
-    - keepalived
-    - nginx
+  - name: 拷贝nginx,keepalived安装包
+    copy: src={{ software_dir }}/rpm-ha/{{ item }} dest={{ tmp_dir }}
+    with_items:
+      - keepalived
+      - nginx
 
-- name: 安装keepalived高可用软件
-  shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
-  with_items:
-    - keepalived
+  - name: 安装keepalived高可用软件
+    shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
+    with_items:
+      - keepalived
 
-- name: 安装nginx负载均衡器
-  shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
-  with_items:
-    - nginx
+  - name: 安装nginx负载均衡器
+    shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
+    with_items:
+      - nginx
 
-- name: 拷贝nginx配置文件
-  template: src=nginx.conf.j2 dest=/etc/nginx/nginx.conf
+  - name: 拷贝nginx配置文件
+    template: src=nginx.conf.j2 dest=/etc/nginx/nginx.conf
 
-- name: 拷贝keepalived配置文件       
-  template: src=keepalived.conf.j2 dest=/etc/keepalived/keepalived.conf
+  - name: 拷贝keepalived配置文件       
+    template: src=keepalived.conf.j2 dest=/etc/keepalived/keepalived.conf
 
-- name: 拷贝nginx健康检查脚本
-  copy: src=check_nginx.sh dest=/etc/keepalived/ mode=u+x
+  - name: 拷贝nginx健康检查脚本
+    copy: src=check_nginx.sh dest=/etc/keepalived/ mode=u+x
 
-- name: 启动服务
-  systemd: name={{ item }} state=restarted enabled=yes daemon_reload=yes
-  with_items:
-    - nginx
-    - keepalived
+  - name: 启动服务
+    systemd: name={{ item }} state=restarted enabled=yes daemon_reload=yes
+    with_items:
+      - nginx
+      - keepalived
+  when: "HA_SUPPORT|bool"
