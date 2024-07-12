@@ -4,7 +4,7 @@
   register: root_dir 
 
 - name: 准备cfssl工具
-  unarchive: src={{ software_dir }}/{{ cfssl_tar }} dest=/usr/bin/ mode=u+x
+  unarchive: src={{ software_dir }}/cfssl-{{ cfssl_type }}.tar.gz dest=/usr/bin/ mode=u+x
 
 - name: 注册变量 result
   command: ls {{ root_dir.stdout }}/ssl

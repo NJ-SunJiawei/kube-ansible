@@ -1,0 +1,65 @@
+
+user  root;
+worker_processes  auto;
+
+error_log  /var/log/nginx/error.log notice;
+pid        /var/run/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    #gzip  on;
+
+    include /etc/nginx/conf.d/*.conf;
+
+    #容器部署设置
+    server {
+        listen 8000;
+        server_name localhost;
+
+        #auth_basic "helm name passwd"; #开启http Basic Authorization 认证
+        #auth_basic_user_file /medcrab/ops/openrestry/nginx/nginx/conf/htpasswd; #账号密码位置
+
+        location /charts {
+          alias {{ HELM_PATH }}/charts;  #把本地生成的charts库 上传到服务器
+          autoindex   on;
+          autoindex_exact_size on;
+          autoindex_localtime on;
+        }
+    }
+
+    #容器或者本地部署设置
+    server {
+        listen 80;
+        server_name {{ inventory_hostname }};
+
+        #auth_basic "helm name passwd"; #开启http Basic Authorization 认证
+        #auth_basic_user_file /medcrab/ops/openrestry/nginx/nginx/conf/htpasswd; #账号密码位置
+
+        location /charts {
+          alias {{ HELM_PATH }}/charts;  #把本地生成的charts库 上传到服务器
+          autoindex   on;
+          autoindex_exact_size on;
+          autoindex_localtime on;
+        }
+    }
+}
+

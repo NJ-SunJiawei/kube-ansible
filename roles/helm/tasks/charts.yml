@@ -1,0 +1,50 @@
+---
+- name: 创建charts目录
+  file: dest={{ HELM_PATH }} state=directory
+
+- name: 注册变量 result
+  command: ls {{ HELM_PATH }}
+  register: result
+
+- block:
+    - name: 创建charts目录
+      file: dest={{ HELM_PATH }}/charts state=directory
+
+    - name: 拷贝nginx配置文件
+      template: src=nginx.conf.j2 dest={{ HELM_PATH }}/nginx.conf
+
+    - name: 拷贝nginx镜像
+      copy: src={{ software_dir }}/images/nginx-*.tar dest={{ tmp_dir }}/images
+
+    - name: 导入nginx镜像（需要花费一些时间...）
+      shell: docker load -i {{ tmp_dir }}/images/nginx-arm64.tar
+
+    - name: 启动nginx镜像
+      shell: docker run -d --name=nginx-helm-charts -p {{ HELM_PORT }}:80 -p 8000:8000 -v {{ HELM_PATH }}/nginx.conf:/etc/nginx/nginx.conf -v {{ HELM_PATH }}/charts:{{ HELM_PATH }}/charts  nginx
+
+    - name: 更新index.html
+      shell: helm repo index {{ HELM_PATH }}/charts --url http://{{ inventory_hostname }}:{{ HELM_PORT }}/charts
+
+    - name: 添加 charts 仓库
+      shell: helm repo add stable http://{{ inventory_hostname }}:{{ HELM_PORT }}/charts
+
+    - name: 创建demo
+      shell: cd {{ tmp_dir }}/helm && helm create demo && helm package demo && mv demo-*.tgz {{ HELM_PATH }}/charts
+
+    - name: 更新index.html
+      shell: helm repo index {{ HELM_PATH }}/charts --url http://{{ inventory_hostname }}:{{ HELM_PORT }}/charts
+
+    - name: 添加demo到helm
+      shell: helm repo add demo http://{{ inventory_hostname }}:{{ HELM_PORT }}/charts
+
+  when: '"charts" not in result.stdout'
+
+- name: 查看helm仓库状态
+  shell: helm repo ls
+  register: repo
+- debug: var=repo.stdout_lines
+
+- name: 查看helm仓库状态
+  shell: helm search repo demo
+  register: repo
+- debug: var=repo.stdout_lines

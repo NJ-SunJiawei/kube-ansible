@@ -1,0 +1,18 @@
+---
+- name: 创建临时目录
+  file: dest={{ tmp_dir }}/helm state=directory
+
+- name: 分发HELM安装包
+  unarchive: src={{ item }} dest={{ tmp_dir }}/helm
+  with_fileglob:
+    - "{{ software_dir }}/helm-{{ HELM_VER }}-linux-arm64.tar.gz"
+
+- name: 部署helm二进制
+  shell: cp {{ tmp_dir }}/helm/linux-amd64/helm /usr/bin
+
+- name: 添加 charts 仓库
+  shell: helm repo add stable http://mirror.azure.cn/kubernetes/charts
+  when: "HELM_CHARTS == 'public'"
+
+- import_tasks: charts.yml
+  when: "HELM_CHARTS == 'private'"

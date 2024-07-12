@@ -25,6 +25,10 @@
 [harbor]
 192.168.114.30
 
+#和
+[helm]
+192.168.114.30
+
 [k8s:children]
 master
 node

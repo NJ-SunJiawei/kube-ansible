@@ -1,0 +1,6 @@
+- name: 00安装helm
+  gather_facts: false
+  hosts: master
+  roles:
+    - helm
+  tags: helm
