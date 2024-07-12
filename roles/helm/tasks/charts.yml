@@ -2,6 +2,9 @@
 - name: 创建charts目录
   file: dest={{ HELM_PATH }} state=directory
 
+- name: 创建临时目录
+  file: dest={{ tmp_dir }}/images state=directory
+
 - name: 注册变量 result
   command: ls {{ HELM_PATH }}
   register: result
