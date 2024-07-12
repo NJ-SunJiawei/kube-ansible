@@ -96,7 +96,7 @@ HARBOR_WITH_TRIVY: false
 ############################
 HELM_VER: "v3.11.1"
 HELM_PATH: "/root/helm"
-HELM_PORT: 80
+HELM_PORT: 80 #harbor和helm部署在一起 端口不可为80
 HELM_CHARTS: "private"
 
 ############################
