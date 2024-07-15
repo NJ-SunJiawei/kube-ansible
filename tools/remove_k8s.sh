@@ -2,7 +2,7 @@
 
 echo "remove kubernetes start >>>"
 #remove master
-ansible-playbook -i ../hosts ../update.yml -uroot -t addons_delete
+ansible-playbook -i ../hosts ../01_install.yml -uroot -t addons_delete
 ansible -i ../hosts master -m systemd -a 'name=kube-apiserver state=stopped enabled=no' || exit 1
 ansible -i ../hosts master -m systemd -a 'name=kube-controller-manager state=stopped enabled=no' || exit 1
 ansible -i ../hosts master -m systemd -a 'name=kube-scheduler state=stopped enabled=no' || exit 1
@@ -23,13 +23,18 @@ ansible -i ../hosts k8s    -m systemd -a 'name=kube-proxy state=stopped enabled=
 ansible -i ../hosts k8s    -m shell   -a 'rm -rf /usr/lib/systemd/system/{kubelet,kube-proxy}.service' || exit 1
 echo "remove kubernetes worker OK <<<"
 
-#remove containerd
+#stop containerd
 ansible -i ../hosts k8s    -m shell   -a 'ctr -n=k8s.io c rm $(ctr -n=k8s.io c ls q) || echo true'
 ansible -i ../hosts k8s    -m shell   -a 'ctr -n=k8s.io i rm $(ctr -n=k8s.io i ls q) || echo true'
 ansible -i ../hosts k8s    -m systemd -a 'name=containerd state=stopped enabled=no' || exit 1
 #ansible -i ../hosts k8s   -m shell   -a 'rm -rf /etc/cni' || exit 1
 #ansible -i ../hosts k8s   -m shell   -a 'rm -rf /etc/systemd/system/containerd.service' || exit 1
-echo "remove kubernetes containerd OK <<<"
+echo "stop kubernetes containerd OK <<<"
+
+#stop docker
+ansible -i ../hosts harbor   -m systemd -a 'name=docker state=stopped enabled=no'
+ansible -i ../hosts helm     -m systemd -a 'name=docker state=stopped enabled=no'
+echo "stop kubernetes docker OK <<<"
 
 #remove others
 ansible -i ../hosts k8s    -m shell   -a 'rm -rf /opt/etcd' || exit 1

@@ -54,7 +54,7 @@
   - name: 安装 harbor
     shell: "cd {{ HARBOR_PATH }}/harbor && \
             ./install.sh {{ HARBOR_INST_OPS }} >> {{ tmp_dir }}/harbor-`date +'%Y%m%d%H%M%S'`.log 2>&1"
-  #when: '"registry" not in result.stdout'
+  when: '"registry" not in result.stdout'
 
 - name: 检测 harbor 端口是否正常
   wait_for:

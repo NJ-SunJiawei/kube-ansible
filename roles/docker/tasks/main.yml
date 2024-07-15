@@ -2,49 +2,56 @@
 - name: 创建临时目录
   file: dest={{ tmp_dir }} state=directory
 
-- name: 创建docker证书目录
-  file: dest=/etc/docker/certs.d/{{ HARBOR_REGISTRY }} state=directory
-
-#好像没啥用
-#- name: 分发docker-harbor证书
-#  copy: src=harbor_cert/{{ item }} dest=/etc/docker/certs.d/{{ HARBOR_REGISTRY }}
-#  with_items:
-#    - ca.pem
-#    - harbor.pem
-#    - harbor-key.pem
-
-- name: 分发docker-harbor证书
-  copy: src=harbor_cert/{{ item }} dest=/etc/docker/certs.d/{{ HARBOR_REGISTRY }}/ca.crt
-  with_items:
-    - ca.pem
-
-- name: 分发并解压docker二进制包
-  unarchive: src={{ item }} dest={{ tmp_dir }} mode=u+x
-  with_fileglob:
-    - "{{ software_dir }}/docker-*.tar.gz"
-
-- name: 安装docker二进制文件
-  shell: cd {{ tmp_dir }}/docker && sh install.sh docker-24.0.7.tgz
-
-- name: 查看docker状态
-  shell: docker -v|cut -d' ' -f3
-  register: docker_ver
-- debug: var=docker_ver.stdout_lines
-
-- name: 转换docker版本信息为浮点数
-  set_fact:
-    DOCKER_VER: "{{ docker_ver.stdout.split('.')[0]|int + docker_ver.stdout.split('.')[1]|int/100 }}"
-
-- name: 配置docker daemon
-  template: src=daemon.json.j2 dest=/etc/docker/daemon.json
-
-- name: 开启docker 服务
-  shell: systemctl daemon-reload && systemctl restart docker
-
-- name: 安装docker-compose二进制文件
-  shell: cd {{ tmp_dir }}/docker && mv docker-compose-linux-aarch64 /usr/local/bin/docker-compose && chmod 777 /usr/local/bin/docker-compose
-
 - name: 查看docker-compose状态
   shell: docker-compose -v
-  register: compose_info
-- debug: var=compose_info.stdout_lines
+  register: result
+- debug: var=result.stdout_lines
+
+- block:
+    - name: 创建docker证书目录
+      file: dest=/etc/docker/certs.d/{{ HARBOR_REGISTRY }} state=directory
+
+    #好像没啥用
+    #- name: 分发docker-harbor证书
+    #  copy: src=harbor_cert/{{ item }} dest=/etc/docker/certs.d/{{ HARBOR_REGISTRY }}
+    #  with_items:
+    #    - ca.pem
+    #    - harbor.pem
+    #    - harbor-key.pem
+
+    - name: 分发docker-harbor证书
+      copy: src=harbor_cert/{{ item }} dest=/etc/docker/certs.d/{{ HARBOR_REGISTRY }}/ca.crt
+      with_items:
+        - ca.pem
+
+    - name: 分发并解压docker二进制包
+      unarchive: src={{ item }} dest={{ tmp_dir }} mode=u+x
+      with_fileglob:
+        - "{{ software_dir }}/docker-*.tar.gz"
+
+    - name: 安装docker二进制文件
+      shell: cd {{ tmp_dir }}/docker && sh install.sh docker-24.0.7.tgz
+
+    - name: 查看docker状态
+      shell: docker -v|cut -d' ' -f3
+      register: docker_ver
+    - debug: var=docker_ver.stdout_lines
+
+    - name: 转换docker版本信息为浮点数
+      set_fact:
+        DOCKER_VER: "{{ docker_ver.stdout.split('.')[0]|int + docker_ver.stdout.split('.')[1]|int/100 }}"
+
+    - name: 配置docker daemon
+      template: src=daemon.json.j2 dest=/etc/docker/daemon.json
+
+    - name: 开启docker 服务
+      shell: systemctl daemon-reload && systemctl restart docker
+
+    - name: 安装docker-compose二进制文件
+      shell: cd {{ tmp_dir }}/docker && mv docker-compose-linux-aarch64 /usr/local/bin/docker-compose && chmod 777 /usr/local/bin/docker-compose
+
+    - name: 查看docker-compose状态
+      shell: docker-compose -v
+      register: compose_info
+    - debug: var=compose_info.stdout_lines
+  when: '"Docker" not in result.stdout'
