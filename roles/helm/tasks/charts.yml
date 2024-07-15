@@ -28,6 +28,10 @@
     - name: 更新index.html
       shell: helm repo index {{ HELM_PATH }}/charts --url http://{{ inventory_hostname }}:{{ HELM_PORT }}/charts
 
+    - name: 删除 charts 仓库
+      shell: helm repo remove stable
+      ignore_errors: true      
+
     - name: 添加 charts 仓库
       shell: helm repo add stable http://{{ inventory_hostname }}:{{ HELM_PORT }}/charts
 
@@ -37,9 +41,8 @@
     - name: 更新index.html
       shell: helm repo index {{ HELM_PATH }}/charts --url http://{{ inventory_hostname }}:{{ HELM_PORT }}/charts
 
-    - name: 添加demo到helm
-      shell: helm repo add demo http://{{ inventory_hostname }}:{{ HELM_PORT }}/charts
-
+    - name: 更新repo
+      shell: helm repo update 
   when: '"charts" not in result.stdout'
 
 - name: 查看helm仓库状态
