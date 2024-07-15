@@ -23,7 +23,7 @@
       shell: docker load -i {{ tmp_dir }}/nginx-arm64.tar
 
     - name: 启动nginx镜像
-      shell: docker run -d --name=nginx-helm-charts -p {{ HELM_PORT }}:80 -p 8000:8000 -v {{ HELM_PATH }}/nginx.conf:/etc/nginx/nginx.conf -v {{ HELM_PATH }}/charts:{{ HELM_PATH }}/charts  nginx
+      shell: docker run -d --name=nginx-helm-charts -p {{ HELM_PORT }}:80 -p 8000:8000 -v {{ HELM_PATH }}/nginx.conf:/etc/nginx/nginx.conf -v {{ HELM_PATH }}/charts:{{ HELM_PATH }}/charts  nginx:latest
 
     - name: 更新index.html
       shell: helm repo index {{ HELM_PATH }}/charts --url http://{{ inventory_hostname }}:{{ HELM_PORT }}/charts
