@@ -6,6 +6,9 @@
 - name: 准备cfssl工具
   unarchive: src={{ software_dir }}/cfssl-{{ cfssl_type }}.tar.gz dest=/usr/bin/ mode=u+x
 
+- name: 创建ssl工作目录
+  file: dest={{ root_dir.stdout }}/ssl state=directory
+
 - name: 注册变量 result
   command: ls {{ root_dir.stdout }}/ssl
   register: result
