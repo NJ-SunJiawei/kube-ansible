@@ -1,0 +1,71 @@
+在 Kubernetes 中，基于角色的访问控制（RBAC, Role-Based Access Control）是一种权限管理系统，它允许管理员精细地控制谁能够访问哪些资源。RBAC 在 Kubernetes 1.6 版本中被引入，并在后续版本中成为默认启用的功能。
+
+### RBAC 的核心概念
+
+1. **Role 和 ClusterRole**:
+   - `Role` 定义了一组权限，这些权限可以在一个特定的命名空间内被授予。
+   - `ClusterRole` 与 `Role` 类似，但是其权限跨越整个集群，而不局限于单个命名空间。
+
+2. **RoleBinding 和 ClusterRoleBinding**:
+   - `RoleBinding` 将 `Role` 与命名空间内的一个或多个主体（如用户、用户组、服务账户）关联起来。
+   - `ClusterRoleBinding` 将 `ClusterRole` 与整个集群中的一个或多个主体关联起来。
+
+### ServiceAccount 的角色
+
+在 Kubernetes 中，`ServiceAccount` 是一种特殊的账户类型，用于代表 Pod 或者运行在集群中的其他资源的身份。每个命名空间都有一个默认的 `ServiceAccount`，但你也可以创建自己的 `ServiceAccount`。`ServiceAccount` 主要有以下几个特点：
+
+- 每个 Pod 都可以被赋予一个 `ServiceAccount`，默认情况下，Pod 继承其所在命名空间的默认 `ServiceAccount`。
+- `ServiceAccount` 会自动创建一个与之关联的 Secret，该 Secret 包含了访问 Kubernetes API 所需的令牌（token），从而允许 Pod 以该 `ServiceAccount` 的身份与 API 服务器通信。
+- `ServiceAccount` 可以被绑定到 `Role` 或 `ClusterRole`，以获得特定的权限。
+
+### 使用 RBAC 和 ServiceAccount 的示例
+
+假设我们想要创建一个 `ServiceAccount`，并给予其在特定命名空间内读取 `pods` 和 `services` 的权限。
+
+1. **创建 ServiceAccount**:
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-service-account
+  namespace: my-namespace
+```
+
+2. **创建 Role**:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: my-namespace
+  name: read-pods-services
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services"]
+  verbs: ["get", "watch", "list"]
+```
+
+3. **创建 RoleBinding**:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: my-service-account-binding
+  namespace: my-namespace
+subjects:
+- kind: ServiceAccount
+  name: my-service-account
+  namespace: my-namespace
+roleRef:
+  kind: Role
+  name: read-pods-services
+  apiGroup: rbac.authorization.k8s.io
+```
+
+现在，任何使用 `my-service-account` 的 Pod 都将具有读取 `my-namespace` 中 `pods` 和 `services` 的权限。
+
+### 总结
+
+通过 RBAC 和 `ServiceAccount`，你可以确保 Pod 和其他资源只能访问其必需的最小权限集，从而增强了集群的安全性。同时，这也使得权限管理变得更加清晰和可维护。
