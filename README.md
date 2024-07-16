@@ -7,7 +7,8 @@ k8s版本：1.24.2
 containerd版本：1.6.6
 harbor版本：2.10.2
 docekr版本：24.0.7
-```
+helm版本：3.11.1
+helm_prometheus版本：45.23.0
 
 ### 1、找一台服务器安装Ansible
 ```
