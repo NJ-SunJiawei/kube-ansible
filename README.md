@@ -111,15 +111,22 @@ k8s-node1     Ready    <none>   9h    v1.24.2
 
 ### 6.3 安装harbor仓库
 ```
+#配置hosts文件中harbor地址，可以和master地址一样
 # ansible-playbook -i hosts 03_add-harbor.yml -uroot -t harbor
 若docker登录失败，再次执行
 # ansible-playbook -i hosts 03_add-harbor.yml -uroot -t harbor_login
 ```
 
-### 6.4 所有HTTPS证书存放路径
+### 6.4 安装helm和helm离线仓库
+```
+#配置hosts文件中helm地址，可以和master地址一样，helm和helm仓库安装在一起
+# ansible-playbook -i hosts 04_add-helm.yml -uroot
+```
+
+### 6.5 所有HTTPS证书存放路径
 部署产生的证书都会存放到目录“kube-ansible/ssl”，一定要保存好，后面还会用到~
 
-### 6.5 卸载k8s
+### 6.6 卸载k8s
 ```
 # sh tools/remove_k8s.sh
 ```

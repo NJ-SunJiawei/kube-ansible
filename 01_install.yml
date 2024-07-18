@@ -50,7 +50,14 @@
     - node
   tags: node
 
-- name: 7.部署插件
+- name: 7.导入离线镜像
+  gather_facts: false
+  hosts: k8s 
+  roles:
+    - images
+  tags: images
+
+- name: 8.部署插件
   gather_facts: false
   hosts: master
   roles:

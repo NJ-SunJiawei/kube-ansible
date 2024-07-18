@@ -1,0 +1,65 @@
+---
+- block:
+    - name: 创建临时目录
+      file: dest={{ tmp_dir }}/images state=directory
+  tags: addons_coredns
+  tags: addons_calico
+  tags: addons_metrics
+  tags: addons_dashboard
+  tags: addons_multus
+  tags: addons_prometheus
+
+- block:
+    - name: 分发镜像（需要花费一些时间...）
+      copy: src={{ software_dir }}/images/base dest={{ tmp_dir }}/images
+    - name: 导入base镜像（需要花费一些时间...）
+      shell: cd {{ tmp_dir }}/images/base && \
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+
+- block:
+    - name: 分发镜像（需要花费一些时间...）
+      copy: src={{ software_dir }}/images/calico dest={{ tmp_dir }}/images
+    - name: 导入calico镜像（需要花费一些时间...）
+      shell: cd {{ tmp_dir }}/images/calico && \
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+  tags: addons_calico
+
+- block:
+    - name: 分发镜像（需要花费一些时间...）
+      copy: src={{ software_dir }}/images/dns dest={{ tmp_dir }}/images
+    - name: 导入dns镜像（需要花费一些时间...）
+      shell: cd {{ tmp_dir }}/images/dns && \
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+  tags: addons_coredns
+
+- block:
+    - name: 分发镜像（需要花费一些时间...）
+      copy: src={{ software_dir }}/images/dashboard dest={{ tmp_dir }}/images
+    - name: 导入dashboard镜像（需要花费一些时间...）
+      shell: cd {{ tmp_dir }}/images/dashboard && \
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+  tags: addons_dashboard
+
+- block:
+    - name: 分发镜像（需要花费一些时间...）
+      copy: src={{ software_dir }}/images/metrics dest={{ tmp_dir }}/images
+    - name: 导入metrics-server镜像（需要花费一些时间...）
+      shell: cd {{ tmp_dir }}/images/metrics && \
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+  tags: addons_metrics
+
+- block:
+    - name: 分发镜像（需要花费一些时间...）
+      copy: src={{ software_dir }}/images/multus dest={{ tmp_dir }}/images
+    - name: 导入multus镜像（需要花费一些时间...）
+      shell: cd {{ tmp_dir }}/images/multus && \
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+  tags: addons_multus
+
+- block:
+    - name: 分发镜像（需要花费一些时间...）
+      copy: src={{ software_dir }}/images/prometheus dest={{ tmp_dir }}/images
+    - name: 导入prometheus镜像（需要花费一些时间...）
+      shell: cd {{ tmp_dir }}/images/prometheus && \
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+  tags: addons_prometheus

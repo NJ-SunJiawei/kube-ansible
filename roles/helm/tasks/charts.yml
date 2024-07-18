@@ -17,7 +17,7 @@
       template: src=nginx.conf.j2 dest={{ HELM_PATH }}/nginx.conf
 
     - name: 拷贝nginx镜像
-      copy: src={{ software_dir }}/images/nginx-arm64.tar dest={{ tmp_dir }}
+      copy: src={{ software_dir }}/images/base/nginx-arm64.tar dest={{ tmp_dir }}
 
     - name: 导入nginx镜像（需要花费一些时间...）
       shell: docker load -i {{ tmp_dir }}/nginx-arm64.tar

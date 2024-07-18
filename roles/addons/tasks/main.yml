@@ -17,19 +17,16 @@
 #         cd {{ tmp_dir }}
 #         for yaml in $(ls *.yaml);do kubectl apply -f $yaml;done
 
-- name: 创建临时目录
-  file: dest={{ tmp_dir }} state=directory
-
-- name: 分发镜像（需要花费一些时间...）
-  copy: src={{ software_dir }}/images dest={{ tmp_dir }}
-
-- name: 导入base镜像（需要花费一些时间...）
-  shell: cd {{ tmp_dir }}/images/base && \
-         for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
-
 - name: 查看Pod状态
   shell: kubectl get all --all-namespaces
   register: pod_info
+  tags: addons_coredns
+  tags: addons_calico
+  tags: addons_metrics
+  tags: addons_dashboard
+  tags: addons_multus
+  tags: addons_prometheus
+
 - debug: var=pod_info.stdout_lines
 
 - import_tasks: coredns.yml

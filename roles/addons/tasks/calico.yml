@@ -1,8 +1,4 @@
 ---
-- name: 导入calico镜像（需要花费一些时间...）
-  shell: cd {{ tmp_dir }}/images/calico && \
-         for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
-
 - name: 准备calico的部署文件
   copy: src=calico dest={{ tmp_dir }}
   tags: addons_delete
