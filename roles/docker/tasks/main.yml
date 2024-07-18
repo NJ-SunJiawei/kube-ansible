@@ -5,6 +5,7 @@
 - name: 查看docker-compose状态
   shell: docker-compose -v
   register: result
+  ignore_errors: true
 - debug: var=result.stdout_lines
 
 - block:

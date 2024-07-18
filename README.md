@@ -9,6 +9,7 @@ harbor版本：2.10.2
 docekr版本：24.0.7
 helm版本：3.11.1
 helm_prometheus版本：45.23.0
+```
 
 ### 1、找一台服务器安装Ansible
 ```
@@ -120,5 +121,5 @@ k8s-node1     Ready    <none>   9h    v1.24.2
 
 ### 6.5 卸载k8s
 ```
-# sh tools/unsintall_k8s.sh
+# sh tools/remove_k8s.sh
 ```

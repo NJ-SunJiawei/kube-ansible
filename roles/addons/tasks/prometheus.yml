@@ -1,11 +1,43 @@
 ---
-- name: 准备calico的部署文件
-  copy: src=calico dest={{ tmp_dir }}
+- name: 导入prometheus镜像（需要花费一些时间...）
+  shell: cd {{ tmp_dir }}/images/prometheus && \
+         for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+
+- name: 创建临时目录
+  file: dest={{ k8s_addons_dir }}/prometheus state=directory
+
+- name: 准备prometheus的部署文件
+  copy: src=prometheus dest={{ tmp_dir }}
   tags: addons_delete
 
-- name: 删除calico部署
-  shell: "kubectl delete -f {{ tmp_dir }}/calico/ || echo true; sleep 3"
-  tags: addons_delete
+- block:
+    - name: 获取是否已创建命名空间{{ prom_namespace }}
+      shell: "kubectl get ns"
+      register: ns_info
+    
+    - name: 创建命名空间{{ prom_namespace }}
+      shell: "kubectl create ns {{ prom_namespace }}"
+      when: "{{ prom_namespace }} not in ns_info.stdout"
+    
+    - name: get etcd-client-cert info
+      shell: "kubectl get secrets -n {{ prom_namespace }}"
+      register: secrets_info
+    
+    - name: 创建 etcd-client-cert
+      shell: "kubectl create secret generic -n {{ prom_namespace }} etcd-client-cert \
+            --from-file=etcd-ca={{ k8s_work_dir }}/ssl/etcd/ca.pem \
+            --from-file=etcd-client={{ k8s_work_dir }}/ssl/etcd/server.pem \
+            --from-file=etcd-client-key={{ k8s_work_dir }}/ssl/etcd/server-key.pem"
+      when: '"etcd-client-cert" not in secrets_info.stdout'
 
-- name: 创建calico部署
-  shell: "kubectl apply -f {{ tmp_dir }}/calico/"
+    - name: 创建 prom chart 个性化设置
+      template: src=prometheus/values.yaml.j2 dest={{ k8s_addons_dir }}/prometheus/prom-values.yaml
+
+    - name: helm 删除 kube-prometheus-stack {{ prom_chart_ver }}
+      shell: "helm delete prometheus -n {{ prom_namespace }} || echo true; sleep 3"
+      tags: addons_delete
+
+    - name: helm 创建 kube-prometheus-stack {{ prom_chart_ver }}
+      shell: "helm upgrade prometheus --install \
+              -n {{ prom_namespace }} -f {{ k8s_addons_dir }}/prometheus/prom-values.yaml \
+              {{ tmp_dir }}/kube-prometheus-stack-{{ prom_chart_ver }}.tgz"

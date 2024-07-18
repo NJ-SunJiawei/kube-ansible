@@ -33,12 +33,15 @@
 - debug: var=pod_info.stdout_lines
 
 - import_tasks: coredns.yml
+  tags: addons_coredns
 #  when: '"coredns" not in pod_info.stdout'
 
 - import_tasks: calico.yml
+  tags: addons_calico
 #  when: '"calico" not in pod_info.stdout'
 
 - import_tasks: metrics-server.yml
+  tags: addons_metrics
 #  when: '"metrics-server" not in pod_info.stdout'
 
 - import_tasks: dashboard.yml
@@ -50,7 +53,13 @@
 #  when: '"kuboard" not in pod_info.stdout'
 
 - import_tasks: multus.yml
+  tags: addons_multus
   when: '"macvlan" not in pod_info.stdout'
+
+- import_tasks: prometheus.yml
+  tags: addons_prometheus
+  when: '"prometheus" not in pod_info.stdout'
+  #when: 'prom_install == "yes"'
 
 - name: 查看Pod状态
   shell: kubectl get all --all-namespaces

@@ -34,7 +34,9 @@ echo "stop kubernetes containerd OK <<<"
 #stop docker
 ansible -i ../hosts harbor   -m systemd -a 'name=docker state=stopped enabled=no'
 ansible -i ../hosts helm     -m systemd -a 'name=docker state=stopped enabled=no'
-echo "stop kubernetes docker OK <<<"
+ansible -i ../hosts harbor   -m shell   -a 'rm -rf /usr/local/bin/docker-compose'
+ansible -i ../hosts helm     -m shell   -a 'rm -rf /usr/local/bin/docker-compose'
+echo "stop harbor/helm docker OK <<<"
 
 #remove others
 ansible -i ../hosts k8s    -m shell   -a 'rm -rf /opt/etcd' || exit 1

@@ -1,6 +1,7 @@
 # 安装目录 
 software_dir: '/data/k8s_install/k8s_1.24.2'
 k8s_work_dir: '/opt/kubernetes'
+k8s_addons_dir: '{{ k8s_work_dir }}/addons'
 etcd_work_dir: '/opt/etcd'
 tmp_dir: '/tmp/k8s'
 
@@ -69,6 +70,12 @@ cert_hosts:
     - 192.168.114.112
 #    - 192.168.114.34
 #    - 192.168.114.35
+
+############################
+# prometheus
+############################
+prom_namespace: "monitor"
+prom_chart_ver: "45.23.0"
 
 ############################
 # ha高可用

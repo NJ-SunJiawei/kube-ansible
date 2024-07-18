@@ -20,6 +20,7 @@
 - name: 注册变量 result
   command: ls {{ HARBOR_PATH }}
   register: result
+- debug: var=result.stdout_lines
 
 - block:
 #  - name: 生成 harbor 随机密码
