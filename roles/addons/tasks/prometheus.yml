@@ -13,8 +13,9 @@
     
     - name: 创建命名空间{{ prom_namespace }}
       shell: "kubectl create ns {{ prom_namespace }}"
-      when: "{{ prom_namespace }} not in ns_info.stdout"
-    
+      #when: "prom_namespace not in ns_info.stdout"
+      ignore_errors: true
+      
     - name: get etcd-client-cert info
       shell: "kubectl get secrets -n {{ prom_namespace }}"
       register: secrets_info
@@ -32,6 +33,7 @@
     - name: helm 删除 kube-prometheus-stack {{ prom_chart_ver }}
       shell: "helm delete prometheus -n {{ prom_namespace }} || echo true; sleep 3"
       tags: addons_delete
+      ignore_errors: true
 
     - name: helm 创建 kube-prometheus-stack {{ prom_chart_ver }}
       shell: "helm upgrade prometheus --install \
