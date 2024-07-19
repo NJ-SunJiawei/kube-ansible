@@ -38,4 +38,4 @@
     - name: helm 创建 kube-prometheus-stack {{ prom_chart_ver }}
       shell: "helm upgrade prometheus --install \
               -n {{ prom_namespace }} -f {{ k8s_addons_dir }}/prometheus/prom-values.yaml \
-              {{ tmp_dir }}/kube-prometheus-stack-{{ prom_chart_ver }}.tgz"
+              {{ tmp_dir }}/prometheus/kube-prometheus-stack-{{ prom_chart_ver }}.tgz"

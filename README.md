@@ -59,6 +59,7 @@ cert_hosts:
 
 前期准备工作：
 ```
+#新集群第一次安装，删除ssl文件夹
 # ansible-playbook -i hosts 00_prepare.yml -uroot
 ```
 

@@ -31,19 +31,19 @@
 
 - import_tasks: coredns.yml
   tags: addons_coredns
-#  when: '"coredns" not in pod_info.stdout'
+  when: '"coredns" not in pod_info.stdout'
 
 - import_tasks: calico.yml
   tags: addons_calico
-#  when: '"calico" not in pod_info.stdout'
+  when: '"calico" not in pod_info.stdout'
 
 - import_tasks: metrics-server.yml
   tags: addons_metrics
-#  when: '"metrics-server" not in pod_info.stdout'
+  when: '"metrics-server" not in pod_info.stdout'
 
 - import_tasks: dashboard.yml
   tags: addons_dashboard
-#  when: '"dashboard" not in pod_info.stdou'
+  when: '"kubernetes-dashboard" not in pod_info.stdout'
 
 #抛弃-不好使
 #- import_tasks: kuboard.yml
@@ -51,7 +51,7 @@
 
 - import_tasks: multus.yml
   tags: addons_multus
-  when: '"macvlan" not in pod_info.stdout'
+#  when: '"macvlan" not in pod_info.stdout'
 
 - import_tasks: prometheus.yml
   tags: addons_prometheus
