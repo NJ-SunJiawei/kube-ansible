@@ -20,12 +20,14 @@
 - name: 查看Pod状态
   shell: kubectl get all --all-namespaces
   register: pod_info
-  tags: addons_coredns
-  tags: addons_calico
-  tags: addons_metrics
-  tags: addons_dashboard
-  tags: addons_multus
-  tags: addons_prometheus
+  tags: 
+    - addons_delete
+    - addons_coredns
+    - addons_calico
+    - addons_metrics
+    - addons_dashboard
+    - addons_multus
+    - addons_prometheus
 
 - debug: var=pod_info.stdout_lines
 
