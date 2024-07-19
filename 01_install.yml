@@ -56,8 +56,16 @@
   roles:
     - images
   tags: images
+  
+- name: 8.安装helm
+  gather_facts: false
+  hosts: helm
+  roles:
+    - docker
+    - helm
+  tags: helm
 
-- name: 8.部署插件
+- name: 9.部署插件
   gather_facts: false
   hosts: master
   roles:

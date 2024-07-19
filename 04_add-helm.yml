@@ -1,7 +1,0 @@
-- name: 00安装helm
-  gather_facts: false
-  hosts: helm
-  roles:
-    - docker
-    - helm
-  tags: helm
