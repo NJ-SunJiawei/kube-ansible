@@ -19,6 +19,9 @@ helm_prometheus版本：45.23.0
 
 集群机器需要安装:
 # yum install unzip zip tar iptables -y
+
+NFS机器需要安装：
+yum install nfs-utils rpcbind -y
 注：做好机器的时间同步
 ```
 ### 2、下载所需文件
