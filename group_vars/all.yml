@@ -72,11 +72,16 @@ cert_hosts:
 #    - 192.168.114.35
 
 ############################
-# prometheus
+# nfs server
+############################
+NFS_DEFAULT_PATH: "/data/k8s"
+
+############################
+# prometheus+grafana
 ############################
 prom_namespace: "monitor"
 prom_chart_ver: "45.23.0"
-
+prom_install: yes
 ############################
 # ha高可用
 ############################

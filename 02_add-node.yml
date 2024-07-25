@@ -6,6 +6,21 @@
     - common
   tags: common 
 
+- name: 02更新newnode dns
+  gather_facts: false
+  hosts: 
+    - master
+    - node
+    - newnode
+  tasks:
+    - name: /etc/hosts添加DNS
+      lineinfile:
+        dest: /etc/hosts
+        state: present
+        regexp: '{{ hostvars[{{ item }}].node_name }}'
+        line: "{{ hostvars[{{ item }}].inventory_hostname }} {{ hostvars[{{ item }}].node_name }}"
+        with_items: ["{{ groups.newnode }}"]
+
 - name: 2.部署containerd
   gather_facts: false
   hosts: newnode 
@@ -13,9 +28,16 @@
     - containerd 
   tags: containerd
 
-- name: 2.部署K8S Node
+- name: 3.部署K8S Node
   gather_facts: false
   hosts: newnode
   roles:
     - node
   tags: node
+
+- name: 4.导入离线镜像
+  gather_facts: false
+  hosts: newnode 
+  roles:
+    - images
+  tags: images

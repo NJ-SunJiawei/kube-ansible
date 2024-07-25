@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-client-provisioner
+  labels:
+    app: nfs-client-provisioner
+  # replace with namespace where provisioner is deployed
+  namespace: kube-system  #与RBAC文件中的namespace保持一致
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nfs-client-provisioner
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: nfs-client-provisioner
+    spec:
+      serviceAccountName: nfs-client-provisioner
+      containers:
+        - name: nfs-client-provisioner
+          #这里特别注意，在k8s-1.20以后版本中使用上面提供的包，并不好用，这里我折腾了好久，才解决，后来在官方的github上，别人提的问题中建议使用下面这个包才解决的，我这里是下载后，传到我自已的仓库里
+          image: registry.cn-hangzhou.aliyuncs.com/helm-1c/nfs-subdir-external-provisioner:v4.0.2-arm64
+          volumeMounts:
+            - name: nfs-client-root
+              mountPath: /persistentvolumes
+          env:
+            - name: PROVISIONER_NAME
+              value: nfs-provisioner # 和3.Storage中provisioner保持一致便可
+            - name: NFS_SERVER
+              value: {{ groups['nfs_server'][0] }}
+            - name: NFS_PATH
+              value: {{ NFS_DEFAULT_PATH }}
+      volumes:
+        - name: nfs-client-root
+          nfs:
+            server: {{ groups['nfs_server'][0] }}
+            path: {{ NFS_DEFAULT_PATH }}

@@ -65,7 +65,14 @@
     - helm
   tags: helm
 
-- name: 9.部署插件
+- name: 9.安装nfs_server
+  gather_facts: false
+  hosts: nfs_server
+  roles:
+    - nfs
+  tags: nfs
+
+- name: 10.部署插件
   gather_facts: false
   hosts: master
   roles:

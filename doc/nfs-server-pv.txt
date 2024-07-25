@@ -1,0 +1,140 @@
+在openEuler上配置NFS服务端并部署Kubernetes NFS客户端的步骤如下：
+
+### 在openEuler上配置NFS服务端
+
+#### 1. 安装NFS软件包
+
+```bash
+sudo yum install -y nfs-utils
+```
+
+#### 2. 配置NFS服务器
+
+创建要共享的目录，并设置适当的权限：
+
+```bash
+sudo mkdir -p /srv/nfs
+sudo chown nobody:nobody /srv/nfs
+sudo chmod 755 /srv/nfs
+```
+
+编辑`/etc/exports`文件，添加要共享的目录和访问权限：
+
+```bash
+echo "/srv/nfs *(rw,sync,no_root_squash)" | sudo tee -a /etc/exports
+```
+
+#### 3. 启动和启用NFS服务
+
+```bash
+sudo systemctl enable nfs-server
+sudo systemctl start nfs-server
+```
+
+#### 4. 配置防火墙
+
+允许NFS流量通过防火墙：
+
+```bash
+#sudo firewall-cmd --permanent --add-service=nfs
+#sudo firewall-cmd --permanent --add-service=rpc-bind
+#sudo firewall-cmd --permanent --add-service=mountd
+#sudo firewall-cmd --reload
+```
+
+#### 5. 检查NFS共享
+
+验证NFS共享是否已成功导出：
+
+```bash
+sudo exportfs -r
+sudo exportfs -v
+```
+
+### 部署Kubernetes NFS客户端
+
+#### 1. 安装NFS客户端
+
+在Kubernetes节点上安装NFS客户端：
+
+```bash
+sudo yum install -y nfs-utils
+```
+
+#### 2. 创建持久存储卷（Persistent Volume, PV）
+
+创建一个YAML文件`nfs-pv.yaml`，定义NFS PV：
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    path: /srv/nfs
+    server: <NFS_SERVER_IP>
+```
+
+将`<NFS_SERVER_IP>`替换为NFS服务器的IP地址。然后应用该配置：
+
+```bash
+kubectl apply -f nfs-pv.yaml
+```
+
+#### 3. 创建持久存储卷声明（Persistent Volume Claim, PVC）
+
+创建一个YAML文件`nfs-pvc.yaml`，定义NFS PVC：
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+```
+
+应用该配置：
+
+```bash
+kubectl apply -f nfs-pvc.yaml
+```
+
+#### 4. 部署使用NFS存储的应用
+
+创建一个YAML文件`nfs-pod.yaml`，定义使用NFS PVC的Pod：
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nfs-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    volumeMounts:
+    - mountPath: "/usr/share/nginx/html"
+      name: nfs-volume
+  volumes:
+  - name: nfs-volume
+    persistentVolumeClaim:
+      claimName: nfs-pvc
+```
+
+应用该配置：
+
+```bash
+kubectl apply -f nfs-pod.yaml
+```
+
+以上步骤完成后，您将在openEuler上成功配置NFS服务端，并在Kubernetes中部署使用NFS存储的客户端。

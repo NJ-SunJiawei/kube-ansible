@@ -1,0 +1,18 @@
+---
+- name: 创建临时目录
+  file: dest={{ tmp_dir }}/nfs state=directory
+
+- name: 生成nfs-pv yml
+  template: src=nfs/{{ item }} dest={{ tmp_dir }}/nfs/{{ item.split('.')[:-1]|join('.') }}
+  with_items:
+   - nfs-p.yaml.j2
+   - rbac.yaml.j2
+   - sc.yaml.j2
+  tags: addons_delete
+
+- name: 删除nfs-client-provisioner部署
+  shell: "kubectl delete -f {{ tmp_dir }}/nfs/ || echo true; sleep 10"
+  tags: addons_delete
+
+- name: 创建nfs-client-provisioner部署
+  shell: "kubectl apply -f {{ tmp_dir }}/nfs/"
