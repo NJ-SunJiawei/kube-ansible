@@ -6,20 +6,15 @@
     - common
   tags: common 
 
-- name: 02更新newnode dns
+- name: 1.更新newnode dns
   gather_facts: false
-  hosts: 
-    - master
-    - node
+  hosts:
+    - k8s
     - newnode
   tasks:
-    - name: /etc/hosts添加DNS
-      lineinfile:
-        dest: /etc/hosts
-        state: present
-        regexp: '{{ hostvars[{{ item }}].node_name }}'
-        line: "{{ hostvars[{{ item }}].inventory_hostname }} {{ hostvars[{{ item }}].node_name }}"
-        with_items: ["{{ groups.newnode }}"]
+    - name: 更新hosts
+      template: src=tools/newnode_hosts.j2 dest=/etc/hosts
+      tags: update_hosts
 
 - name: 2.部署containerd
   gather_facts: false

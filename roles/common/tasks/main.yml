@@ -60,13 +60,6 @@
   template: src=hosts.j2 dest=/etc/hosts
   tags: update_hosts
 
-#- name: /etc/hosts添加DNS
-#  lineinfile:
-#    dest: /etc/hosts
-#    state: present
-#    regexp: '{{ hostvars[item].node_name }}'
-#    line: "{{ hostvars[item].inventory_hostname }} {{ hostvars[item].node_name }}"
-#    with_items: ["{{ groups.k8s }}"]
 
 - name: 复制环境变量文件
   copy: src={{ item }} dest=/etc/sysctl.d/
