@@ -8,6 +8,14 @@
   - ca.pem
   - harbor.pem
   - harbor-key.pem
+  
+- name: 创建docker证书目录
+  file: dest=/etc/docker/certs.d/{{ HARBOR_REGISTRY }} state=directory
+
+- name: 分发docker-harbor证书
+  copy: src=harbor_cert/{{ item }} dest=/etc/docker/certs.d/{{ HARBOR_REGISTRY }}/ca.crt
+  with_items:
+    - ca.pem
 #\-------------------------------------------------------------------------------------------------\
 #\-------------------------------------------------------------------------------------------------\
 - name: 创建 {{ HARBOR_PATH }} 目录

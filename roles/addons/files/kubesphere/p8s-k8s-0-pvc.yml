@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    nfs.io/storage-path: p8s-k8s-0
+    pv.kubernetes.io/bind-completed: "yes"
+    pv.kubernetes.io/bound-by-controller: "yes"
+    volume.beta.kubernetes.io/storage-provisioner: k8s-sigs.io/nfs-subdir-external-provisioner
+    volume.kubernetes.io/storage-provisioner: k8s-sigs.io/nfs-subdir-external-provisioner
+  labels:
+    app.kubernetes.io/instance: k8s
+    app.kubernetes.io/managed-by: prometheus-operator
+    app.kubernetes.io/name: prometheus
+    operator.prometheus.io/name: k8s
+    operator.prometheus.io/shard: "0"
+    prometheus: k8s
+  name: prometheus-k8s-db-prometheus-k8s-0
+  namespace: kubesphere-monitoring-system
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: nfs-client
+  volumeMode: Filesystem
+status:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 20Gi
+  phase: Bound

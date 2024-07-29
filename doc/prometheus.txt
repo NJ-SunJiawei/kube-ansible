@@ -1,151 +1,88 @@
-# Helm
+# Prometheus
+`prometheus`已经成为k8s集群上默认的监控解决方案，它的监控理念、数据结构设计其实相当精简，包括其非常灵活的查询语言；但是对于初学者来说，想要在k8s集群中实践搭建一套相对可用的部署却比较麻烦。本项目3.x采用的helm chart方式部署，使用的charts地址: https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack
 
-`Helm`致力于成为k8s集群的应用包管理工具，希望像linux 系统的`RPM` `DPKG`那样成功；确实在k8s上部署复杂一点的应用很麻烦，需要管理很多yaml文件（configmap,controller,service,rbac,pv,pvc等等），而helm能够整齐管理这些文档：版本控制，参数化安装，方便的打包与分享等。  
-- 建议积累一定k8s经验以后再去使用helm；对于初学者来说手工去配置那些yaml文件对于快速学习k8s的设计理念和运行原理非常有帮助，而不是直接去使用helm，面对又一层封装与复杂度。
-- 本文基于helm 3（建议版本），helm 2 文档[请看这里](helm2.md)
+## 安装
 
-## 安装 helm
+kubeasz 集成安装
 
-在官方repo下载[release版本](https://github.com/helm/helm/releases)中自带的二进制文件即可（以Linux amd64为例）
+- 1.修改 /etc/kubeasz/clusters/xxxx/config.yml 中配置项 prom_install: "yes"
+- 2.下载镜像 /etc/kubeasz/ezdown -X prometheus
+- 3.安装 /etc/kubeasz/ezctl setup xxxx 07
+
+生成的charts自定义配置在/etc/kubeasz/clusters/xxxx/yml/prom-values.yaml
+
+注1：如果需要修改配置，修改roles/cluster-addon/templates/prometheus/values.yaml.j2 后重新执行安装命令
+
+注2：如果集群节点有增减，重新执行安装命令
+
+注3：涉及到很多相关镜像下载比较慢，另外部分k8s.gcr.io的镜像已经替换成easzlab的mirror镜像地址
+
+## 验证安装
+
+``` bash 
+# 查看相关pod和svc
+$ kubectl get pod,svc -n monitor
+NAME                                                         READY   STATUS    RESTARTS   AGE
+pod/alertmanager-prometheus-kube-prometheus-alertmanager-0   2/2     Running   0          160m
+pod/prometheus-grafana-69f88948bc-7hnbp                      3/3     Running   0          160m
+pod/prometheus-kube-prometheus-operator-f8f4758cb-bm6gs      1/1     Running   0          160m
+pod/prometheus-kube-state-metrics-74b8f49c6c-f9wgg           1/1     Running   0          160m
+pod/prometheus-prometheus-kube-prometheus-prometheus-0       2/2     Running   0          160m
+pod/prometheus-prometheus-node-exporter-6nfb4                1/1     Running   0          160m
+pod/prometheus-prometheus-node-exporter-q4qq2                1/1     Running   0          160m
+
+NAME                                              TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+service/alertmanager-operated                     ClusterIP   None            <none>        9093/TCP,9094/TCP,9094/UDP   160m
+service/prometheus-grafana                        NodePort    10.68.253.23    <none>        80:30903/TCP                 160m
+service/prometheus-kube-prometheus-alertmanager   NodePort    10.68.125.191   <none>        9093:30902/TCP               160m
+service/prometheus-kube-prometheus-operator       NodePort    10.68.161.218   <none>        443:30900/TCP                160m
+service/prometheus-kube-prometheus-prometheus     NodePort    10.68.64.217    <none>        9090:30901/TCP               160m
+service/prometheus-kube-state-metrics             ClusterIP   10.68.111.106   <none>        8080/TCP                     160m
+service/prometheus-operated                       ClusterIP   None            <none>        9090/TCP                     160m
+service/prometheus-prometheus-node-exporter       ClusterIP   10.68.252.83    <none>        9100/TCP                     160m
+```
+
+- 访问prometheus的web界面：`http://$NodeIP:30901`
+- 访问alertmanager的web界面：`http://$NodeIP:30902`
+- 访问grafana的web界面：`http://$NodeIP:30903` (默认用户密码 admin:Admin1234!)
+
+## 其他操作
+
+-- 以下内容没有更新测试
+
+### [可选] 配置钉钉告警
+
+- 创建钉钉群，获取群机器人 webhook 地址
+
+使用钉钉创建群聊以后可以方便设置群机器人，【群设置】-【群机器人】-【添加】-【自定义】-【添加】，然后按提示操作即可，参考 https://open.dingtalk.com/document/group/custom-robot-access
+
+上述配置好群机器人，获得这个机器人对应的Webhook地址，记录下来，后续配置钉钉告警插件要用，格式如下
 
 ```
-wget https://get.helm.sh/helm-v3.11.1-linux-amd64.tar.gz
-mv ./linux-amd64/helm /usr/bin
+https://oapi.dingtalk.com/robot/send?access_token=xxxxxxxx
 ```
 
-- 启用官方 charts 仓库
+- 创建钉钉告警插件，参考:
+  - https://github.com/timonwong/prometheus-webhook-dingtalk
+  - http://theo.im/blog/2017/10/16/release-prometheus-alertmanager-webhook-for-dingtalk/
 
-```
-helm repo add stable https://kubernetes-charts.storage.googleapis.com/
-```
-国内镜像
-```
- helm repo add stable http://mirror.azure.cn/kubernetes/charts
-```
-
-
-## 使用 helm 安装应用
-
-helm3 安装命令与 helm2 稍有变化，个人习惯先下载对应charts到本地然后按照固定目录格式安装，以创建一个redis集群举例：
-
-- 创建 redis-cluster 目录
 ``` bash
-mkdir -p /opt/charts/redis-cluster
-cd /opt/charts/redis-cluster
+# 编辑修改文件中 access_token=xxxxxx 为上一步你获得的机器人认证 token
+$ vi /etc/kubeasz/roles/cluster-addon/templates/prometheus/dingtalk-webhook.yaml
+# 运行插件
+$ kubectl apply -f /etc/kubeasz/roles/cluster-addon/templates/prometheus/dingtalk-webhook.yaml
 ```
 
-- 下载最新stalbe/redis-ha
-```
-helm repo update
-helm pull stable/redis-ha
-```
+- 修改 alertsmanager 告警配置，重新运行安装命令/etc/kubeasz/ezctl setup xxxx 07，成功后如上节测试告警发送
 
-- 解压 charts，复制 values.yaml设置
-```
-tar zxvf redis-ha-*.tgz
-cp redis-ha/values.yaml .
-```
-
-- 创建 start.sh 脚本记录启动命令
-```
-cat > start.sh << EOF
-#!/bin/sh
-set -x
-
-ROOT=$(cd `dirname $0`; pwd)
-cd $ROOT
-
-helm install redis \
-	--create-namespace \
-	--namespace dependency \
-	-f ./values.yaml \
-	./redis-ha
-EOF
-```
-
-- 查看当前目录结构如下
-```
-tree .
-.
-├── redis-ha		# redis-ha 原始charts目录
-├── start.sh		# 启动命名脚本
-└── values.yaml		# 个性化参数配置
-```
-
-- 修改当前目录的 values.yaml 为你的个性化配置
 ``` bash
-#举例values.yaml 配置如下，没有启用PV
-#cat values.yaml
-image:
-  repository: redis
-  tag: 5.0.6-alpine
-
-replicas: 2
-
-## Redis specific configuration options
-redis:
-  port: 6379
-  masterGroupName: "mymaster"       # must match ^[\\w-\\.]+$) and can be templated
-  config:
-    ## For all available options see http://download.redis.io/redis-stable/redis.conf
-    min-replicas-to-write: 1
-    min-replicas-max-lag: 5   # Value in seconds
-    maxmemory: "4g"       # Max memory to use for each redis instance. Default is unlimited.
-    maxmemory-policy: "allkeys-lru"  # Max memory policy to use for each redis instance. Default is volatile-lru.
-    repl-diskless-sync: "yes"
-    rdbcompression: "yes"
-    rdbchecksum: "yes"
-
-  resources:
-    requests:
-      memory: 200Mi
-      cpu: 100m
-    limits:
-      memory: 4000Mi
-
-## Sentinel specific configuration options
-sentinel:
-  port: 26379
-  quorum: 1
-
-  resources:
-    requests:
-      memory: 200Mi
-      cpu: 100m
-    limits:
-      memory: 200Mi
-
-hardAntiAffinity: true
-
-## Configures redis with AUTH (requirepass & masterauth conf params)
-auth: false
-
-persistentVolume:
-  enabled: false
-
-hostPath:
-  path: "/data/mcs-redis/{{ .Release.Name }}"
-```
-
-- 执行安装
-```
-bash ./start.sh
-```
-
-- 查看安装
-```
-helm ls -A
-NAME 	NAMESPACE 	REVISION	UPDATED                                	STATUS  	CHART         	APP VERSION
-redis	dependency	1       	2020-05-28 20:57:31.166002853 +0800 CST	deployed	redis-ha-4.4.4	5.0.6
-
-# 查看k8s上资源
-kubectl get pod,svc -n dependency
-NAME                          READY   STATUS    RESTARTS   AGE
-pod/redis-redis-ha-server-0   2/2     Running   0          119s
-pod/redis-redis-ha-server-1   2/2     Running   0          104s
-
-NAME                                TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)              AGE
-service/redis-redis-ha              ClusterIP   None          <none>        6379/TCP,26379/TCP   119s
-service/redis-redis-ha-announce-0   ClusterIP   10.68.41.65   <none>        6379/TCP,26379/TCP   119s
-service/redis-redis-ha-announce-1   ClusterIP   10.68.64.49   <none>        6379/TCP,26379/TCP   119s
+# 修改 alertsmanager 告警配置
+$ vi /etc/kubeasz/roles/cluster-addon/templates/prometheus/values.yaml.j2 
+# 增加 receiver dingtalk，然后在 route 配置使用 receiver: dingtalk
+    receivers:
+    - name: dingtalk
+      webhook_configs:
+      - send_resolved: false
+        url: http://webhook-dingtalk.monitor.svc.cluster.local:8060/dingtalk/webhook1/send
+# ...
 ```
