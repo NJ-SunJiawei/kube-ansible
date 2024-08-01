@@ -1,0 +1,33 @@
+---
+- name: 创建临时目录
+  file: dest={{ tmp_dir }}/ksphere state=directory
+
+- name: 生成ksphere yml
+  template: src=kubesphere/{{ item }} dest={{ tmp_dir }}/ksphere/{{ item.split('.')[:-1]|join('.') }}
+  with_items:
+   - kubesphere-installer.yaml.j2
+   - cluster-configuration.yaml.j2
+  tags: addons_delete
+
+- name: copy ksphere tool
+  copy: src=kubesphere dest={{ tmp_dir }}/ksphere/
+  tags: addons_delete
+
+- name: 删除ksphere部署
+  shell: "sh {{ tmp_dir }}/ksphere/kubesphere/kubesphere-delete.sh || echo true; sleep 10"
+  tags: addons_delete
+
+- name: 创建ksphere部署1
+  shell: "kubectl apply -f {{ tmp_dir }}/ksphere/kubesphere-installer.yaml"
+
+- name: 创建ksphere部署2
+  shell: "kubectl apply -f {{ tmp_dir }}/ksphere/cluster-configuration.yaml"
+
+- name: 等待2分钟
+  shell: "echo true; sleep 120"
+
+- name: 更新部署
+  shell: > 
+         helm upgrade --install ks-core {{ tmp_dir }}/ksphere/kubesphere/ks-core/ 
+         -f {{ tmp_dir }}/ksphere/kubesphere/ks-core/custom-values-ks-core.yaml 
+         --namespace kubesphere-system

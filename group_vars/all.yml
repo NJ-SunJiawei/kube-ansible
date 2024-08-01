@@ -77,15 +77,33 @@ cert_hosts:
 NFS_DEFAULT_PATH: "/data/k8s"
 
 ############################
-# prometheus+grafana
+#metrics-server
 ############################
-prom_namespace: "monitor"
-prom_chart_ver: "45.23.0"
-prom_install: yes
+metrics-server_install: yes
+
+############################
+#dashboard
+############################
+dashboard_install: yes
+
 ############################
 # ha高可用
 ############################
-HA_SUPPORT: false
+ha_support: false
+
+############################
+# prometheus+grafana
+# 和kubesphere二选一
+############################
+prom_namespace: "monitor"
+prom_chart_ver: "45.23.0"
+prom_install: no
+
+############################
+# kubesphere
+############################
+kubesphere_ver: "3.3.2"
+kubesphere_install: yes
 
 ############################
 # harbor

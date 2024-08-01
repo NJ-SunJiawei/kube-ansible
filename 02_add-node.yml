@@ -13,7 +13,7 @@
     - newnode
   tasks:
     - name: 更新hosts
-      template: src=tools/newnode_hosts.j2 dest=/etc/hosts
+      template: src=tools/newnode/newnode_hosts.j2 dest=/etc/hosts
       tags: update_hosts
 
 - name: 2.部署containerd

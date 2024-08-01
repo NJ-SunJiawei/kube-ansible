@@ -9,6 +9,7 @@
   tags: addons_multus
   tags: addons_prometheus
   tags: addons_nfs
+  tags: addons_kubesphere
 
 - block:
     - name: 分发镜像（需要花费一些时间...）
@@ -35,19 +36,11 @@
 
 - block:
     - name: 分发镜像（需要花费一些时间...）
-      copy: src={{ software_dir }}/images/dashboard dest={{ tmp_dir }}/images
-    - name: 导入dashboard镜像（需要花费一些时间...）
-      shell: cd {{ tmp_dir }}/images/dashboard && \
+      copy: src={{ software_dir }}/images/nfs dest={{ tmp_dir }}/images
+    - name: 导入nfs镜像（需要花费一些时间...）
+      shell: cd {{ tmp_dir }}/images/nfs && \
              for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
-  tags: addons_dashboard
-
-- block:
-    - name: 分发镜像（需要花费一些时间...）
-      copy: src={{ software_dir }}/images/metrics dest={{ tmp_dir }}/images
-    - name: 导入metrics-server镜像（需要花费一些时间...）
-      shell: cd {{ tmp_dir }}/images/metrics && \
-             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
-  tags: addons_metrics
+  tags: addons_nfs
 
 - block:
     - name: 分发镜像（需要花费一些时间...）
@@ -59,16 +52,36 @@
 
 - block:
     - name: 分发镜像（需要花费一些时间...）
+      copy: src={{ software_dir }}/images/dashboard dest={{ tmp_dir }}/images
+    - name: 导入dashboard镜像（需要花费一些时间...）
+      shell: cd {{ tmp_dir }}/images/dashboard && \
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+  when: dashboard_install == "yes"
+  tags: addons_dashboard
+
+- block:
+    - name: 分发镜像（需要花费一些时间...）
+      copy: src={{ software_dir }}/images/metrics dest={{ tmp_dir }}/images
+    - name: 导入metrics-server镜像（需要花费一些时间...）
+      shell: cd {{ tmp_dir }}/images/metrics && \
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+  when: metrics-server_install == "yes"
+  tags: addons_metrics
+
+- block:
+    - name: 分发镜像（需要花费一些时间...）
       copy: src={{ software_dir }}/images/prometheus dest={{ tmp_dir }}/images
     - name: 导入prometheus镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/prometheus && \
              for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+  when: prom_install == "yes"
   tags: addons_prometheus
 
 - block:
     - name: 分发镜像（需要花费一些时间...）
-      copy: src={{ software_dir }}/images/nfs dest={{ tmp_dir }}/images
-    - name: 导入nfs镜像（需要花费一些时间...）
-      shell: cd {{ tmp_dir }}/images/nfs && \
+      copy: src={{ software_dir }}/images/kubesphere/kubesphere_3.3.2_part.tar.gz dest={{ tmp_dir }}/images
+    - name: 导入prometheus镜像（需要花费一些时间...）
+      shell: cd {{ tmp_dir }}/images/kubesphere && \
              for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
-  tags: addons_nfs
+  when: prom_install == "yes"
+  tags: addons_prometheus

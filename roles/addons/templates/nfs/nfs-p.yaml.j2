@@ -28,7 +28,7 @@ spec:
               mountPath: /persistentvolumes
           env:
             - name: PROVISIONER_NAME
-              value: nfs-provisioner # 和3.Storage中provisioner保持一致便可
+              value: "nfs-client" # 和StorageClass中provisioner保持一致便可
             - name: NFS_SERVER
               value: {{ groups['nfs_server'][0] }}
             - name: NFS_PATH

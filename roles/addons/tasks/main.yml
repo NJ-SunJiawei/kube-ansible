@@ -29,6 +29,7 @@
     - addons_multus
     - addons_prometheus
     - addons_nfs
+    - addons_kubesphere
 
 - debug: var=pod_info.stdout_lines
 
@@ -40,30 +41,29 @@
   tags: addons_calico
   when: '"calico" not in pod_info.stdout'
 
-- import_tasks: metrics-server.yml
-  tags: addons_metrics
-  when: '"metrics-server" not in pod_info.stdout'
-
-- import_tasks: dashboard.yml
-  tags: addons_dashboard
-  when: '"kubernetes-dashboard" not in pod_info.stdout'
-
-#抛弃-不好使
-#- import_tasks: kuboard.yml
-#  when: '"kuboard" not in pod_info.stdout'
-
 - import_tasks: multus.yml
   tags: addons_multus
 #  when: '"macvlan" not in pod_info.stdout'
 
-- import_tasks: prometheus.yml
-  tags: addons_prometheus
-  #when: '"prometheus" not in pod_info.stdout'
-  when: 'prom_install == "yes" or "prometheus" not in pod_info.stdout'
-
 - import_tasks: nfs.yml
   tags: addons_nfs
   when: '"nfs-client-provisioner" not in pod_info.stdout'
+
+- import_tasks: metrics-server.yml
+  tags: addons_metrics
+  when: metrics-server_install == "yes" and '"metrics-server" not in pod_info.stdout'
+
+- import_tasks: dashboard.yml
+  tags: addons_dashboard
+  when: dashboard_install == "yes" and '"kubernetes-dashboard" not in pod_info.stdout'
+
+- import_tasks: prometheus.yml
+  tags: addons_prometheus
+  when: prom_install == "yes" and '"prometheus" not in pod_info.stdout'
+
+- import_tasks: kubesphere.yml
+  tags: addons_kubesphere
+  when: kubesphere_install == "yes" and '"kubesphere" not in pod_info.stdout'
 
 - name: 查看Pod状态
   shell: kubectl get all --all-namespaces
