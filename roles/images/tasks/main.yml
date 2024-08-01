@@ -84,4 +84,4 @@
       shell: cd {{ tmp_dir }}/images/kubesphere && \
              for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
   when: prom_install == "yes"
-  tags: addons_prometheus
+  tags: addons_kubesphere

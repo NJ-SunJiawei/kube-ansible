@@ -14,7 +14,7 @@
   tags: addons_delete
 
 - name: 删除ksphere部署
-  shell: "sh {{ tmp_dir }}/ksphere/kubesphere/kubesphere-delete.sh || echo true; sleep 10"
+  shell: "cd {{ tmp_dir }}/ksphere/kubesphere/ && sh kubesphere-delete.sh || echo true; sleep 10"
   tags: addons_delete
 
 - name: 创建ksphere部署1
