@@ -36,8 +36,12 @@
          kubectl logs -n kubesphere-system $(kubectl get pod -n kubesphere-system -l app=ks-installer -o jsonpath='{.items[0].metadata.name}')
   register: log_output
   until: log_output.stdout.find("Welcome to KubeSphere!") != -1
-  retries: 30
+  retries: 60
   delay: 20
+
+- name: 删除default-http-backend部署
+  shell: >
+         kubectl delete -f {{ tmp_dir }}/ksphere/kubesphere/kubesphere-controls-system_amd64.yaml
 
 - name: 更新部署
   shell: >
