@@ -3,6 +3,12 @@
   copy: src=dashboard dest={{ tmp_dir }}
   tags: addons_delete
 
+- name: 生成dashboard yml
+  template: src=dashboard/{{ item }} dest={{ tmp_dir }}/dashboard/{{ item.split('.')[:-1]|join('.') }}
+  with_items:
+   - kubernetes-dashboard.yaml.j2
+  tags: addons_delete
+
 - name: 删除dashboard部署
   shell: "kubectl delete -f {{ tmp_dir }}/dashboard/ || echo true; sleep 10"
   tags: addons_delete

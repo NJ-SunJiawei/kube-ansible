@@ -44,7 +44,7 @@ KubeSphere 作为一个**全栈的多租户容器平台**，不仅支持**安装
 2. 等待安装成功（取决于您的网络状况，约十几至二十几分钟不等），运行以下命令查看安装日志：
 
    ```bash
-   kubectl logs -n kubesphere-system $(kubectl get pod -n kubesphere-system -l app=ks-install -o jsonpath='{.items[0].metadata.name}') -f
+   kubectl logs -n kubesphere-system $(kubectl get pod -n kubesphere-system -l app=ks-installer -o jsonpath='{.items[0].metadata.name}') -f
    ```
 
   ![](https://pek3b.qingstor.com/kubesphere-docs/png/20191005195724.png)

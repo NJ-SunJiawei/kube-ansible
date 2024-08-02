@@ -45,7 +45,24 @@
 #    - dpdk-devbind.py
 #  when: "{{ node_label }} == 'c2000'"
 
-- name: 查看Pod状态
+
+- name: 查看nfs状态
+  shell: "exportfs -v"
+  register: nfs_info
+  ignore_errors: true
+- debug: var=nfs_info.stdout_lines
+
+- name: 设置nfs
+  shell: |
+         mkdir -p {{ nfs_default_path }}
+         chown nobody:nobody {{ nfs_default_path }}
+         chmod 755 {{ nfs_default_path }}
+         echo "{{ nfs_default_path }} *(rw,sync,no_root_squash)" | sudo tee -a /etc/exports
+         systemctl enable nfs-server
+         systemctl start nfs-server
+  when: '{{ nfs_default_path }} not in nfs_info.stdout'
+
+- name: 查看/etc状态
   shell: ls /etc/
   register: etc_info
 - debug: var=etc_info.stdout_lines

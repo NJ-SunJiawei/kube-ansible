@@ -32,9 +32,9 @@ spec:
             - name: NFS_SERVER
               value: {{ groups['nfs_server'][0] }}
             - name: NFS_PATH
-              value: {{ NFS_DEFAULT_PATH }}
+              value: {{ nfs_default_path }}
       volumes:
         - name: nfs-client-root
           nfs:
             server: {{ groups['nfs_server'][0] }}
-            path: {{ NFS_DEFAULT_PATH }}
+            path: {{ nfs_default_path }}

@@ -35,11 +35,11 @@
 
 - import_tasks: coredns.yml
   tags: addons_coredns
-  when: '"coredns" not in pod_info.stdout'
+#  when: '"coredns" not in pod_info.stdout'
 
 - import_tasks: calico.yml
   tags: addons_calico
-  when: '"calico" not in pod_info.stdout'
+#  when: '"calico" not in pod_info.stdout'
 
 - import_tasks: multus.yml
   tags: addons_multus
@@ -47,23 +47,31 @@
 
 - import_tasks: nfs.yml
   tags: addons_nfs
-  when: '"nfs-client-provisioner" not in pod_info.stdout'
+#  when: '"nfs-client-provisioner" not in pod_info.stdout'
 
 - import_tasks: metrics-server.yml
   tags: addons_metrics
-  when: metrics-server_install == "yes" and '"metrics-server" not in pod_info.stdout'
+  when:
+    - metrics-server_install == "yes" 
+#    - '"metrics-server" not in pod_info.stdout'
 
 - import_tasks: dashboard.yml
   tags: addons_dashboard
-  when: dashboard_install == "yes" and '"kubernetes-dashboard" not in pod_info.stdout'
+  when:
+    - dashboard_install == "yes"
+#    - '"kubernetes-dashboard" not in pod_info.stdout'
 
 - import_tasks: prometheus.yml
   tags: addons_prometheus
-  when: prom_install == "yes" and '"prometheus" not in pod_info.stdout'
+  when:
+    - prom_install == "yes"
+#    - '"prometheus" not in pod_info.stdout'
 
 - import_tasks: kubesphere.yml
   tags: addons_kubesphere
-  when: kubesphere_install == "yes" and '"kubesphere" not in pod_info.stdout'
+  when:
+    - kubesphere_install == "yes"
+#    - '"kubesphere" not in pod_info.stdout'
 
 - name: 查看Pod状态
   shell: kubectl get all --all-namespaces

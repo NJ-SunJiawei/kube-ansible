@@ -7,7 +7,7 @@ alertmanager:
     image:
       registry: quay.io
   service:
-    nodePort: 30902
+    nodePort: {{ prom_alertmanager_nodeport }}
     type: NodePort
 
 ## Using default values from https://github.com/grafana/helm-charts/blob/main/charts/grafana/values.yaml
@@ -18,7 +18,7 @@ grafana:
   image:
     repository: docker.io/grafana/grafana 
   service:
-    nodePort: 30903
+    nodePort: {{ prom_grafana_nodeport }}
     type: NodePort
   sidecar:
     image:
@@ -123,8 +123,8 @@ prometheusOperator:
     registry: quay.io
     repository: prometheus-operator/prometheus-operator
   service:
-    nodePort: 30899
-    nodePortTls: 30900
+    nodePort: {{ prom_operator_nodeport }}
+    nodePortTls: {{ prom_operator_nodeport_tls }}
     type: NodePort
   prometheusConfigReloader:
     image:
@@ -135,7 +135,7 @@ prometheusOperator:
 prometheus:
   enabled: true
   service:
-    nodePort: 30901
+    nodePort: {{ prom_self_nodeport }}
     type: NodePort
 
   prometheusSpec:
