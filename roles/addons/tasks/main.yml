@@ -52,7 +52,7 @@
 - import_tasks: metrics-server.yml
   tags: addons_metrics
   when:
-    - metrics-server_install == "yes" 
+    - metrics_server_install == "yes" 
 #    - '"metrics-server" not in pod_info.stdout'
 
 - import_tasks: dashboard.yml

@@ -71,6 +71,12 @@ cert_hosts:
 #    - 192.168.114.34
 #    - 192.168.114.35
 
+
+############################
+# ha高可用(多master)
+############################
+ha_support: false
+
 ############################
 # nfs server
 ############################
@@ -78,19 +84,16 @@ nfs_default_path: "/data/k8s"
 
 ############################
 #metrics-server
+#和kubesphere二选一
 ############################
-metrics-server_install: yes
+metrics_server_install: "yes"
 
 ############################
 #dashboard
+#和kubesphere二选一
 ############################
-dashboard_install: yes
+dashboard_install: "no"
 dashboard_nodeport: 30001
-
-############################
-# ha高可用
-############################
-ha_support: false
 
 ############################
 # prometheus+grafana
@@ -98,7 +101,7 @@ ha_support: false
 ############################
 prom_namespace: "monitor"
 prom_chart_ver: "45.23.0"
-prom_install: no
+prom_install: "no"
 prom_operator_nodeport: 30899
 prom_operator_nodeport_tls: 30900
 prom_self_nodeport: 30901
@@ -108,7 +111,7 @@ prom_grafana_nodeport: 30903
 # kubesphere 30880
 ############################
 kubesphere_ver: "3.3.2"
-kubesphere_install: yes
+kubesphere_install: "yes"
 kubesphere_api_nodeport: 30801
 kubesphere_nodeport: 30880
 kubesphere_password: "P@88w0rd"

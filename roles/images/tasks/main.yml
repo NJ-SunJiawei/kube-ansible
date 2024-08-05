@@ -65,7 +65,7 @@
     - name: 导入metrics-server镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/metrics && \
              for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
-  when: metrics-server_install == "yes"
+  when: metrics_server_install == "yes"
   tags: addons_metrics
 
 - block:

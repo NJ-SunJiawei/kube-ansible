@@ -25,7 +25,11 @@
   shell: "cd {{ tmp_dir }}/ksphere/kubesphere/ && sh kubesphere-delete.sh || echo true; sleep 10"
   tags: addons_delete
 
-- name: get kube-etcd-client-certs info
+- name: 创建命名空间{{ prom_namespace }}
+  shell: "kubectl create ns kubesphere-monitoring-system"
+  ignore_errors: true
+
+- name: get kube-etcd-client-certs inkubesphere-monitoring-systemfo
   shell: "kubectl get secrets -n kubesphere-monitoring-system"
   register: secrets_info
 
