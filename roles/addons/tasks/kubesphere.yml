@@ -25,6 +25,17 @@
   shell: "cd {{ tmp_dir }}/ksphere/kubesphere/ && sh kubesphere-delete.sh || echo true; sleep 10"
   tags: addons_delete
 
+- name: get kube-etcd-client-certs info
+  shell: "kubectl get secrets -n kubesphere-monitoring-system"
+  register: secrets_info
+
+- name: 创建 kube-etcd-client-certs
+  shell: "kubectl create secret generic -n kubesphere-monitoring-system kube-etcd-client-certs \
+        --from-file=etcd-client-ca.crt={{ k8s_work_dir }}/ssl/etcd/ca.pem \
+        --from-file=etcd-client.crt={{ k8s_work_dir }}/ssl/etcd/server.pem \
+        --from-file=etcd-client.key={{ k8s_work_dir }}/ssl/etcd/server-key.pem"
+  when: '"kube-etcd-client-certs" not in secrets_info.stdout'
+
 - name: 创建ksphere部署1
   shell: "kubectl apply -f {{ tmp_dir }}/ksphere/kubesphere-installer.yaml"
 
@@ -43,11 +54,15 @@
   shell: >
          kubectl delete -f {{ tmp_dir }}/ksphere/kubesphere/kubesphere-controls-system_amd64.yaml
 
-- name: 更新部署
+- name: 更新default-http-backend部署
   shell: >
-         helm upgrade --install ks-core {{ tmp_dir }}/ksphere/kubesphere/ks-core/ 
-         -f {{ tmp_dir }}/ksphere/kubesphere/ks-core/custom-values-ks-core.yaml 
-         --namespace kubesphere-system
+         kubectl apply -f {{ tmp_dir }}/ksphere/kubesphere/kubesphere-controls-system_arm64.yaml
+
+#- name: 更新部署
+#  shell: >
+#         helm upgrade --install ks-core {{ tmp_dir }}/ksphere/kubesphere/ks-core/ 
+#         -f {{ tmp_dir }}/ksphere/kubesphere/ks-core/custom-values-ks-core.yaml 
+#         --namespace kubesphere-system
 
 - name: 开放ks-api端口
   shell: |

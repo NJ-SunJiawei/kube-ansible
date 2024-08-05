@@ -105,12 +105,13 @@ prom_self_nodeport: 30901
 prom_alertmanager_nodeport: 30902
 prom_grafana_nodeport: 30903
 ############################
-# kubesphere
+# kubesphere 30880
 ############################
 kubesphere_ver: "3.3.2"
 kubesphere_install: yes
 kubesphere_api_nodeport: 30801
-
+kubesphere_nodeport: 30880
+kubesphere_password: "P@88w0rd"
 ############################
 # helm charts
 #和kubeconfig部署在一起
