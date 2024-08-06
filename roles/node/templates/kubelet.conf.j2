@@ -8,3 +8,4 @@ KUBELET_OPTS="--logtostderr=false \
 --cert-dir={{ k8s_work_dir }}/ssl \
 --container-runtime-endpoint=unix:///run/containerd/containerd.sock"
 --feature-gates=HugePages=true
+--feature-gates=DevicePlugins=true

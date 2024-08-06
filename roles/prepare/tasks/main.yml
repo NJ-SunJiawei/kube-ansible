@@ -21,20 +21,20 @@
 #  with_items:
 #    - rpm-tools
 #    - vbbu
-#  when: "{{ node_label }} == 'c2000'"
+#  when: "node_label == 'c2000'"
 
 #- name: 安装rpm-tools包
 #  shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
 #  with_items:
 #    - rpm-tools
 #  ignore_errors: true
-#  when: "{{ node_label }} == 'c2000'"
+#  when: "node_label == 'c2000'"
 
 #- name: 安装vbbu包
 #  shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
 #  with_items:
 #    - vbbu
-#  when: "{{ node_label }} == 'c2000'"
+#  when: "node_label == 'c2000'"
  
 #- name: 分发vbbu快捷脚本
 #  copy: src={{ software_dir }}/vbbu/sh/{{ item }} dest=/usr/bin mode=u+x
@@ -43,7 +43,7 @@
 #    - vbbu_attach
 #    - vbbu_list
 #    - dpdk-devbind.py
-#  when: "{{ node_label }} == 'c2000'"
+#  when: "node_label == 'c2000'"
 
 
 - name: 查看nfs状态

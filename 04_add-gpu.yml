@@ -1,0 +1,36 @@
+---
+- name: test
+  gather_facts: false
+  hosts: k8s
+  tasks:
+    - name: test
+      debug:
+        msg:
+          - "{{ gpu_label }}"
+
+
+- name: 00安装gpu
+  gather_facts: false
+  hosts: k8s
+  roles:
+    - gpu
+  tags: gpu
+
+- name: 01更新gpu yaml
+  gather_facts: false
+  hosts: 
+    - master
+  tasks:
+    - name: "Generate nvidia-device-plugin yaml"
+      template:
+        src: "roles/gpu/templates/{{item.src}}"
+        dest: "{{ tmp_dir }}/nvidia/{{item.dest}}"
+      with_items:
+        - {src: "nvidia-device-plugin-0.16.1.yaml.j2", dest: "nvidia-device-plugin.yaml"}
+      tags: nvidia-device-plugin
+
+    - name: "Deploy nvidia-device-plugin"
+      shell: "kubectl apply -f {{ tmp_dir }}/nvidia/nvidia-device-plugin.yaml"
+      delegate_to: "{{ groups['master'][0] }}"
+      run_once: true
+      tags: nvidia-device-plugin
