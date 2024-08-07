@@ -1,5 +1,5 @@
 ---
-- name: test
+- name: test1
   gather_facts: false
   hosts: k8s
   tasks:
@@ -7,6 +7,19 @@
       debug:
         msg:
           - "{{ gpu_label }}"
+          - "{{ groups.k8s }}"
+
+- name: test2
+  gather_facts: false
+  hosts: master
+  tasks:
+    - name: test
+      debug:
+        msg:
+          - "{{ hostvars[item].gpu_label }}"
+          - "{{ hostvars[item].node_name }}"
+      when: "hostvars[item].gpu_label == 'sp_t4'"
+      with_items: ["{{ groups.master }}", "{{ groups.node }}"] 
 
 
 - name: 00安装gpu
@@ -21,16 +34,113 @@
   hosts: 
     - master
   tasks:
-    - name: "Generate nvidia-device-plugin yaml"
-      template:
-        src: "roles/gpu/templates/{{item.src}}"
-        dest: "{{ tmp_dir }}/nvidia/{{item.dest}}"
-      with_items:
-        - {src: "nvidia-device-plugin-0.16.1.yaml.j2", dest: "nvidia-device-plugin.yaml"}
-      tags: nvidia-device-plugin
+    #yaml部署是一个简单的静态守护进程集，旨在演示 的基本功能。在生产环境中部署插件时，使用helm部署
+    #- name: "Generate nvidia-device-plugin yaml"
+    #  template:
+    #    src: "roles/gpu/templates/{{item.src}}"
+    #    dest: "{{ tmp_dir }}/nvidia/{{item.dest}}"
+    #  with_items:
+    #    - {src: "nvidia-device-plugin-0.16.1.yaml.j2", dest: "nvidia-device-plugin.yaml"}
+    #  tags: nvidia-device-plugin
 
-    - name: "Deploy nvidia-device-plugin"
-      shell: "kubectl apply -f {{ tmp_dir }}/nvidia/nvidia-device-plugin.yaml"
-      delegate_to: "{{ groups['master'][0] }}"
-      run_once: true
-      tags: nvidia-device-plugin
+    #- name: "Deploy nvidia-device-plugin"
+    #  shell: "kubectl apply -f {{ tmp_dir }}/nvidia/nvidia-device-plugin.yaml"
+    #  delegate_to: "{{ groups['master'][0] }}"
+    #  run_once: true
+    #  tags: nvidia-device-plugin
+
+    - name: 创建临时目录
+      file: dest={{ tmp_dir }}/nvidia state=directory
+      tags: nvidia-delete
+
+    - name: 分发k8s配置文件
+      template: src=roles/gpu/templates/{{ item }} dest={{ tmp_dir }}/nvidia/{{ item.split('.')[:-1]|join('.') }}
+      with_items:
+        - dp-mps-config.yaml.j2
+        - dp-time-slicing-config.yaml.j2
+        - dp-only-one-config.yaml.j2
+
+    - name: copy nvidia-device-plugin tool
+      copy: src=nvidia-device-plugin-{{ nvidia_gpu_ver }}.tgz dest={{ tmp_dir }}/nvidia
+      tags: nvidia-delete
+
+    - name: copy nvidia-device-plugin helm
+      shell: >
+             cd {{ tmp_dir }}/nvidia &&
+             mv nvidia-device-plugin-{{ nvidia_gpu_ver }}.tgz {{ HELM_PATH }}/charts &&
+             helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
+             helm repo update
+
+    - name: 删除helm部署
+      shell: "helm delete nvdp -n nvidia-device-plugin || echo true; sleep 3"
+      tags: nvidia-delete
+      ignore_errors: true
+
+
+#问题解决：nvidia-device-plugin           nvdp-nvidia-device-plugin                      0         0         0       0            0           <none>                        144m
+#https://github.com/NVIDIA/k8s-device-plugin/issues/708
+
+
+#禁止调用标签===============>
+#kubectl label nodes z-k8s-n-2 nvidia.com/gpu.deploy.operands=false
+
+#0x10de 是PCI vender ID，是分配给 NVIDIA 的供应商ID
+    - name: 打nvidia标签
+      shell: >
+             kubectl label nodes {{ hostvars[item].node_name }} feature.node.kubernetes.io/pci-10de.present=true  --overwrite
+#kubectl label nodes {{ hostvars[item].node_name }} feature.node.kubernetes.io/cpu-model.vendor_id=NVIDIA  --overwrite
+#kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/gpu.present=true  --overwrite
+      when: "hostvars[item].gpu_label == 'sp_t4'"
+      with_items: ["{{ groups.master }}", "{{ groups.node }}"]    
+
+    - name: 打only-one标签
+      shell: >
+             kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=true  --overwrite
+             kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config0 –-overwrite
+      when:
+        - "hostvars[item].gpu_label == 'sp_t4'"
+        - "hostvars[item].gpu_share_label == 'sp_one'"
+      with_items: ["{{ groups.master }}", "{{ groups.node }}"]  
+
+    - name: 打mps标签
+      shell: >
+             kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=true  --overwrite
+             kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config1 –-overwrite
+      when:
+        - "hostvars[item].gpu_label == 'sp_t4'"
+        - "hostvars[item].gpu_share_label == 'sp_mps'"
+      with_items: ["{{ groups.master }}", "{{ groups.node }}"]  
+
+    - name: 打非mps标签
+      shell: >
+             kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=false  --overwrite
+             kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config2 –-overwrite
+      when:
+        - "hostvars[item].gpu_label == 'sp_t4'"
+        - "hostvars[item].gpu_share_label == 'sp_time'"
+      with_items: ["{{ groups.master }}", "{{ groups.node }}"]
+
+#时间分片和 MPS 的使用是互相排斥的,可以集群不同node混部，默认配置mps
+    - name: 更新部署
+      shell: >
+             helm upgrade -i nvdp
+             --namespace nvidia-device-plugin
+             --create-namespace
+              {{ tmp_dir }}/nvidia/nvidia-device-plugin-{{ nvidia_gpu_ver }}.tgz
+             --set config.default=config1
+             --set-file config.map.config0={{ tmp_dir }}/nvidia/dp-only-one-config.yaml
+             --set-file config.map.config1={{ tmp_dir }}/nvidia/dp-mps-config.yaml
+             --set-file config.map.config2={{ tmp_dir }}/nvidia/dp-time-slicing-config.yaml
+#--set gfd.enabled=true  gpu-feature-discovery #进行部署以实现自动节点标签
+#--set compatWithCPUManager=true #启用兼容性CPUManager并以 100ms 的 CPU 时间请求和 512MB 内存限制运行
+#--set resources.requests.cpu=100m
+#--set resources.limits.memory=512Mi
+
+#独立模式部署 gpu-feature-discovery
+#helm upgrade--install nvdp {{ tmp_dir }}/nvidia/nvidia-device-plugin-0.16.1.tgz
+#  --namespace gpu-feature-discovery
+#  --create-namespace
+#  --set devicePlugin.enabled=false
+
+  tags: nvidia-device-plugin
+  tags: gpu

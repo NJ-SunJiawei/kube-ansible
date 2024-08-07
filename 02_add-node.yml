@@ -16,23 +16,40 @@
       template: src=tools/newnode/newnode_hosts.j2 dest=/etc/hosts
       tags: update_hosts
 
-- name: 2.部署containerd
+- name: 2.更新label
+  gather_facts: false
+  hosts: 
+    - master
+  tasks:
+    - name: 打label标签
+      shell: >
+             kubectl label nodes {{ hostvars[item].node_name }} model={{ hostvars[item].node_label }} --overwrite
+      with_items: ["{{ groups.newnode }}"]
+
+- name: 3.部署containerd
   gather_facts: false
   hosts: newnode 
   roles:
     - containerd 
   tags: containerd
 
-- name: 3.部署K8S Node
+- name: 4.部署K8S Node
   gather_facts: false
   hosts: newnode
   roles:
     - node
   tags: node
 
-- name: 4.导入离线镜像
+- name: 5.导入离线镜像
   gather_facts: false
   hosts: newnode 
   roles:
     - images
   tags: images
+
+- name: 6.安装gpu
+  gather_facts: false
+  hosts: newnode
+  roles:
+    - gpu
+  tags: gpu

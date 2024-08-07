@@ -1,0 +1,8 @@
+version: v1
+sharing:
+  timeSlicing:
+    renameByDefault:  {{ nvidia_gpu_share_rename }} #nvidia.com/gpu.shared
+    #failRequestsGreaterThanOne: true #如果容器请求多个共享资源，则插件将无法向容器分配任何共享资源,该将请求视为1访问请求而不是独占资源请求
+    resources:
+    - name: nvidia.com/gpu
+      replicas:  {{ nvidia_gpu_config_replicas }}

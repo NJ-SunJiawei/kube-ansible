@@ -70,14 +70,18 @@ https://github.com/NVIDIA/libnvidia-container/tree/gh-pages
 虚拟化：
 NVIDIA GPU虚拟化主要有以下几种方法：
 
-| 方法                  | 描述                                                                                                   | 优点                                                                                               | 适用场景                                      |
-|-----------------------|--------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|-----------------------------------------------|
-| **vGPU (Virtual GPU)**| 利用NVIDIA vGPU软件将物理GPU划分为多个虚拟GPU，使多个虚拟机共享一块物理GPU。                            | 高效利用GPU资源，支持多种工作负载，灵活分配。                                                      | 桌面虚拟化、工作站虚拟化、云计算              |
-| **CUDA Multi-Process Service (MPS)** | 允许多个CUDA应用共享同一个GPU，同时运行，提升GPU利用率。                                     | 提高多用户环境下的并行计算能力，减少上下文切换开销。                                                | 高性能计算（HPC）、深度学习训练               |
-| **GPU Passthrough**   | 将物理GPU直接分配给虚拟机，虚拟机可以独占使用该GPU。                                                    | 性能接近裸机，适合对GPU性能要求高的应用。                                                          | 高性能计算、图形渲染、游戏服务器              |
-| **Docker GPU 支持**   | 通过NVIDIA Docker运行容器化的应用，使容器可以直接访问主机的GPU。                                         | 容器化管理，方便应用部署和迁移，支持多种深度学习框架。                                              | 深度学习、容器化应用                          |
-| **Mig (Multi-Instance GPU)** | NVIDIA A100等新型GPU支持将单个GPU划分为多个独立的小实例，每个实例有独立的资源配额和隔离机制。    | 精细的资源分配和隔离，适合多租户环境和并行计算。                                                    | 数据中心、多租户环境、AI推理工作负载          |
-| **SR-IOV (Single Root I/O Virtualization)** | 通过硬件支持将物理GPU的资源划分为多个虚拟功能（Virtual Function，VF），每个VF可以独立使用。| 硬件级虚拟化，提供高性能和低延迟的GPU访问。                                                        | 数据中心、云计算                              |
+在大类上计算虚拟化技术有这3种： 软件模拟、直通独占(如网卡独占、显卡独占)、直通共享（如vCPU 、vGPU）。但对于显卡GPU而言我总结细化出至少这6种分类(其中第四、五种都是第三种的具体实现)：
+
+第一种、软件模拟（eg sGPU）, 又叫半虚拟化。
+第二种、直通独占 (pGPU) , 有的文章翻译为透传 。Openstack/KVM/ESX等IaaS场景用到。
+第三种、直通共享 (基于SR-IOV技术虚拟出vGPU) , 在技术上分类叫全虚拟化 。三个大厂有部分型号GPU支持，具体型号见 https://open-iov.org/index.php/GPU_Support 。这是AMD首先搞出来的，但似乎他们后来也转向GPU分片虚拟化了，这个网站AMD的产品反而没几款。
+第四种、GPU分片虚拟化（mediated passthrough），也属于全虚拟化技术。其热度很高，基于VFIO mediated passthrough framework的GPU虚拟化方案。该方案由NVIDIA提出，并联合Intel一起提交到了Linux kernel 4.10代码库，该方案的kernel部分代码简称mdev模块。把会影响性能的访问直接passthrough给虚拟机，把性能无关，功能性的MMIO访问做拦截并在mdev模块内做模拟。商业产品有NVIDIA GRID vGPU 与Intel的GVT-g系列，前者不开源，后者大部分开源。
+第五种、多实例 GPU (MIG) 技术，也属于全虚拟化技术。MIGNvidia 搞出的新技术，可将单个 GPU 分区为最多 7个完全的隔离vGPU实例，减少资源争抢的延时，提高物理 GPU 利用率。但可惜目前仅昂贵和国内禁售的NVIDIA A100 GPU 支持。
+第六种。Time-Slicing GPU （时间共享GPU）。把本来再空间上并行（时间独占）的成百上千的GPU流水线进行的时间维度的分割和共享。各个GPU厂家都有类似的技术。英伟达的技术文档：https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-sharing.html 。
+注意，以上第四种是收费的，所以企业用户要去英伟达官网购买license。英伟达又卖硬件又卖软件license,赚钱能力真强。
+第五种MIG则是买到昂贵的A100卡就能用了，不需要license。
+普通玩k8s的企业，则用免费的Time-Slicing GPU (时间分片共享GPU) 。
+————————————————
 
 容器和GPU混合部署
 https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-operator-kubevirt.html

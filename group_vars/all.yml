@@ -78,6 +78,13 @@ cert_hosts:
 ha_support: false
 
 ############################
+# gpu
+############################
+nvidia_gpu_ver: "0.16.1"
+nvidia_gpu_share_rename: "false"
+nvidia_gpu_config_replicas: 10
+
+############################
 # nfs server
 ############################
 nfs_default_path: "/data/k8s"

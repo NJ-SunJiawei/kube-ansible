@@ -14,10 +14,10 @@
     - name: 分发nvidia-container-toolkit安装包
       unarchive: src={{ item }} dest={{ tmp_dir }}/nvidia
       with_fileglob:
-        - "{{ software_dir }}/gpu/nvidia/rpm/nvidia-container-toolkit_1.16.1_rpm_aarch64.tar.gz"
+        - "{{ software_dir }}/gpu/nvidia/rpm/nvidia-container-toolkit_{{ nvidia_gpu_ver }}_rpm_aarch64.tar.gz"
 
     - name: 安装nvidia rpm包
-      shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/nvidia/release-v1.16.1-stable/packages/centos7/aarch64/*.rpm
+      shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/nvidia/release-v{{ nvidia_gpu_ver }}-stable/packages/centos7/aarch64/*.rpm
     
 #https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
 #官方方案一：有缺陷，未修改"default-runtime"
