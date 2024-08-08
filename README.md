@@ -132,14 +132,17 @@ k8s-node1     Ready    <none>   9h    v1.24.2
 # ansible-playbook -i hosts 04_add-gpu.yml -uroot
 ```
 mps模式：
+
 ![image](https://github.com/user-attachments/assets/85d66c2b-a656-466e-b818-2947819a0add)
 
 
-time-slicing模式
+time-slicing模式：
+
 ![image](https://github.com/user-attachments/assets/3710432d-a378-45d9-961e-f589a6614b08)
 
 
-10个gpu容器副本
+10个gpu容器副本：
+
 ![image](https://github.com/user-attachments/assets/47dfb72b-9e45-4a4f-896a-e289cc9e5425)
 
 ### 6.5 所有HTTPS证书存放路径
