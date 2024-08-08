@@ -118,19 +118,19 @@
   retries: 60
   delay: 20
 
-- name: 删除default-http-backend部署
-  shell: >
-         kubectl delete -f {{ tmp_dir }}/ksphere/kubesphere/kubesphere-controls-system_amd64.yaml
-
-- name: 更新default-http-backend部署
-  shell: >
-         kubectl apply -f {{ tmp_dir }}/ksphere/kubesphere/kubesphere-controls-system_arm64.yaml
-
-#- name: 更新部署
+#- name: 删除default-http-backend部署
 #  shell: >
-#         helm upgrade --install ks-core {{ tmp_dir }}/ksphere/kubesphere/ks-core/ 
-#         -f {{ tmp_dir }}/ksphere/kubesphere/ks-core/custom-values-ks-core.yaml 
-#         --namespace kubesphere-system
+#         kubectl delete -f {{ tmp_dir }}/ksphere/kubesphere/kubesphere-controls-system_amd64.yaml
+
+#- name: 更新default-http-backend部署
+#  shell: >
+#         kubectl apply -f {{ tmp_dir }}/ksphere/kubesphere/kubesphere-controls-system_arm64.yaml
+
+- name: 更新部署
+  shell: >
+         helm upgrade --install ks-core {{ tmp_dir }}/ksphere/kubesphere/ks-core/ 
+         -f {{ tmp_dir }}/ksphere/kubesphere/ks-core/custom-values-ks-core.yaml 
+         --namespace kubesphere-system
 
 - name: 开放ks-api端口
   shell: |
