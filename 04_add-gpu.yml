@@ -101,7 +101,7 @@
     - name: 打GPU独占标签
       shell: |
              kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=false  --overwrite
-             kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config0 –-overwrite
+             kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config0 --overwrite
       when:
         - "hostvars[item].gpu_label == 'sp_t4'"
         - "hostvars[item].gpu_share_label == 'sp_one'"
@@ -110,7 +110,7 @@
     - name: 打mps标签
       shell: |
              kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=true  --overwrite
-             kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config1 –-overwrite
+             kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config1 --overwrite
       when:
         - "hostvars[item].gpu_label == 'sp_t4'"
         - "hostvars[item].gpu_share_label == 'sp_mps'"
@@ -119,7 +119,7 @@
     - name: 打time-slicing标签
       shell: |
              kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=false  --overwrite
-             kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config2 –-overwrite
+             kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config2 --overwrite
       when:
         - "hostvars[item].gpu_label == 'sp_t4'"
         - "hostvars[item].gpu_share_label == 'sp_time'"
@@ -132,11 +132,11 @@
              --namespace nvidia-device-plugin
              --create-namespace
               {{ tmp_dir }}/nvidia/nvidia-device-plugin-{{ nvidia_gpu_plugin_ver }}.tgz
-             --set config.default=config1
+             --set config.default=config0
              --set-file config.map.config0={{ tmp_dir }}/nvidia/dp-only-one-config.yaml
              --set-file config.map.config1={{ tmp_dir }}/nvidia/dp-mps-config.yaml
              --set-file config.map.config2={{ tmp_dir }}/nvidia/dp-time-slicing-config.yaml
-#--set gfd.enabled=true #节点标签自动发现
+             --set gfd.enabled=true
 
 #--set compatWithCPUManager=true #启用兼容性CPUManager并以 100ms 的 CPU 时间请求和 512MB 内存限制运行
 #--set resources.requests.cpu=100m
