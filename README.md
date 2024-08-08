@@ -121,10 +121,10 @@ k8s-node1     Ready    <none>   9h    v1.24.2
 # ansible-playbook -i hosts 03_add-harbor.yml -uroot -t harbor_login
 ```
 
-### 6.4 安装helm和helm离线仓库
+### 6.4 安装gpu
 ```
-#配置hosts文件中helm地址，可以和master地址一样，helm和helm仓库安装在一起
-# ansible-playbook -i hosts 04_add-helm.yml -uroot
+#配置hosts和all.yaml文件中gpu参数
+# ansible-playbook -i hosts 04_add-gpu.yml -uroot
 ```
 
 ### 6.5 所有HTTPS证书存放路径

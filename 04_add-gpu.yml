@@ -22,7 +22,7 @@
       with_items: ["{{ groups.master }}", "{{ groups.node }}"] 
 
 
-- name: 00安装gpu
+- name: 00安装gpu 依赖
   gather_facts: false
   hosts: k8s
   roles:
