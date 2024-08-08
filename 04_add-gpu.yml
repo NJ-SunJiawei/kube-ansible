@@ -69,8 +69,8 @@
     - name: copy nvidia-device-plugin helm
       shell: >
              cd {{ tmp_dir }}/nvidia &&
-             mv nvidia-device-plugin-{{ nvidia_gpu_plugin_ver }}.tgz {{ HELM_PATH }}/charts &&
-             mv dcgm-exporter-3.5.0.tgz {{ HELM_PATH }}/charts &&
+             cp nvidia-device-plugin-{{ nvidia_gpu_plugin_ver }}.tgz {{ HELM_PATH }}/charts &&
+             cp dcgm-exporter-3.5.0.tgz {{ HELM_PATH }}/charts &&
              helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
              helm repo update
 
@@ -129,14 +129,14 @@
     - name: 更新部署
       shell: >
              helm upgrade -i nvdp
+             {{ tmp_dir }}/nvidia/nvidia-device-plugin-{{ nvidia_gpu_plugin_ver }}.tgz
              --namespace nvidia-device-plugin
              --create-namespace
-              {{ tmp_dir }}/nvidia/nvidia-device-plugin-{{ nvidia_gpu_plugin_ver }}.tgz
+             --set gfd.enabled=true
              --set config.default=config0
              --set-file config.map.config0={{ tmp_dir }}/nvidia/dp-only-one-config.yaml
              --set-file config.map.config1={{ tmp_dir }}/nvidia/dp-mps-config.yaml
              --set-file config.map.config2={{ tmp_dir }}/nvidia/dp-time-slicing-config.yaml
-             --set gfd.enabled=true
 
 #--set compatWithCPUManager=true #启用兼容性CPUManager并以 100ms 的 CPU 时间请求和 512MB 内存限制运行
 #--set resources.requests.cpu=100m
