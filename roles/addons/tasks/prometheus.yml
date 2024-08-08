@@ -38,14 +38,16 @@
 #https://github.com/prometheus-community/helm-charts/issues/2753
     - name: 删除旧版本配置
       shell: >
-             kubectl delete crd alertmanagerconfigs.monitoring.coreos.com
-                                alertmanagers.monitoring.coreos.com
-                                podmonitors.monitoring.coreos.com
-                                probes.monitoring.coreos.com
-                                prometheuses.monitoring.coreos.com
-                                prometheusrules.monitoring.coreos.com
-                                servicemonitors.monitoring.coreos.com
-                                thanosrulers.monitoring.coreos.com
+              kubectl delete crd {{ item }}
+      with_items:
+        - alertmanagerconfigs.monitoring.coreos.com
+        - alertmanagers.monitoring.coreos.com
+        - podmonitors.monitoring.coreos.com
+        - probes.monitoring.coreos.com
+        - prometheuses.monitoring.coreos.com
+        - prometheusrules.monitoring.coreos.com
+        - servicemonitors.monitoring.coreos.com
+        - thanosrulers.monitoring.coreos.com
       tags: addons_delete
       ignore_errors: true
 

@@ -24,39 +24,50 @@
 #https://github.com/prometheus-community/helm-charts/issues/2753
 - name: 删除promutheus旧版本配置
   shell: >
-         kubectl delete crd alertmanagerconfigs.monitoring.coreos.com
-                            alertmanagers.monitoring.coreos.com
-                            podmonitors.monitoring.coreos.com
-                            probes.monitoring.coreos.com
-                            prometheuses.monitoring.coreos.com
-                            prometheusrules.monitoring.coreos.com
-                            servicemonitors.monitoring.coreos.com
-                            thanosrulers.monitoring.coreos.com
+          kubectl delete crd {{ item }}
+  with_items:
+    - alertmanagerconfigs.monitoring.coreos.com
+    - alertmanagers.monitoring.coreos.com
+    - podmonitors.monitoring.coreos.com
+    - probes.monitoring.coreos.com
+    - prometheuses.monitoring.coreos.com
+    - prometheusrules.monitoring.coreos.com
+    - servicemonitors.monitoring.coreos.com
+    - thanosrulers.monitoring.coreos.com
+  tags: addons_delete
+  ignore_errors: true
+
+- name: helm 删除 kube-prometheus-stack {{ prom_chart_ver }}
+  shell: "helm delete prometheus -n {{ prom_namespace }} || echo true; sleep 3"
   tags: addons_delete
   ignore_errors: true
 
 #https://ask.kubesphere.io/forum/d/9517-ks-core
 - name: 删除clusterrolebinding配置(官方脚本遗漏)
   shell: >
-         kubectl delete clusterrolebinding kubesphere
-                                           kubesphere-kube-state-metrics
-                                           kubesphere-node-exporter
-                                           kubesphere-prometheus-k8s
-                                           kubesphere-prometheus-operator
-                                           system:kubesphere-cluster-admin
-                                           system:nginx-ingress-clusterrole-nisa-binding
+         kubectl delete clusterrolebinding {{ item }}
+  with_items:
+    - kubesphere
+    - kubesphere-kube-state-metrics
+    - kubesphere-node-exporter
+    - kubesphere-prometheus-k8s
+    - kubesphere-prometheus-operator
+    - system:kubesphere-cluster-admin
+    - system:nginx-ingress-clusterrole-nisa-binding
   tags: addons_delete
   ignore_errors: true
 
 - name: 删除clusterrole配置(官方脚本遗漏)
   shell: >
-         kubectl delete clusterrole ks-controller-manager-role 
-                                    ks-installer
-                                    kubesphere-kube-state-metrics
-                                    kubesphere-node-exporter
-                                    kubesphere-prometheus-k8s
-                                    kubesphere-prometheus-operator
-                                    system:kubesphere-router-clusterrole 
+         kubectl delete clusterrole  {{ item }}
+  with_items:
+    - ks-controller-manager-role
+    - ks-installer
+    - kubesphere-kube-state-metrics
+    - kubesphere-node-exporter
+    - kubesphere-prometheus-k8s
+    - kubesphere-prometheus-operator
+    - system:kubesphere-router-clusterrole
   tags: addons_delete
   ignore_errors: true
 
