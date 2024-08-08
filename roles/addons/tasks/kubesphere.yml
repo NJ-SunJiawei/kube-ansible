@@ -21,6 +21,11 @@
          helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
          helm repo update 
 
+- name: helm 删除 kube-prometheus-stack {{ prom_chart_ver }}
+  shell: "helm delete prometheus -n {{ prom_namespace }} || echo true; sleep 3"
+  tags: addons_delete
+  ignore_errors: true
+
 #https://github.com/prometheus-community/helm-charts/issues/2753
 - name: 删除promutheus旧版本配置
   shell: >
@@ -34,11 +39,6 @@
     - prometheusrules.monitoring.coreos.com
     - servicemonitors.monitoring.coreos.com
     - thanosrulers.monitoring.coreos.com
-  tags: addons_delete
-  ignore_errors: true
-
-- name: helm 删除 kube-prometheus-stack {{ prom_chart_ver }}
-  shell: "helm delete prometheus -n {{ prom_namespace }} || echo true; sleep 3"
   tags: addons_delete
   ignore_errors: true
 
