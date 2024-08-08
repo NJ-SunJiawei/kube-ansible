@@ -35,6 +35,20 @@
       tags: addons_delete
       ignore_errors: true
 
+#https://github.com/prometheus-community/helm-charts/issues/2753
+    - name: 删除旧版本配置
+      shell: >
+             kubectl delete crd alertmanagerconfigs.monitoring.coreos.com
+                                alertmanagers.monitoring.coreos.com
+                                podmonitors.monitoring.coreos.com
+                                probes.monitoring.coreos.com
+                                prometheuses.monitoring.coreos.com
+                                prometheusrules.monitoring.coreos.com
+                                servicemonitors.monitoring.coreos.com
+                                thanosrulers.monitoring.coreos.com
+      tags: addons_delete
+      ignore_errors: true
+
     - name: helm 创建 kube-prometheus-stack {{ prom_chart_ver }}
       shell: "helm upgrade prometheus --install \
               -n {{ prom_namespace }} -f {{ k8s_addons_dir }}/prometheus/prom-values.yaml \
