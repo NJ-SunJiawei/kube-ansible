@@ -1,4 +1,7 @@
 ### 0、集群安装环境
+
+<img width="662" alt="0891e363822b6aa9dbb355f066af4f9" src="https://github.com/user-attachments/assets/2ff36409-2e59-4be1-af16-176c7cabd066">
+
 ```
 集群服务器架构：arm64
 集群操作系统：openeuler22.03
@@ -10,6 +13,8 @@ docekr版本：24.0.7
 helm版本：3.11.1
 helm_prometheus版本：45.23.0
 ```
+<img width="761" alt="818f62181fc150751be1d332b499edb" src="https://github.com/user-attachments/assets/a47a0253-7844-425e-a185-0a6e80c745c0">
+
 
 ### 1、找一台服务器安装Ansible
 ```
@@ -27,6 +32,7 @@ yum install nfs-utils rpcbind -y
 ### 2、下载所需文件
 
 下载准备好软件包（包含所有涉及文件和镜像，比较大），解压到指定目录：
+![image](https://github.com/user-attachments/assets/dacf3102-0573-4420-8e77-2a0e0a87570d)
 
 ```
 链接：https://pan.baidu.com/s/1I09BeIDG2nIgA9caPhTuiA 
@@ -126,6 +132,11 @@ k8s-node1     Ready    <none>   9h    v1.24.2
 #配置hosts和all.yaml文件中gpu参数
 # ansible-playbook -i hosts 04_add-gpu.yml -uroot
 ```
+![image](https://github.com/user-attachments/assets/85d66c2b-a656-466e-b818-2947819a0add)
+
+![image](https://github.com/user-attachments/assets/5f7f1874-ddb5-4c5c-a5aa-b1774c3eedc0)
+
+![image](https://github.com/user-attachments/assets/47dfb72b-9e45-4a4f-896a-e289cc9e5425)
 
 ### 6.5 所有HTTPS证书存放路径
 部署产生的证书都会存放到目录“kube-ansible/ssl”，一定要保存好，后面还会用到~
