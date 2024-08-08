@@ -52,7 +52,7 @@
     - name: 创建临时目录
       file: dest={{ tmp_dir }}/nvidia state=directory
 
-    - name: 分发k8s配置文件
+    - name: 分发gpu容器化配置文件
       template: src=roles/gpu/templates/{{ item }} dest={{ tmp_dir }}/nvidia/{{ item.split('.')[:-1]|join('.') }}
       with_items:
         - dp-mps-config.yaml.j2
@@ -61,15 +61,16 @@
         #- dcgm-exporter.yaml.j2
 
     - name: copy nvidia-device-plugin tool
-      copy: src={{ item }} dest={{ tmp_dir }}/nvidia
+      copy: src=roles/gpu/files/{{ item }} dest={{ tmp_dir }}/nvidia
       with_items:
-        - nvidia-device-plugin-{{ nvidia_gpu_ver }}.tgz
+        - nvidia-device-plugin-{{ nvidia_gpu_plugin_ver }}.tgz
         - dcgm-exporter-3.5.0.tgz
 
     - name: copy nvidia-device-plugin helm
       shell: >
              cd {{ tmp_dir }}/nvidia &&
-             mv nvidia-device-plugin-{{ nvidia_gpu_ver }}.tgz {{ HELM_PATH }}/charts &&
+             mv nvidia-device-plugin-{{ nvidia_gpu_plugin_ver }}.tgz {{ HELM_PATH }}/charts &&
+             mv dcgm-exporter-3.5.0.tgz {{ HELM_PATH }}/charts &&
              helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
              helm repo update
 
@@ -98,7 +99,7 @@
       with_items: ["{{ groups.master }}", "{{ groups.node }}"]    
 
     - name: 打GPU独占标签
-      shell: >
+      shell: |
              kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=false  --overwrite
              kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config0 –-overwrite
       when:
@@ -107,7 +108,7 @@
       with_items: ["{{ groups.master }}", "{{ groups.node }}"]  
 
     - name: 打mps标签
-      shell: >
+      shell: |
              kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=true  --overwrite
              kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config1 –-overwrite
       when:
@@ -116,7 +117,7 @@
       with_items: ["{{ groups.master }}", "{{ groups.node }}"]  
 
     - name: 打time-slicing标签
-      shell: >
+      shell: |
              kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=false  --overwrite
              kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config2 –-overwrite
       when:
@@ -130,7 +131,7 @@
              helm upgrade -i nvdp
              --namespace nvidia-device-plugin
              --create-namespace
-              {{ tmp_dir }}/nvidia/nvidia-device-plugin-{{ nvidia_gpu_ver }}.tgz
+              {{ tmp_dir }}/nvidia/nvidia-device-plugin-{{ nvidia_gpu_plugin_ver }}.tgz
              --set config.default=config1
              --set-file config.map.config0={{ tmp_dir }}/nvidia/dp-only-one-config.yaml
              --set-file config.map.config1={{ tmp_dir }}/nvidia/dp-mps-config.yaml
@@ -142,7 +143,7 @@
 #--set resources.limits.memory=512Mi
 
 #独立模式部署 gpu-feature-discovery
-#helm upgrade--install nvdp {{ tmp_dir }}/nvidia/nvidia-device-plugin-0.16.1.tgz
+#helm upgrade--install nvdp {{ tmp_dir }}/nvidia/nvidia-device-plugin-{{ nvidia_gpu_plugin_ver }}.tgz
 #  --namespace gpu-feature-discovery
 #  --create-namespace
 #  --set devicePlugin.enabled=false

@@ -80,7 +80,8 @@ ha_support: false
 ############################
 # gpu
 ############################
-nvidia_gpu_ver: "0.16.1"
+nvidia_toolkit_ver: "1.16.1"
+nvidia_gpu_plugin_ver: "0.16.1"
 nvidia_gpu_share_rename: "false"
 nvidia_gpu_config_replicas: 10
 
