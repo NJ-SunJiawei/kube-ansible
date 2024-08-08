@@ -21,6 +21,19 @@
          helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
          helm repo update 
 
+- name: 删除旧版本配置
+  shell: >
+         kubectl delete crd alertmanagerconfigs.monitoring.coreos.com
+                            alertmanagers.monitoring.coreos.com
+                            podmonitors.monitoring.coreos.com
+                            probes.monitoring.coreos.com
+                            prometheuses.monitoring.coreos.com
+                            prometheusrules.monitoring.coreos.com
+                            servicemonitors.monitoring.coreos.com
+                            thanosrulers.monitoring.coreos.com
+  tags: addons_delete
+  ignore_errors: true
+
 - name: 删除ksphere部署
   shell: "cd {{ tmp_dir }}/ksphere/kubesphere/ && sh kubesphere-delete.sh || echo true; sleep 10"
   tags: addons_delete
