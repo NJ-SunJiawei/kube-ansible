@@ -133,7 +133,7 @@ k8s-node1     Ready    <none>   9h    v1.24.2
 ```
 ![image](https://github.com/user-attachments/assets/85d66c2b-a656-466e-b818-2947819a0add)
 
-![image](https://github.com/user-attachments/assets/5f7f1874-ddb5-4c5c-a5aa-b1774c3eedc0)
+![image](https://github.com/user-attachments/assets/2b0bea23-c5c1-4631-9764-ed2600575341)
 
 ![image](https://github.com/user-attachments/assets/47dfb72b-9e45-4a4f-896a-e289cc9e5425)
 
