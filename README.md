@@ -30,10 +30,8 @@ yum install nfs-utils rpcbind -y
 注：做好机器的时间同步
 ```
 ### 2、下载所需文件
-
-下载准备好软件包（包含所有涉及文件和镜像，比较大），解压到指定目录：
 ![image](https://github.com/user-attachments/assets/dacf3102-0573-4420-8e77-2a0e0a87570d)
-
+下载准备好软件包（包含所有涉及文件和镜像，比较大），解压到指定目录：
 ```
 链接：https://pan.baidu.com/s/1I09BeIDG2nIgA9caPhTuiA 
 提取码：1234
