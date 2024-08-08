@@ -51,7 +51,6 @@
 
     - name: 创建临时目录
       file: dest={{ tmp_dir }}/nvidia state=directory
-      tags: nvidia-delete
 
     - name: 分发k8s配置文件
       template: src=roles/gpu/templates/{{ item }} dest={{ tmp_dir }}/nvidia/{{ item.split('.')[:-1]|join('.') }}
@@ -62,7 +61,6 @@
 
     - name: copy nvidia-device-plugin tool
       copy: src=nvidia-device-plugin-{{ nvidia_gpu_ver }}.tgz dest={{ tmp_dir }}/nvidia
-      tags: nvidia-delete
 
     - name: copy nvidia-device-plugin helm
       shell: >
@@ -73,16 +71,13 @@
 
     - name: 删除helm部署
       shell: "helm delete nvdp -n nvidia-device-plugin || echo true; sleep 3"
-      tags: nvidia-delete
+      tags: addons_delete
       ignore_errors: true
 
 
 #问题解决：nvidia-device-plugin           nvdp-nvidia-device-plugin                      0         0         0       0            0           <none>                        144m
 #https://github.com/NVIDIA/k8s-device-plugin/issues/708
 
-
-#禁止调用标签===============>
-#kubectl label nodes z-k8s-n-2 nvidia.com/gpu.deploy.operands=false
 
 #0x10de 是PCI vender ID，是分配给 NVIDIA 的供应商ID
     - name: 打nvidia标签
@@ -93,9 +88,9 @@
       when: "hostvars[item].gpu_label == 'sp_t4'"
       with_items: ["{{ groups.master }}", "{{ groups.node }}"]    
 
-    - name: 打only-one标签
+    - name: 打GPU独占标签
       shell: >
-             kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=true  --overwrite
+             kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=false  --overwrite
              kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config0 –-overwrite
       when:
         - "hostvars[item].gpu_label == 'sp_t4'"
@@ -111,7 +106,7 @@
         - "hostvars[item].gpu_share_label == 'sp_mps'"
       with_items: ["{{ groups.master }}", "{{ groups.node }}"]  
 
-    - name: 打非mps标签
+    - name: 打time-slicing标签
       shell: >
              kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=false  --overwrite
              kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config2 –-overwrite
@@ -131,7 +126,8 @@
              --set-file config.map.config0={{ tmp_dir }}/nvidia/dp-only-one-config.yaml
              --set-file config.map.config1={{ tmp_dir }}/nvidia/dp-mps-config.yaml
              --set-file config.map.config2={{ tmp_dir }}/nvidia/dp-time-slicing-config.yaml
-#--set gfd.enabled=true  gpu-feature-discovery #进行部署以实现自动节点标签
+#--set gfd.enabled=true #节点标签自动发现
+
 #--set compatWithCPUManager=true #启用兼容性CPUManager并以 100ms 的 CPU 时间请求和 512MB 内存限制运行
 #--set resources.requests.cpu=100m
 #--set resources.limits.memory=512Mi
@@ -144,3 +140,15 @@
 
   tags: nvidia-device-plugin
   tags: gpu
+
+#方式二:
+#kubectl create ns nvidia-device-plugin
+#kubectl create cm -n nvidia-device-plugin nvidia-plugin-configs \
+#    --from-file=config0=/tmp/dp-example-config0.yaml \
+#    --from-file=config1=/tmp/dp-example-config1.yaml
+#helm upgrade -i nvdp nvdp/nvidia-device-plugin \
+#    --version=0.16.1 \
+#    --namespace nvidia-device-plugin \
+#    --create-namespace \
+#    --set config.default=config0 \
+#    --set config.name=nvidia-plugin-configs
