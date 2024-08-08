@@ -74,6 +74,11 @@
              helm repo update
 
     - name: 删除helm部署
+      shell: "helm delete dcgm-exporter -n nvidia-device-plugin || echo true; sleep 3"
+      tags: addons_delete
+      ignore_errors: true
+
+    - name: 删除helm部署
       shell: "helm delete nvdp -n nvidia-device-plugin || echo true; sleep 3"
       tags: addons_delete
       ignore_errors: true
