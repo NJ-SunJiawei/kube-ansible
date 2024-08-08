@@ -1,15 +1,15 @@
 ---
 - name: 创建临时目录
-  file: dest={{ NFS_DEFAULT_PATH }} state=directory
+  file: dest={{ nfs_default_path }} state=directory
 
 - name: 设置目录用户
-  shell: chown nobody:nobody {{ NFS_DEFAULT_PATH }}
+  shell: chown nobody:nobody {{ nfs_default_path }}
 
 - name: 设置目录属性
-  shell: chmod 755 {{ NFS_DEFAULT_PATH }}
+  shell: chmod 755 {{ nfs_default_path }}
 
 - name: 编辑/etc/exports文件
-  shell: echo "{{ NFS_DEFAULT_PATH }} *(rw,sync,no_root_squash)" | tee -a /etc/exports
+  shell: echo "{{ nfs_default_path }} *(rw,sync,no_root_squash)" | tee -a /etc/exports
 
 - name: 启动nfs-server组件
   systemd: name=nfs-server state=restarted enabled=yes daemon_reload=yes

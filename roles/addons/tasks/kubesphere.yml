@@ -5,13 +5,17 @@
 - name: 生成ksphere yml
   template: src=kubesphere/{{ item }} dest={{ tmp_dir }}/ksphere/{{ item.split('.')[:-1]|join('.') }}
   with_items:
-   - kubesphere-installer.yaml.j2
-   - cluster-configuration.yaml.j2
-  tags: addons_delete
+    - kubesphere-installer.yaml.j2
+    - cluster-configuration.yaml.j2
+  tags:
+    - addons_delete
+    - kubesphere_delete
 
 - name: copy ksphere tool
   copy: src=kubesphere dest={{ tmp_dir }}/ksphere/
-  tags: addons_delete
+  tags:
+    - addons_delete
+    - kubesphere_delete
 
 - name: copy ksphere tool
   shell: >
@@ -22,8 +26,10 @@
          helm repo update 
 
 - name: helm 删除 kube-prometheus-stack {{ prom_chart_ver }}
-  shell: "helm delete prometheus -n {{ prom_namespace }} || echo true; sleep 3"
-  tags: addons_delete
+  shell: "helm delete prometheus -n {{ prom_namespace }} || echo true; sleep 15"
+  tags:
+    - addons_delete
+    - kubesphere_delete
   ignore_errors: true
 
 #https://github.com/prometheus-community/helm-charts/issues/2753
@@ -39,8 +45,16 @@
     - prometheusrules.monitoring.coreos.com
     - servicemonitors.monitoring.coreos.com
     - thanosrulers.monitoring.coreos.com
-  tags: addons_delete
+  tags:
+    - addons_delete
+    - kubesphere_delete
   ignore_errors: true
+
+- name: 删除ksphere部署
+  shell: "cd {{ tmp_dir }}/ksphere/kubesphere/ && sh kubesphere-delete.sh || echo true; sleep 10"
+  tags:
+    - addons_delete
+    - kubesphere_delete
 
 #https://ask.kubesphere.io/forum/d/9517-ks-core
 - name: 删除clusterrolebinding配置(官方脚本遗漏)
@@ -54,7 +68,9 @@
     - kubesphere-prometheus-operator
     - system:kubesphere-cluster-admin
     - system:nginx-ingress-clusterrole-nisa-binding
-  tags: addons_delete
+  tags:
+    - addons_delete
+    - kubesphere_delete
   ignore_errors: true
 
 - name: 删除clusterrole配置(官方脚本遗漏)
@@ -68,12 +84,10 @@
     - kubesphere-prometheus-k8s
     - kubesphere-prometheus-operator
     - system:kubesphere-router-clusterrole
-  tags: addons_delete
+  tags:
+    - addons_delete
+    - kubesphere_delete
   ignore_errors: true
-
-- name: 删除ksphere部署
-  shell: "cd {{ tmp_dir }}/ksphere/kubesphere/ && sh kubesphere-delete.sh || echo true; sleep 10"
-  tags: addons_delete
 
 - name: 创建命名空间{{ prom_namespace }}
   shell: "kubectl create ns kubesphere-monitoring-system"
