@@ -1,7 +1,7 @@
 version: v1
 sharing:
   mps:
-    #renameByDefault: true #nvidia.com/gpu.shared
+    renameByDefault:  {{ nvidia_gpu_share_rename }} #nvidia.com/gpu.shared
     resources:
     - name: nvidia.com/gpu
       replicas: {{ nvidia_gpu_config_replicas }}

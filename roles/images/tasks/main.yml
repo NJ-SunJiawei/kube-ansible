@@ -79,9 +79,11 @@
 
 - block:
     - name: 分发镜像（需要花费一些时间...）
-      copy: src={{ software_dir }}/images/kubesphere/kubesphere_3.3.2_part.tar.gz dest={{ tmp_dir }}/images
-    - name: 导入prometheus镜像（需要花费一些时间...）
+      unarchive: src={{ software_dir }}/images/kubesphere/kubesphere_{{ kubesphere_ver }}_part.tar.gz dest={{ tmp_dir }}/images
+    - name: 分发插件镜像
+      copy: src={{ software_dir }}/images/kubesphere/kubesphere-plugin-nvidia-dcgm-exporter_2.1.8-2.4.0-rc.3-ubuntu18.04.tar dest={{ tmp_dir }}/images/kubesphere
+    - name: 导入kubesphere镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/kubesphere && \
              for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
-  when: prom_install == "yes"
+  when: kubesphere_install == "yes"
   tags: addons_kubesphere

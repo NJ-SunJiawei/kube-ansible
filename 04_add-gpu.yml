@@ -58,9 +58,13 @@
         - dp-mps-config.yaml.j2
         - dp-time-slicing-config.yaml.j2
         - dp-only-one-config.yaml.j2
+        #- dcgm-exporter.yaml.j2
 
     - name: copy nvidia-device-plugin tool
-      copy: src=nvidia-device-plugin-{{ nvidia_gpu_ver }}.tgz dest={{ tmp_dir }}/nvidia
+      copy: src={{ item }} dest={{ tmp_dir }}/nvidia
+      with_items:
+        - nvidia-device-plugin-{{ nvidia_gpu_ver }}.tgz
+        - dcgm-exporter-3.5.0.tgz
 
     - name: copy nvidia-device-plugin helm
       shell: >
@@ -81,10 +85,10 @@
 
 #0x10de 是PCI vender ID，是分配给 NVIDIA 的供应商ID
     - name: 打nvidia标签
-      shell: >
+      shell: |
              kubectl label nodes {{ hostvars[item].node_name }} feature.node.kubernetes.io/pci-10de.present=true  --overwrite
+             kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/gpu.present=true  --overwrite
 #kubectl label nodes {{ hostvars[item].node_name }} feature.node.kubernetes.io/cpu-model.vendor_id=NVIDIA  --overwrite
-#kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/gpu.present=true  --overwrite
       when: "hostvars[item].gpu_label == 'sp_t4'"
       with_items: ["{{ groups.master }}", "{{ groups.node }}"]    
 
@@ -137,6 +141,10 @@
 #  --namespace gpu-feature-discovery
 #  --create-namespace
 #  --set devicePlugin.enabled=false
+    - name: 更新部署
+      shell: >
+             helm upgrade -i dcgm-exporter  --namespace nvidia-device-plugin
+             {{ tmp_dir }}/nvidia/dcgm-exporter-3.5.0.tgz
 
   tags: nvidia-device-plugin
   tags: gpu
