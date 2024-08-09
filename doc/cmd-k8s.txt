@@ -1,0 +1,41 @@
+开放port范围
+vim /etc/kubernetes/manifests/kube-apiserver.yaml   
+在- --service-cluster-ip-range=10.96.0.0/12下增加
+  - --service-node-port-range=1-65535
+
+kubectl create namespace sset-5g-simulation   创建命名空间
+kubectl get ns                                查看命名空间
+kubectl get pods -n sset-5g-simulation        指定命名空间查看
+
+kubectl get pods -n sset-5g-simulation -o yaml 查看pod详细信息
+kubectl get pods -n sset-5g-simulation -o wide 查看pod信息
+
+
+kubectl get nodes 查看nodes
+
+kubectl get cm amf.yaml --from-file=amf.yml   基于amf.yml文件创建ConfigMap
+
+
+kubectl get events 查看K8s启动事件
+
+kubectl describe node node1 查看节点日志
+kubectl describe pod podname   查看pod应用信息
+
+kubectl delete -f core.yml/  删除pod
+kubectl apply -f core.yml/   更新pod
+kubectl create -f core.yml/  创建pod
+
+kubectl exec -it  cn-deploy-0 -n sset-5g-simulation  -c  容器名  /bin/bash  进入容器内部
+
+kubectl logs -f --tail=100 cn-deploy-0 -n sset-5g-simulation -c  容器名  查看pod日志
+
+-c  指定容器
+
+docker inspect 容器名  -- 查询k8s emptyDir{}
+
+headless服务    多个pod副本   1、gnb-deploy-1.gnb-svc-pool.sset-5g-simulation.svc.cluster.local     DNS别名指定IP
+                              2、gnb-svc-pool      iptables、ipvs负载均衡
+                单个pod          gnb-svc-pool
+			 
+clusterIP服务   多个pod副本   1、gnb-svc-pool         iptables、ipvs负载均衡
+                单个pod          gnb-svc-pool

@@ -1,0 +1,74 @@
+命令介绍：
+ctr：是containerd本身的CLI
+crictl ：是Kubernetes社区定义的专门CLI工具
+
+1.查看本地镜像列表
+ctr images list  或者 crictl images
+查看导入的镜像
+ctr images ls 
+
+列表名称：
+REF TYPE DIGEST SIZE PLATFORMS LABELS
+
+2.下载镜像命令
+ctr images pull docker.io/rancher/mirrored-pause
+
+# 3.上传命令:打标签
+ctr images tag  docker.io/docker/alpine:latest  host/test/alping:v1或ctr i tag docker.io/docker/alpine:latest host/test/alping:v1ctr images pull host/test/alping:v1 # 4.导入/导出本地镜像ctr images import app.tarctr images exporter
+[root@node1 ~]# ctr i ls -q
+docker.io/library/busybox:1.28
+docker.io/library/tomcat:8.5-jre8-alpine
+
+# 导出
+[root@node1 ~]# ctr images export busybox-1.28.tar.gz docker.io/library/busybox:1.28
+
+# 删除
+[root@node1 ~]# ctr images rm docker.io/library/busybox:1.28  或 ctr i rm docker.io/library/busybox:1.28
+docker.io/library/busybox:1.28
+
+# 导入
+[root@node1 ~]# ctr images import busybox-1.28.tar.gz 
+unpacking docker.io/library/busybox:1.28 (sha256:585093da3a716161ec2b2595011051a90d2f089bc2a25b4a34a18e2cf542527c)...done
+
+# 查看容器名称列表
+[root@node1 ~]# ctr i ls -q
+docker.io/library/busybox:1.28
+docker.io/library/tomcat:8.5-jre8-alpine
+
+# 5.显示运行的容器列表
+crictl ps
+
+# 6.删除本地镜像ctr images ls
+crictl rmi  # 没生效可以使用下面这个ctr i rm REF名称# 7. 查看容器资源情况
+crictl stats# 8.登录容器平台crictl exec# 9.容器启动和停止crictl start/stop# 10.查看容器日志crictl logs[root@master containerd]# ctr image --help
+NAME:
+   ctr images - manage images
+
+USAGE:
+   ctr images command [command options] [arguments...]
+
+COMMANDS:
+   check                    check existing images to ensure all content is available locally
+   export                   export images
+   import                   import images
+   list, ls                 list images known to containerd
+   mount                    mount an image to a target path
+   unmount                  unmount the image from the target
+   pull                     pull an image from a remote
+   push                     push an image to a remote
+   delete, del, remove, rm  remove one or more images by reference
+   tag                      tag an image
+   label                    set and clear labels for an image
+   convert                  convert an image
+   
+   11.查看containerd默认命名空间
+[root@moban containerd]# ctr namespace ls
+NAME    LABELS 
+default        
+moby 
+ctr 有命名空间 namespace 来指定类似于工作空间的隔离区域。使用方法 ctr -n default images ls来查看 default 命名空间的镜像，不加 -n 参数，默认也是使用 default 的命名空间。
+
+12.查看默认名称空间下镜像
+[root@moban containerd]# ctr -n=default images ls
+REF                                                           TYPE                                                      DIGEST                                                                  SIZE      PLATFORMS                                                                    LABELS 
+registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.6 application/vnd.docker.distribution.manifest.list.v2+json sha256:3d380ca8864549e74af4b29c10f9cb0956236dfb01c40ca076fb6c37253234db 294.7 KiB linux/amd64,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x,windows/amd64 -

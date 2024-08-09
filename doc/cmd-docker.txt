@@ -1,0 +1,57 @@
+docker images查看镜像
+docker rmi 镜像名 删除镜像
+
+docker save -o xxxx.tar  ubuntu:20.04  保存镜像为tar包
+docker load -i ubuntu.tar.gz   加载镜像tar包
+docker tag  d13c942271d6 ubuntu:20.04 设置镜像标签
+
+
+docker export 容器id > ubuntu.tar 导出容器快照到本地tar包
+cat docker/ubuntu.tar |docker import - test/ubuntu:v1  导入容器快照为镜像
+
+docker commit -m=“描述信息” -a=“作者”  容器ID  test/ubuntu:v1   从容器制作镜像
+
+docker ps -a 查看所有容器
+docker start/stop/restart  容器id
+docker rm -f 容器id  删除容器
+docker container prune 删除所有终止状态容器
+
+docker run -it  --name 名字   d13c942271d6 /bin/bash  前台运行镜像，并进入容器，exit退出
+docker run -itd --name 名字  d13c942271d6 /bin/bash  后台运行镜像
+docker exec -it  318ffd95fdc8  /bin/bash  进入容器内部
+
+
+
+docker build -t  镜像名字:tag .       构建镜像
+
+docker cp 容器ID:/home/aaaa      /home/aaaa  将容器内部文件考出
+
+
+核心网容器中使用systemctl说明：
+centos :  docker run -itd --privileged    --name 名字   XXXXX   /usr/sbin/init
+ubuntu:  docker run -itd --privileged    --name 名字   XXXXX   /sbin/init
+docker exec -it xxxx  /bin/bash
+
+docker logs -f -t --tail 100 0dad8c3f2c72 查看日志
+docker top  0dad8c3f2c72 
+
+docker run -d --net=host  --name=名字  --entrypoint=新命令   镜像ID  cmd命令      主机模式运行
+
+===========================================
+* Build Image
+  
+  `$ docker-compose build`
+
+* Runtime
+
+  docker-compose -f docker-compose.yml -f docker-compose.run.yml run run
+ 
+  docker-compose -f docker-compose.yml -f docker-compose.run.yml up -d
+
+  docker-compose -f docker-compose.run.yml run run
+ 
+  docker-compose -f docker-compose.mongo.yml -f docker-compose.volumes-nonacos-run.yml  up -d
+
+
+set -a
+source xxx.env
