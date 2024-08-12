@@ -50,14 +50,24 @@
     - node
   tags: node
 
-- name: 7.导入离线镜像
+- name: 7.更新label
+  gather_facts: false
+  hosts: 
+    - master
+  tasks:
+    - name: 打label标签
+      shell: >
+             kubectl label nodes {{ hostvars[item].node_name }} model={{ hostvars[item].node_label }} --overwrite
+      with_items: ["{{ groups.master }}", "{{ groups.node }}"] 
+
+- name: 8.导入离线镜像
   gather_facts: false
   hosts: k8s 
   roles:
     - images
   tags: images
   
-- name: 8.安装helm
+- name: 9.安装helm
   gather_facts: false
   hosts: helm
   roles:
@@ -65,14 +75,14 @@
     - helm
   tags: helm
 
-- name: 9.安装nfs_server
+- name: 10.安装nfs_server
   gather_facts: false
   hosts: nfs_server
   roles:
     - nfs
   tags: nfs
 
-- name: 10.部署插件
+- name: 11.部署插件
   gather_facts: false
   hosts: master
   roles:

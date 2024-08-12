@@ -107,7 +107,3 @@
 - name: 分发label脚本
   template: src=add_label.sh.j2 dest={{ k8s_work_dir }}/add_label.sh mode=u+x
 
-- name: 打label标签
-  shell: >
-         kubectl label nodes {{ hostvars[item].node_name }} model={{ hostvars[item].node_label }} --overwrite
-  with_items: ["{{ groups.master }}", "{{ groups.node }}"] 

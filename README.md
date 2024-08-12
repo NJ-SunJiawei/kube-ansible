@@ -12,6 +12,10 @@ harbor版本：2.10.2
 docekr版本：24.0.7
 helm版本：3.11.1
 helm_prometheus版本：45.23.0
+
+NVIDIA：Tesla T4
+Driver Version: 550.54.15
+CUDA Version: 12.4
 ```
 <img width="761" alt="818f62181fc150751be1d332b499edb" src="https://github.com/user-attachments/assets/a47a0253-7844-425e-a185-0a6e80c745c0">
 
