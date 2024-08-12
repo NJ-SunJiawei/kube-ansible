@@ -58,7 +58,7 @@
         - dp-mps-config.yaml.j2
         - dp-time-slicing-config.yaml.j2
         - dp-only-one-config.yaml.j2
-        #- dcgm-exporter.yaml.j2
+        - dcgm-exporter-helm-values.yaml.j2
 
     - name: copy nvidia-device-plugin tool
       copy: src=roles/gpu/files/{{ item }} dest={{ tmp_dir }}/nvidia
@@ -151,9 +151,11 @@
       shell: >
              helm upgrade -i dcgm-exporter  --namespace nvidia-device-plugin
              {{ tmp_dir }}/nvidia/dcgm-exporter-3.5.0.tgz
+             -f {{ tmp_dir }}/nvidia/dcgm-exporter-helm-values.yaml
 
-  tags: nvidia-device-plugin
-  tags: gpu
+  tags:
+    - nvidia-device-plugin
+    - gpu
 
 #方式二:
 #kubectl create ns nvidia-device-plugin
