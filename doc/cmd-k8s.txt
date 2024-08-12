@@ -39,3 +39,10 @@ headless服务    多个pod副本   1、gnb-deploy-1.gnb-svc-pool.sset-5g-simulation.sv
 			 
 clusterIP服务   多个pod副本   1、gnb-svc-pool         iptables、ipvs负载均衡
                 单个pod          gnb-svc-pool
+				
+				
+获取 namespace 中状态为 ContainerStatusUnknown 的 pod，并删除:
+kubectl get pods -n [namespace] | grep ContainerStatusUnknown | awk '{print $1}' | xargs kubectl delete pod -n  [namespace]
+
+获取所有非 Running 状态下的 pod，并删除:
+kubectl get pods -A  | grep -v Running | awk '{print $2}' | xargs kubectl delete pod -n kubesphere-system

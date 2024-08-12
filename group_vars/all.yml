@@ -123,6 +123,8 @@ kubesphere_ver: "3.3.2"
 kubesphere_api_nodeport: 30801
 kubesphere_nodeport: 30880
 kubesphere_password: "P@88w0rd"
+kubesphere_clusterRole: "host" #host | member | none
+kubesphere_jwtSecret: "9fhq77p7e4Dub5wDmn8ucMcySajf4nfI"
 ############################
 # helm charts
 #和kubeconfig部署在一起
