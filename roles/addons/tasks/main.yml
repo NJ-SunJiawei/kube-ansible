@@ -30,6 +30,7 @@
     - addons_prometheus
     - addons_nfs
     - addons_kubesphere
+  ignore_errors: true
 
 - debug: var=pod_info.stdout_lines
 
