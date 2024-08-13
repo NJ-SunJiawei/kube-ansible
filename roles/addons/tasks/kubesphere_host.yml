@@ -95,7 +95,7 @@
   shell: >
     kubectl patch cc ks-installer
     --type merge
-    -p '{"spec":{"multicluster":{"clusterRole":"host"}}}'}}}'
+    -p '{"spec":{"multicluster":{"clusterRole":"host"}}}'
     -n kubesphere-system
   register: hh_result
   failed_when: "hh_result.stderr and 'Warning' not in hh_result.stderr"

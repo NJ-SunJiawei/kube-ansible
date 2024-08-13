@@ -46,7 +46,8 @@ ansible -i ../hosts k8s    -m shell   -a 'rm -rf /opt/cni /var/lib/cni /var/lib/
 ansible -i ../hosts k8s    -m shell   -a "umount $(df -HT | grep '/var/lib/kubelet/pods' | awk '{print $7}')" || exit 1
 ansible -i ../hosts k8s    -m shell   -a "umount $(df -HT | grep '/run/containerd' | awk '{print $7}')" || exit 1
 #nfs手动umount
-ansible -i ../hosts k8s    -m shell   -a "rm -rf {/var/lib/kubelet, /run/containerd, /var/lib/etcd}" || exit 1
+#/run/containerd
+ansible -i ../hosts k8s    -m shell   -a "rm -rf {/var/lib/kubelet, /var/lib/etcd}" || exit 1
 
 
 echo "remove kubernetes all OK <<<"
