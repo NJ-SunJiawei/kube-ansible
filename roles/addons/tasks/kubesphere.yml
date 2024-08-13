@@ -137,7 +137,9 @@
          helm upgrade --install ks-core {{ tmp_dir }}/ksphere/kubesphere/ks-core/ 
          -f {{ tmp_dir }}/ksphere/kubesphere/ks-core/custom-values-ks-core.yaml 
          --namespace kubesphere-system
-
+- name: 开放ks-api端口
+  shell: |
+         kubectl -n kubesphere-system patch service ks-apiserver -p '{"spec":{"type":"NodePort", "ports":[{"port":80, "protocol": "TCP", "targetPort":9090, "nodePort":{{ kubesphere_api_nodeport }}}]}}'
 - block:
     - name: copy ksphere tool
       shell: >
@@ -151,7 +153,3 @@
 
   tags: addons_kubesphere_host
   when: kubesphere_clusterRole_host == "yes"
-
-- name: 开放ks-api端口
-  shell: |
-         kubectl -n kubesphere-system patch service ks-apiserver -p '{"spec":{"type":"NodePort", "ports":[{"port":80, "protocol": "TCP", "targetPort":9090, "nodePort":{{ kubesphere_api_nodeport }}}]}}'
