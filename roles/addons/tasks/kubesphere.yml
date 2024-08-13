@@ -52,6 +52,7 @@
     - kubesphere_delete
   ignore_errors: true
 
+
 - name: 删除ksphere部署
   shell: "cd {{ tmp_dir }}/ksphere/kubesphere/ && sh kubesphere-delete.sh || echo true; sleep 10"
   tags:

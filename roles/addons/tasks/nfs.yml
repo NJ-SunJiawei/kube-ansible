@@ -1,6 +1,7 @@
 ---
 - name: 创建临时目录
   file: dest={{ tmp_dir }}/nfs state=directory
+  tags: addons_delete
 
 - name: 生成nfs-pv yml
   template: src=nfs/{{ item }} dest={{ tmp_dir }}/nfs/{{ item.split('.')[:-1]|join('.') }}

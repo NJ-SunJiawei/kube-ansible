@@ -3,6 +3,18 @@
   shell: "kubectl create ns kube-federation-system"
   ignore_errors: true
 
+#删除ns下所有资源
+#下面不要放开
+#https://ask.kubesphere.io/forum/d/4394-v310/3
+#kubectl delete all --all --namespace=kube-federation-system
+#- name: 删除FederatedTypeConfig
+#  shell: >
+#         kubectl -n kube-federation-system delete FederatedTypeConfig --all
+#  tags:
+#    - addons_delete
+#    - kubesphere_delete
+#  ignore_errors: true
+
 - name: 删除kubefed
   shell: >
          helm --namespace kube-federation-system delete kubefed
@@ -34,6 +46,7 @@
 #    - addons_delete
 #    - kubesphere_delete
 #  ignore_errors: true
+
 
 - block:
     - name: Tower | Installing tower
