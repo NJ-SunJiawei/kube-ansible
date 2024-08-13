@@ -132,8 +132,11 @@ spec:
       nvidia_dcgm_exporter:        # Ensure that gpu resources on your hosts can be used normally, otherwise this plug-in will not work properly.
         enabled: false             # Check whether the labels on the GPU hosts contain "nvidia.com/gpu.present=true" to ensure that the DCGM pod is scheduled to these nodes.
         # resources: {}
+#问题记录
+#https://github.com/kubesphere/kubesphere/issues/4654
+#https://ask.kubesphere.io/forum/d/9537-kubesphere
   multicluster:
-    clusterRole: {{ kubesphere_clusterRole }}  # host | member | none  # You can install a solo cluster, or specify it as the Host or Member Cluster.
+    clusterRole: {{ kubesphere_clusterRole_others }}  # host | member | none  # You can install a solo cluster, or specify it as the Host or Member Cluster.
     #hostClusterName: <主集群名称>
   network:
     networkpolicy: # Network policies allow network isolation within the same cluster, which means firewalls can be set up between certain instances (Pods).

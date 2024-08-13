@@ -1,0 +1,79 @@
+---
+- name: 创建命名空间
+  shell: "kubectl create ns kube-federation-system"
+  ignore_errors: true
+
+- name: 删除kubefed
+  shell: >
+         helm --namespace kube-federation-system delete kubefed
+  tags:
+    - addons_delete
+    - kubesphere_delete
+  ignore_errors: true
+
+- name: 删除tower
+  shell: >
+         kubectl -n kubesphere-system delete -f {{ tmp_dir }}/ksphere/kubesphere/kubefed/tower.yaml
+  tags:
+    - addons_delete
+    - kubesphere_delete
+  ignore_errors: true
+
+#- name: 删除controllermanager
+#  shell: >
+#         kubectl delete -f {{ tmp_dir }}/ksphere/kubesphere/kubefed/kubefed/charts/controllermanager/crds/
+#  tags:
+#    - addons_delete
+#    - kubesphere_delete
+#  ignore_errors: true
+
+#- name: 删除federatedcrds
+#  shell: >
+#         kubectl delete -f {{ tmp_dir }}/ksphere/kubesphere/kubefed/federatedcrds/ -n kube-federation-system
+#  tags:
+#    - addons_delete
+#    - kubesphere_delete
+#  ignore_errors: true
+
+- block:
+    - name: Tower | Installing tower
+      shell: >
+        kubectl -n kubesphere-system apply -f {{ tmp_dir }}/ksphere/kubesphere/kubefed/tower.yaml
+      register: tower_result
+      failed_when: false
+
+    - name: Kubefed | Upgrade crd manually #see https://helm.sh/docs/chart_best_practices/custom_resource_definitions/
+      shell: >
+        kubectl apply -f {{ tmp_dir }}/ksphere/kubesphere/kubefed/kubefed/charts/controllermanager/crds/
+      ignore_errors: true
+
+    - name: Kubefed | Initing kube-federation-system
+      shell: >
+        helm upgrade --install kubefed {{ tmp_dir }}/ksphere/kubesphere/kubefed/kubefed
+        -f {{ tmp_dir }}/ksphere/kubesphere/kubefed/custom-values-kubefed.yaml
+        --namespace kube-federation-system --wait --timeout 1800s
+      register: kubefed_result
+      until: kubefed_result is succeeded
+      retries: 2
+      delay: 10
+
+    - name: Kubfed | Labeling kube-federation-system namespace
+      shell: >
+        kubectl label namespace kube-federation-system kubesphere.io/workspace=system-workspace --overwrite
+
+
+- name: Kubefed | Creating MultiCluster crds
+  shell: "kubectl apply -f {{ tmp_dir }}/ksphere/kubesphere/kubefed/federatedcrds/ -n kube-federation-system"
+  ignore_errors: true
+
+- name: Kubefed | Importing multicluster status
+  shell: >
+    kubectl patch cc ks-installer
+    --type merge
+    -p '{"status": {"multicluster": {"status": "enabled", "enabledTime": "{{ lookup('pipe','date  +%Y-%m-%dT%H:%M:%S%Z') }}"}}}'
+    -n kubesphere-system
+  register: cc_result
+  failed_when: "cc_result.stderr and 'Warning' not in cc_result.stderr"
+  until: cc_result is succeeded
+  retries: 10
+  delay: 5

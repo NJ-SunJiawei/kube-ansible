@@ -100,7 +100,7 @@ metrics_server_install: "yes"
 #dashboard
 #和kubesphere二选一
 ############################
-dashboard_install: "yes"
+dashboard_install: "no"
 dashboard_nodeport: 30001
 
 ############################
@@ -115,16 +115,21 @@ prom_operator_nodeport_tls: 30900
 prom_self_nodeport: 30901
 prom_alertmanager_nodeport: 30902
 prom_grafana_nodeport: 30903
+
 ############################
 # kubesphere 30880
+#kubectl -n kubesphere-system get cm kubesphere-config -o yaml | grep -v "apiVersion" | grep jwtSecret
 ############################
 kubesphere_install: "yes"
 kubesphere_ver: "3.3.2"
 kubesphere_api_nodeport: 30801
 kubesphere_nodeport: 30880
 kubesphere_password: "P@88w0rd"
-kubesphere_clusterRole: "none" #host | member | none
+#host官方是有bug的，拆分安装
+kubesphere_clusterRole_host: "yes"
+kubesphere_clusterRole_others: "none" #member | none
 kubesphere_jwtSecret: ""
+
 ############################
 # helm charts
 #和kubeconfig部署在一起
@@ -137,7 +142,6 @@ HELM_CHARTS: "private" #public为官方联网
 ############################
 # harbor
 ############################
-# harbor version，完整版本号
 HARBOR_VER: "v2.10.2"
 HARBOR_DOMAIN: "registry.zjy.com"
 HARBOR_PATH: "/var/data"

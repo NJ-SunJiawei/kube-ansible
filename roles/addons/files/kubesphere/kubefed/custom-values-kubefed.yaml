@@ -1,0 +1,25 @@
+# Default values for kubefed.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+## Configuration values for kubefed controllermanager deployment.
+##
+controllermanager:
+  commonAffinity: {}
+  commonNodeSelector: {}
+  commonTolerations: []
+
+  controller:
+    annotations: {}
+    replicaCount: 1
+    repository: registry.zjy.com/tsz/kubesphere
+    image: kubefed
+    tag: v0.8.1
+  postInstallJob:
+    repository: registry.zjy.com/tsz/kubesphere
+    image: kubectl
+    tag: v1.22.0
+  webhook:
+    repository: registry.zjy.com/tsz/kubesphere
+    image: kubefed
+    tag: v0.8.1

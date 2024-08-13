@@ -1,6 +1,7 @@
 ---
 - name: 创建临时目录
   file: dest={{ tmp_dir }}/ksphere state=directory
+  tags: addons_kubesphere_host
 
 - name: 生成ksphere yml
   template: src=kubesphere/{{ item }} dest={{ tmp_dir }}/ksphere/{{ item.split('.')[:-1]|join('.') }}
@@ -16,6 +17,7 @@
   tags:
     - addons_delete
     - kubesphere_delete
+    - addons_kubesphere_host
 
 - name: copy ksphere tool
   shell: >
@@ -57,6 +59,7 @@
     - kubesphere_delete
 
 #https://ask.kubesphere.io/forum/d/9517-ks-core
+#https://ask.kubesphere.io/forum/u/shunxiang
 - name: 删除clusterrolebinding配置(官方脚本遗漏)
   shell: >
          kubectl delete clusterrolebinding {{ item }}
@@ -126,11 +129,27 @@
 #  shell: >
 #         kubectl apply -f {{ tmp_dir }}/ksphere/kubesphere/kubesphere-controls-system_arm64.yaml
 
+#问题记录：MountVolume.SetUp failed for volume "kubesphere-config" : configmap "kubesphere-config" not found
+#https://github.com/kubesphere/ks-installer/issues/907
 - name: 更新部署
   shell: >
          helm upgrade --install ks-core {{ tmp_dir }}/ksphere/kubesphere/ks-core/ 
          -f {{ tmp_dir }}/ksphere/kubesphere/ks-core/custom-values-ks-core.yaml 
          --namespace kubesphere-system
+
+- block:
+    - name: copy ksphere tool
+      shell: >
+             cd {{ tmp_dir }}/ksphere/kubesphere/ &&
+             tar -zcvf kubefed.tgz kubefed &&
+             mv kubefed.tgz {{ HELM_PATH }}/charts &&
+             helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
+             helm repo update
+
+    - import_tasks: kubesphere_host.yml
+
+  tags: addons_kubesphere_host
+  when: kubesphere_clusterRole_host == "yes"
 
 - name: 开放ks-api端口
   shell: |
