@@ -285,6 +285,8 @@ spec:
         app: ks-installer
     spec:
       serviceAccountName: ks-installer
+      #nodeSelector:  # 正确的位置  
+      #  kubernetes.io/hostname: k8s-master1 
       containers:
       - name: installer
         image: registry.zjy.com/tsz/kubesphere/ks-installer:v3.3.2

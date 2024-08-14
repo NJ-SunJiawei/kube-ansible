@@ -118,7 +118,6 @@ prom_grafana_nodeport: 30903
 
 ############################
 # kubesphere 30880
-#kubectl -n kubesphere-system get cm kubesphere-config -o yaml | grep -v "apiVersion" | grep jwtSecret
 ############################
 kubesphere_install: "yes"
 kubesphere_ver: "3.3.2"
@@ -127,9 +126,9 @@ kubesphere_nodeport: 30880
 kubesphere_password: "P@88w0rd"
 #host官方是有bug的，拆分安装
 kubesphere_clusterRole_host: "yes"
-kubesphere_clusterRole_others: "none" #member | none
-kubesphere_jwtSecret: ""
-
+kubesphere_clusterRole_others: "none" #no:member(从集群) | yes:none(主机群) |no:none(default)
+kubesphere_jwtSecret: "" #从集群时候填充
+#查询jwtSecret： kubectl -n kubesphere-system get cm kubesphere-config -o yaml | grep -v "apiVersion" | grep jwtSecret
 ############################
 # helm charts
 #和kubeconfig部署在一起

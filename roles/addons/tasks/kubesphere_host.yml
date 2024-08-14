@@ -4,16 +4,16 @@
   ignore_errors: true
 
 #删除ns下所有资源
-#下面不要放开
+#不要在helm delete之后放开
 #https://ask.kubesphere.io/forum/d/4394-v310/3
-#kubectl delete all --all --namespace=kube-federation-system
-#- name: 删除FederatedTypeConfig
-#  shell: >
-#         kubectl -n kube-federation-system delete FederatedTypeConfig --all
-#  tags:
-#    - addons_delete
-#    - kubesphere_delete
-#  ignore_errors: true
+kubectl delete all --all --namespace=kube-federation-system
+- name: 删除FederatedTypeConfig
+  shell: >
+         kubectl -n kube-federation-system delete FederatedTypeConfig --all
+  tags:
+    - addons_delete
+    - kubesphere_delete
+  ignore_errors: true
 
 - name: 删除kubefed
   shell: >
