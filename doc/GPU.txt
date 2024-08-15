@@ -83,5 +83,5 @@ NVIDIA GPU虚拟化主要有以下几种方法：
 普通玩k8s的企业，则用免费的Time-Slicing GPU (时间分片共享GPU) 。
 ————————————————
 
-容器和GPU混合部署
+容器和vGPU混合部署
 https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-operator-kubevirt.html

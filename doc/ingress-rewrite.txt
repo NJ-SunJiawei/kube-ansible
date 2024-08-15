@@ -1,0 +1,84 @@
+#https://github.com/easzlab/kubeasz/issues/320           
+#通过host和path定位到某一个service，同时该path 必须是该service中存在的一个路径。
+
+nginx.ingress.kubernetes.io/rewrite-target	必须重定向流量的目标 URI	string
+nginx.ingress.kubernetes.io/ssl-redirect	指示位置部分是否仅可通过 SSL 访问（当 Ingress 包含证书时默认为 True）	布尔值
+nginx.ingress.kubernetes.io/force-ssl-redirect	即使 Ingress 未启用 TLS，也会强制重定向到 HTTPS	布尔值
+nginx.ingress.kubernetes.io/app-root	定义控制器在/上下文中必须重定向的应用程序根	string
+nginx.ingress.kubernetes.io/use-regex	指示 Ingress 上定义的路径是否使用正则表达式	布尔值
+
+Examples
+Rewrite Target
+!!! attention Starting in Version 0.22.0, ingress definitions using the annotation nginx.ingress.kubernetes.io/rewrite-target are not backwards compatible with previous versions. In Version 0.22.0 and beyond, any substrings within the request URI that need to be passed to the rewritten path must explicitly be defined in a capture group.
+
+!!! note Captured groups are saved in numbered placeholders, chronologically, in the form $1, $2 ... $n. These placeholders can be used as parameters in the rewrite-target annotation.
+
+!!! note Please see the FAQ for Validation Of path
+
+Create an Ingress rule with a rewrite annotation:
+
+$ echo '
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  name: rewrite
+  namespace: default
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: rewrite.bar.com
+    http:
+      paths:
+      - path: /something(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: http-svc
+            port: 
+              number: 80
+' | kubectl create -f -
+In this ingress definition, any characters captured by (.*) will be assigned to the placeholder $2, which is then used as a parameter in the rewrite-target annotation.
+
+For example, the ingress definition above will result in the following rewrites:
+
+rewrite.bar.com/something rewrites to rewrite.bar.com/
+rewrite.bar.com/something/ rewrites to rewrite.bar.com/
+rewrite.bar.com/something/new rewrites to rewrite.bar.com/new
+App Root
+Create an Ingress rule with an app-root annotation:
+
+$ echo "
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/app-root: /app1
+  name: approot
+  namespace: default
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: approot.bar.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: http-svc
+            port: 
+              number: 80
+" | kubectl create -f -
+Check the rewrite is working
+
+$ curl -I -k http://approot.bar.com/
+HTTP/1.1 302 Moved Temporarily
+Server: nginx/1.11.10
+Date: Mon, 13 Mar 2017 14:57:15 GMT
+Content-Type: text/html
+Content-Length: 162
+Location: http://approot.bar.com/app1
+Connection: keep-alive

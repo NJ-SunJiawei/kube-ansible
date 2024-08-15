@@ -1,0 +1,75 @@
+TLS/HTTPS
+TLS 机密
+任何时候我们引用 TLS 密钥，我们指的是 PEM 编码的 X.509、RSA（2048）密钥。
+
+!!! 警告确保证书顺序为 leaf->intermediate->root，否则控制器将无法导入证书，并且您会在日志中看到此错误W1012 09:15:45.920000       6 backend_ssl.go:46] Error obtaining X.509 certificate: unexpected error creating SSL Cert: certificate and private key does not have a matching public key: tls: private key does not match public key
+
+您可以使用以下命令生成自签名证书和私钥：
+
+$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ${KEY_FILE} -out ${CERT_FILE} -subj "/CN=${HOST}/O=${HOST}" -addext "subjectAltName = DNS:${HOST}"
+然后通过以下方式在集群中创建秘密：
+
+kubectl create secret tls ${CERT_NAME} --key ${KEY_FILE} --cert ${CERT_FILE}
+最终的秘密将是 类型kubernetes.io/tls。
+
+主机名
+确保相关入口规则指定了匹配的主机名。
+
+默认 SSL 证书
+NGINX 提供了使用server_name配置服务器作为 catch-all 的选项， 用于处理与任何已配置的服务器名称不匹配的请求。此配置对于 HTTP 流量开箱即用。对于 HTTPS，自然需要证书。
+
+因此，Ingress 控制器提供了标志--default-ssl-certificate。此标志引用的 secret 包含访问 catch-all 服务器时要使用的默认证书。如果未提供此标志，NGINX 将使用自签名证书。
+
+例如，如果您foo-tls在命名空间中有一个 TLS 密钥default，请将其添加到部署--default-ssl-certificate=default/foo-tls中nginx-controller。
+
+如果tls:未设置该部分，NGINX 将提供默认证书，但不会强制 HTTPS 重定向。
+
+另一方面，如果tls:设置了该部分 - 即使没有指定secretName选项 - NGINX 也会强制 HTTPS 重定向。
+
+要强制重定向未指定 TLS 块的 Ingress，请查看force-ssl-redirectConfigMap 。
+
+SSL 直通
+此--enable-ssl-passthrough标志启用 SSL 直通功能，该功能默认处于禁用状态。这是在 Ingress 对象中启用直通后端所必需的。
+
+!!! 警告 此功能通过拦截配置的 HTTPS 端口（默认值：443）上的所有流量并将其移交给本地 TCP 代理来实现。这会完全绕过 NGINX，并带来不可忽略的性能损失。
+
+SSL Passthrough 利用SNI并从 TLS 协商中读取虚拟域，这需要兼容的客户端。在 TLS 侦听器接受连接后，该连接将由控制器本身处理并在后端和客户端之间来回传输。
+
+如果没有与请求的主机名匹配的主机名，则请求将交给配置的直通代理端口（默认值：442）上的 NGINX，后者将请求代理到默认后端。
+
+!!! 注意与 HTTP 后端不同，到 Passthrough 后端的流量被发送到支持服务的clusterIP ，而不是单个端点。
+
+HTTP 严格传输安全
+HTTP 严格传输安全 (HSTS) 是通过使用特殊响应标头指定的可选安全增强功能。受支持的浏览器收到此标头后，该浏览器将阻止通过 HTTP 向指定域发送任何通信，而是通过 HTTPS 发送所有通信。
+
+默认情况下，HSTS 处于启用状态。
+
+要禁用此行为，请hsts: "false"在配置中使用ConfigMap。
+
+通过重定向执行服务器端 HTTPS
+默认情况下，如果为该 Ingress 启用了 TLS，则控制器会使用 308 永久重定向响应将 HTTP 客户端重定向到 HTTPS 端口 443。
+
+可以使用ssl-redirect: "false"NGINX配置映射nginx.ingress.kubernetes.io/ssl-redirect: "false"全局禁用此功能，或者使用 特定资源中的注释为每个 Ingress 禁用此功能。
+
+!!! 提示 在集群外部使用 SSL 卸载（例如 AWS ELB）时，即使没有可用的 TLS 证书，强制重定向到 HTTPS 也很有用。这可以通过nginx.ingress.kubernetes.io/force-ssl-redirect: "true" 在特定资源中使用注释来实现。
+
+使用 cert-manager 进行自动证书管理
+cert-manager通过监控入口资源，自动从一系列 受支持的颁发者（包括Let's Encrypt ）请求缺失或过期的证书。
+
+要设置 cert-manager，您应该查看这个完整的示例。
+
+要为入口资源启用它，您必须部署证书管理器，配置证书颁发者更新清单：
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-demo
+  annotations:
+    cert-manager.io/issuer: "letsencrypt-staging" # Replace this with a production issuer once you've tested it
+    [..]
+spec:
+  tls:
+    - hosts:
+        - ingress-demo.example.com
+      secretName: ingress-demo-tls
+    [...]

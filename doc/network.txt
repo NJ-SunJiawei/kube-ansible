@@ -1,0 +1,8 @@
+calico  yes
+cilium
+kube-ovn
+
+multus[calico,ovs-cni]
+multus[calico,kube-ovn]
+multus[calico,macvlan]   yes
+multus[calico,srvio]

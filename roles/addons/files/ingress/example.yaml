@@ -1,0 +1,113 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-web
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 1 # 指定Pod副本数
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: docker.io/library/nginx:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+         - containerPort: 80
+           name: http
+         - containerPort: 443
+           name: https
+---
+#containerPort: 指定容器内部的应用监听端口，定义在Pod的spec中，仅用于文档记录和调试目的。
+#targetPort: Service用来指定将流量转发到容器的哪个端口，通常对应containerPort。
+#port: Service在集群内部暴露的端口，其他Pod通过这个端口访问Service。
+#nodePort: Service在每个节点上暴露的端口，允许外部流量通过指定的节点IP和端口访问Service。
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nginx
+  name: nginx-service
+  namespace: default
+spec:
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: 443
+  selector:
+    app: nginx
+  sessionAffinity: None
+  type: ClusterIP
+
+#创建两个Ingress测试
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-myservice-http
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: myservicehttp.foo.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-service
+            port:
+              number: 80
+
+#https://github.com/easzlab/kubeasz/issues/320           
+#通过host和path定位到某一个service，同时该path 必须是该service中存在的一个路径。
+#所以下面无法生效，除非使用rewrite-target
+      - path: /path
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-service
+            port:
+              number: 80  #nginx-web pod的port
+  ingressClassName: nginx
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-myservice-https
+spec:
+#  ingressClassName: nginx #可配置
+  tls:
+    - hosts:
+      - myservicehttps.foo.org
+      # This assumes tls-secret exists and the SSL
+      # certificate contains a CN for foo.bar.com
+      secretName: tls-secret
+  rules:
+  - host: myservicehttps.foo.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-service
+            port:
+              number: 80   #nginx-web pod的port
+  ingressClassName: nginx

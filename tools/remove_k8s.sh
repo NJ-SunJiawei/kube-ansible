@@ -47,7 +47,7 @@ ansible -i ../hosts k8s    -m shell   -a "umount $(df -HT | grep '/var/lib/kubel
 ansible -i ../hosts k8s    -m shell   -a "umount $(df -HT | grep '/run/containerd' | awk '{print $7}')" || exit 1
 #nfs手动umount
 #/run/containerd
-ansible -i ../hosts k8s    -m shell   -a "rm -rf /var/lib/kubelet /var/lib/etcd /run/containerd" || exit 1
+ansible -i ../hosts k8s    -m shell   -a "rm -rf /var/lib/kubelet /var/lib/etcd /run/containerd/io.containerd.runtime.v2.task" || exit 1
 
 
 echo "remove kubernetes all OK <<<"

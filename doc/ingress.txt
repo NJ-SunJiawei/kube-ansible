@@ -1,1 +1,451 @@
-todo
+https://github.com/kubernetes/ingress-nginx/blob/controller-v1.8.1/docs/deploy/baremetal.md
+裸机注意事项
+在传统的云环境中，网络负载均衡器可按需使用，单个 Kubernetes 清单足以为外部客户端提供 Ingress-Nginx 控制器的单一联系点，并间接为集群内运行的任何应用程序提供联系点。裸机环境缺乏这种商品，需要略有不同的设置才能为外部消费者提供相同类型的访问权限。
+
+云环境 裸机环境
+
+本文档的其余部分介绍了在裸机上运行的 Kubernetes 集群内部署 Ingress-Nginx 控制器的一些推荐方法。
+
+纯软件解决方案：MetalLB
+MetalLB为未在受支持的云提供商上运行的 Kubernetes 集群提供了网络负载均衡器实现，从而有效地允许在任何集群中使用 LoadBalancer 服务。
+
+本节演示如何在具有可公开访问节点的 Kubernetes 集群中将 MetalLB 的第 2 层配置模式与 NGINX Ingress 控制器一起使用。在此模式下，一个节点会吸引服务 IP 的所有流量。有关更多详细信息，请参阅流量策略。ingress-nginx
+
+MetalLB 处于 L2 模式
+
+!!! 注意其他支持的配置模式的描述超出了本文档的范围。
+
+!!! 警告 MetalLB 目前处于测试阶段。请阅读项目成熟度，并确保仔细阅读官方文档以了解相关信息。
+
+MetalLB 可以使用简单的 Kubernetes 清单或 Helm 进行部署。本示例的其余部分假设 MetalLB 是按照安装说明部署的，并且 Ingress-Nginx Controller 是使用安装指南快速入门部分中描述的步骤安装的。
+
+MetalLB 需要一个 IP 地址池才能拥有该ingress-nginx服务的所有权。此池可以通过与 MetalLB 控制器位于同一命名空间中的对象来定义IPAddressPool。此 IP 池必须专供 MetalLB 使用，您不能重复使用 Kubernetes 节点 IP 或 DHCP 服务器分发的 IP。
+
+!!! 示例 给出以下 3 节点 Kubernetes 集群（作为示例添加外部 IP，在大多数裸机环境中此值为 <None>）
+
+```console
+$ kubectl get node
+NAME     STATUS   ROLES    EXTERNAL-IP
+host-1   Ready    master   203.0.113.1
+host-2   Ready    node     203.0.113.2
+host-3   Ready    node     203.0.113.3
+```
+
+After creating the following objects, MetalLB takes ownership of one of the IP addresses in the pool and updates
+the *loadBalancer* IP field of the `ingress-nginx` Service accordingly.
+
+```yaml
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  addresses:
+  - 203.0.113.10-203.0.113.15
+  autoAssign: true
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - default
+```
+
+```console
+$ kubectl -n ingress-nginx get svc
+NAME                   TYPE          CLUSTER-IP     EXTERNAL-IP  PORT(S)
+default-http-backend   ClusterIP     10.0.64.249    <none>       80/TCP
+ingress-nginx          LoadBalancer  10.0.220.217   203.0.113.10  80:30100/TCP,443:30101/TCP
+```
+一旦 MetalLB 设置了ingress-nginxLoadBalancer 服务的外部 IP 地址，就会在 iptables NAT 表中创建相应的条目，并且具有选定 IP 地址的节点开始响应 LoadBalancer 服务中配置的端口上的 HTTP 请求：
+
+$ curl -D- http://203.0.113.10 -H 'Host: myapp.example.com'
+HTTP/1.1 200 OK
+Server: nginx/1.15.2
+!!! 提示 为了保留发送到 NGINX 的 HTTP 请求中的源 IP 地址，必须使用流量策略。流量策略在流量策略以及下一节中Local 有更详细的描述。
+
+通过 NodePort 服务
+由于其简单性，这是用户按照安装指南中描述的步骤时默认部署的设置 。
+
+!!! info 类型的服务NodePort通过kube-proxy组件在每个 Kubernetes 节点（包括主节点）上公开相同的非特权端口（默认值：30000-32767）。有关更多信息，请参阅服务。
+
+在此配置中，NGINX 容器与主机网络保持隔离。因此，它可以安全地绑定到任何端口，包括标准 HTTP 端口 80 和 443。但是，由于容器命名空间隔离，位于集群网络外部（例如在公共互联网上）的客户端无法直接通过端口 80 和 443 访问 Ingress 主机。相反，外部客户端必须将分配给服务的 NodePort 附加ingress-nginx到 HTTP 请求。
+
+NodePort 请求流程
+
+30100!!! 例如给定分配给ingress-nginx服务的NodePort
+
+```console
+$ kubectl -n ingress-nginx get svc
+NAME                   TYPE        CLUSTER-IP     PORT(S)
+default-http-backend   ClusterIP   10.0.64.249    80/TCP
+ingress-nginx          NodePort    10.0.220.217   80:30100/TCP,443:30101/TCP
+```
+
+and a Kubernetes node with the public IP address `203.0.113.2` (the external IP is added as an example, in most
+bare-metal environments this value is <None\>)
+
+```console
+$ kubectl get node
+NAME     STATUS   ROLES    EXTERNAL-IP
+host-1   Ready    master   203.0.113.1
+host-2   Ready    node     203.0.113.2
+host-3   Ready    node     203.0.113.3
+```
+
+a client would reach an Ingress with `host: myapp.example.com` at `http://myapp.example.com:30100`, where the
+myapp.example.com subdomain resolves to the 203.0.113.2 IP address.
+!!! 危险“对主机系统的影响”虽然使用 API 服务器标志重新配置 NodePort 范围以包含非特权端口并能够公开端口 80 和 443 听起来很诱人，但这样做可能会导致意外问题，包括（但不限于）使用原本保留给系统守护进程的端口以及授予原本可能不需要的特权的--service-node-port-range必要性 。kube-proxy
+
+This practice is therefore **discouraged**. See the other approaches proposed in this page for alternatives.
+这种方法还有一些其他的局限性，需要注意：
+
+源 IP 地址
+NodePort 类型的服务默认会进行源地址转换，也就是说从 NGINX 的角度来看， HTTP 请求的源 IP 始终是接收请求的 Kubernetes 节点的 IP 地址。
+
+在 NodePort 设置中保留源 IP 的推荐方法是将服务规范externalTrafficPolicy 的字段值设置ingress-nginx为Local（示例）。
+
+!!! 警告 此设置会有效丢弃发送到未运行任何 NGINX Ingress 控制器实例的 Kubernetes 节点的数据包。考虑将 NGINX Pod 分配给特定节点，以控制应在哪些节点上调度或不调度 Ingress-Nginx Controller。
+
+!!! 例如 在一个由 3 个节点组成的 Kubernetes 集群中（添加外部 IP 作为示例，在大多数裸机环境中此值为 <None>）
+
+```console
+$ kubectl get node
+NAME     STATUS   ROLES    EXTERNAL-IP
+host-1   Ready    master   203.0.113.1
+host-2   Ready    node     203.0.113.2
+host-3   Ready    node     203.0.113.3
+```
+
+with a `ingress-nginx-controller` Deployment composed of 2 replicas
+
+```console
+$ kubectl -n ingress-nginx get pod -o wide
+NAME                                       READY   STATUS    IP           NODE
+default-http-backend-7c5bc89cc9-p86md      1/1     Running   172.17.1.1   host-2
+ingress-nginx-controller-cf9ff8c96-8vvf8   1/1     Running   172.17.0.3   host-3
+ingress-nginx-controller-cf9ff8c96-pxsds   1/1     Running   172.17.1.4   host-2
+```
+
+Requests sent to `host-2` and `host-3` would be forwarded to NGINX and original client's IP would be preserved,
+while requests to `host-1` would get dropped because there is no NGINX replica running on that node.
+入口状态
+由于 NodePort Services 没有获得定义分配的 LoadBalancerIP，因此 Ingress-Nginx Controller不会更新其管理的 Ingress 对象的状态。
+
+$ kubectl get ingress
+NAME           HOSTS               ADDRESS   PORTS
+test-ingress   myapp.example.com             80
+尽管没有负载均衡器为 Ingress-Nginx Controller 提供公网 IP 地址，但可以通过设置ServiceexternalIPs的字段强制更新所有管理的 Ingress 对象的状态ingress-nginx 。
+
+externalIPs!!! 警告除了启用 Ingress-Nginx Controller 来更新 Ingress 对象的状态之外，还有更多设置。请阅读官方 Kubernetes 文档的服务页面中的此选项以及本文档中有关外部 IP 的部分以获取更多信息。
+
+!!! 示例 给出以下 3 节点 Kubernetes 集群（作为示例添加外部 IP，在大多数裸机环境中此值为 <None>）
+
+```console
+$ kubectl get node
+NAME     STATUS   ROLES    EXTERNAL-IP
+host-1   Ready    master   203.0.113.1
+host-2   Ready    node     203.0.113.2
+host-3   Ready    node     203.0.113.3
+```
+
+one could edit the `ingress-nginx` Service and add the following field to the object spec
+
+```yaml
+spec:
+  externalIPs:
+  - 203.0.113.1
+  - 203.0.113.2
+  - 203.0.113.3
+```
+
+which would in turn be reflected on Ingress objects as follows:
+
+```console
+$ kubectl get ingress -o wide
+NAME           HOSTS               ADDRESS                               PORTS
+test-ingress   myapp.example.com   203.0.113.1,203.0.113.2,203.0.113.3   80
+```
+重定向
+由于 NGINX不知道 NodePort 服务操作的端口转换，后端应用程序负责生成重定向 URL，该 URL 会考虑外部客户端（包括 NodePort）使用的 URL。
+
+!!! 例如，由 NGINX 生成的重定向（例如 HTTP 到 HTTPS 或domain）www.domain无需 NodePort 即可生成：
+
+```console
+$ curl -D- http://myapp.example.com:30100`
+HTTP/1.1 308 Permanent Redirect
+Server: nginx/1.15.2
+Location: https://myapp.example.com/  #-> missing NodePort in HTTPS redirect
+```
+通过主机网络
+在没有外部负载均衡器可用但无法使用 NodePort 的设置中，可以将 ingress-nginxPod 配置为使用其运行的主机的网络，而不是专用的网络命名空间。这种方法的好处是 Ingress-Nginx 控制器可以将端口 80 和 443 直接绑定到 Kubernetes 节点的网络接口，而无需 NodePort 服务施加的额外网络转换。
+
+!!! 注意此方法没有利用任何 Service 对象来暴露 Ingress-Nginx Controller。如果ingress-nginx 目标集群中存在该 Service，建议删除它。
+
+hostNetwork这可以通过在 Pods 规范中启用该选项来实现。
+
+template:
+  spec:
+    hostNetwork: true
+!!! danger “安全注意事项” 启用此选项会将任何网络接口上的每个系统守护进程暴露给 Ingress-Nginx 控制器，包括主机的环回。请仔细评估这可能对系统安全性造成的影响。
+
+!!! 例如，考虑这个ingress-nginx-controller由 2 个副本组成的部署，NGINX Pods 从其主机的 IP 地址继承，而不是内部 Pod IP。
+
+```console
+$ kubectl -n ingress-nginx get pod -o wide
+NAME                                       READY   STATUS    IP            NODE
+default-http-backend-7c5bc89cc9-p86md      1/1     Running   172.17.1.1    host-2
+ingress-nginx-controller-5b4cf5fc6-7lg6c   1/1     Running   203.0.113.3   host-3
+ingress-nginx-controller-5b4cf5fc6-lzrls   1/1     Running   203.0.113.2   host-2
+```
+这种部署方法的一个主要限制是，每个集群节点上只能调度一个 Ingress-Nginx Controller Pod，因为从技术上讲，在同一网络接口上多次绑定同一端口是不可能的。由于这种情况而无法调度的 Pod 会失败并出现以下事件：
+
+$ kubectl -n ingress-nginx describe pod <unschedulable-ingress-nginx-controller-pod>
+...
+Events:
+  Type     Reason            From               Message
+  ----     ------            ----               -------
+  Warning  FailedScheduling  default-scheduler  0/3 nodes are available: 3 node(s) didn't have free ports for the requested pod ports.
+确保仅创建可调度 Pod 的一种方法是将 Ingress-Nginx Controller 部署为DaemonSet，而不是传统的 Deployment。
+
+!!! info DaemonSet 为每个集群节点（包括主节点）精确调度一种类型的 Pod，除非节点配置为 排斥这些 Pod。有关更多信息，请参阅DaemonSet。
+
+由于 DaemonSet 对象的大多数属性与 Deployment 对象相同，因此本文档页面将相应清单的配置留给用户自行决定。
+
+DaemonSet 与主机网络流
+
+与 NodePorts 类似，这种方法有一些需要注意的怪癖。
+
+DNS 解析
+配置为 的 PodhostNetwork: true不使用内部 DNS 解析器（即kube-dns或CoreDNS），除非其dnsPolicyspec 字段设置为ClusterFirstWithHostNet。如果出于任何原因需要 NGINX 解析内部名称，请考虑使用此设置。
+
+入口状态
+由于在使用主机网络的配置中没有公开 Ingress-Nginx 控制器的服务，因此 --publish-service标准云设置中使用的默认标志不适用，并且所有 Ingress 对象的状态保持空白。
+
+$ kubectl get ingress
+NAME           HOSTS               ADDRESS   PORTS
+test-ingress   myapp.example.com             80
+相反，由于裸机节点通常没有 ExternalIP，因此必须启用该 --report-node-internal-ip-address标志，将所有 Ingress 对象的状态设置为运行 Ingress-Nginx 控制器的所有节点的内部 IP 地址。
+
+!!! 例如给定一个ingress-nginx-controller由 2 个副本组成的 DaemonSet
+
+```console
+$ kubectl -n ingress-nginx get pod -o wide
+NAME                                       READY   STATUS    IP            NODE
+default-http-backend-7c5bc89cc9-p86md      1/1     Running   172.17.1.1    host-2
+ingress-nginx-controller-5b4cf5fc6-7lg6c   1/1     Running   203.0.113.3   host-3
+ingress-nginx-controller-5b4cf5fc6-lzrls   1/1     Running   203.0.113.2   host-2
+```
+
+the controller sets the status of all Ingress objects it manages to the following value:
+
+```console
+$ kubectl get ingress -o wide
+NAME           HOSTS               ADDRESS                   PORTS
+test-ingress   myapp.example.com   203.0.113.2,203.0.113.3   80
+```
+!!! note 或者，可以使用标志覆盖写入 Ingress 对象的地址 --publish-status-address。请参阅命令行参数。
+
+使用自行配置的边缘
+与云环境类似，此部署方法需要边缘网络组件来提供 Kubernetes 集群的公共入口点。此边缘组件可以是硬件（例如供应商设备）或软件（例如HAproxy），并且通常由运营团队在 Kubernetes 环境之外进行管理。
+
+这种部署基于上文在 NodePort 服务上描述的 NodePort 服务，但有一个显著的区别：外部客户端不直接访问集群节点，只有边缘组件可以访问。这特别适用于没有一个节点具有公共 IP 地址的私有 Kubernetes 集群。
+
+在边缘端，唯一的先决条件是指定一个公共 IP 地址，将所有 HTTP 流量转发到 Kubernetes 节点和/或主节点。TCP 端口 80 和 443 上的传入流量将转发到目标节点上相应的 HTTP 和 HTTPS NodePort，如下图所示：
+
+用户边缘
+
+外部 IP
+!!! 危险“源 IP 地址”此方法不允许以任何方式保留 HTTP 请求的源 IP，因此尽管它看似简单，但不建议使用它。
+
+Service选项之前在NodePortexternalIPs部分提到过。
+
+根据Kubernetes 官方文档的服务externalIPs页面，该选项会将 发送到任意 IP 地址和服务端口的kube-proxy流量路由到该服务的端点。这些 IP 地址必须属于目标节点。
+
+!!! 示例 给出以下 3 节点 Kubernetes 集群（作为示例添加外部 IP，在大多数裸机环境中此值为 <None>）
+
+```console
+$ kubectl get node
+NAME     STATUS   ROLES    EXTERNAL-IP
+host-1   Ready    master   203.0.113.1
+host-2   Ready    node     203.0.113.2
+host-3   Ready    node     203.0.113.3
+```
+
+and the following `ingress-nginx` NodePort Service
+
+```console
+$ kubectl -n ingress-nginx get svc
+NAME                   TYPE        CLUSTER-IP     PORT(S)
+ingress-nginx          NodePort    10.0.220.217   80:30100/TCP,443:30101/TCP
+```
+
+One could set the following external IPs in the Service spec, and NGINX would become available on both the NodePort
+and the Service port:
+
+```yaml
+spec:
+  externalIPs:
+  - 203.0.113.2
+  - 203.0.113.3
+```
+
+```console
+$ curl -D- http://myapp.example.com:30100
+HTTP/1.1 200 OK
+Server: nginx/1.15.2
+
+$ curl -D- http://myapp.example.com
+HTTP/1.1 200 OK
+Server: nginx/1.15.2
+```
+
+We assume the myapp.example.com subdomain above resolves to both 203.0.113.2 and 203.0.113.3 IP addresses.
+
+#####################################################################################################################################
+公开 TCP 和 UDP 服务
+Ingress 不支持 TCP 或 UDP 服务。因此，此 Ingress 控制器使用标志--tcp-services-configmap和--udp-services-configmap指向现有配置映射，其中键是要使用的外部端口，值表示要使用以下格式公开的服务： <namespace/service name>:<service port>:[PROXY]:[PROXY]
+
+也可以使用数字或端口名称。最后两个字段是可选的。添加PROXY最后两个字段中的任意一个或两个，我们可以在 TCP 服务中使用代理协议PROXY解码 (listen) 和/或编码 (proxy_pass)。第一个控制代理协议的解码，第二个PROXY控制使用代理协议的编码。这允许解码传入连接或编码传出连接。还可以通过在 TCP 服务上打开解码和编码来在两个不同的代理之间进行仲裁。
+
+下一个示例展示如何使用端口公开在example-go命名空间中运行的服务default8080 9000
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tcp-services
+  namespace: ingress-nginx
+data:
+  9000: "default/example-go:8080"
+自 1.9.13 版本起，NGINX 提供UDP 负载均衡。下一个例子展示了如何使用端口号在端口中暴露kube-dns命名空间中运行的服务kube-system5353
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: udp-services
+  namespace: ingress-nginx
+data:
+  53: "kube-system/kube-dns:53"
+如果使用 TCP/UDP 代理支持，则需要在为 Ingress 定义的服务中公开这些端口。
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: 443
+      protocol: TCP
+    - name: proxied-tcp-9000
+      port: 9000
+      targetPort: 9000
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+然后，应该将配置映射添加到入口控制器的部署参数中。
+
+ args:
+    - /nginx-ingress-controller
+    - --tcp-services-configmap=ingress-nginx/tcp-services
+
+##############################################################################################################
+基本用法-基于主机的路由
+ingress-nginx 可用于多种用例，在各种云提供商内部使用，并支持多种配置。在本节中，您可以找到一个常见的使用场景，其中由 ingress-nginx 提供支持的单个负载均衡器将根据主机名将流量路由到 2 个不同的 HTTP 后端服务。
+
+首先按照说明安装 ingress-nginx。然后假设您需要公开已安装的 2 个 HTTP 服务，myServiceA，myServiceB，并配置为type: ClusterIP。
+
+假设您想要在 处公开第一个myServiceA.foo.org，在 处公开第二个myServiceB.foo.org。
+
+如果集群版本 <1.19，则可以像这样创建两个ingress资源：
+
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-myservicea
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: myservicea.foo.org
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: myservicea
+          servicePort: 80
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-myserviceb
+  annotations:
+    # use the shared ingress-nginx
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+  - host: myserviceb.foo.org
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: myserviceb
+          servicePort: 80
+如果集群使用 Kubernetes 版本 >= 1.19.x，则建议创建 2 个 ingress 资源，使用下面显示的 yaml 示例。这些示例符合 api networking.kubernetes.io/v1。
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-myservicea
+spec:
+  rules:
+  - host: myservicea.foo.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: myservicea
+            port:
+              number: 80
+  ingressClassName: nginx
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-myserviceb
+spec:
+  rules:
+  - host: myserviceb.foo.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: myserviceb
+            port:
+              number: 80
+  ingressClassName: nginx
+当您应用此 yaml 时，将创建由ingress-nginx实例管理的 2 个入口资源。Nginx 配置为自动发现所有带有kubernetes.io/ingress.class: "nginx"注释或ingressClassName: nginx存在注释的入口。请注意，入口资源应放置在后端资源的同一命名空间内。
+
+在许多云提供商上，ingress-nginx 还将创建相应的负载均衡器资源。您所要做的就是获取外部 IP，并A record在 DNS 提供商内部添加 DNS，将 myservicea.foo.org 和 myserviceb.foo.org 指向 nginx 外部 IP。通过运行以下命令获取外部 IP：
+
+kubectl get services -n ingress-nginx
+要在 minikube 内部进行测试，请参阅此文档：使用 NGINX Ingress Controller 在 Minikube 上设置 Ingress

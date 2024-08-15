@@ -29,6 +29,7 @@
     - addons_multus
     - addons_prometheus
     - addons_nfs
+    - addons_ingress
     - addons_kubesphere
   ignore_errors: true
 
@@ -49,6 +50,9 @@
 - import_tasks: nfs.yml
   tags: addons_nfs
 #  when: '"nfs-client-provisioner" not in pod_info.stdout'
+
+- import_tasks: ingress.yml
+  tags: addons_ingress
 
 - import_tasks: metrics-server.yml
   tags: addons_metrics

@@ -1,0 +1,381 @@
+https://github.com/kubernetes/ingress-nginx/blob/main/docs/user-guide/monitoring.md
+
+监控
+本文档介绍了安装和配置 Prometheus 和 Grafana 的两种不同方法。
+
+使用 Pod Annotations 安装 Prometheus 和 Grafana。这会将 Prometheus 和 Grafana 安装在与 NGINX Ingress 相同的命名空间中
+使用服务监视器安装 Prometheus 和 Grafana。这会在两个不同的命名空间中安装 Prometheus 和 Grafana。这是首选方法，helm charts 默认支持此方法。
+使用 Pod Annotations 安装 Prometheus 和 Grafana
+本教程将向您展示如何安装Prometheus和Grafana以抓取 Ingress-Nginx 控制器的指标。
+
+!!! 重要 此示例使用emptyDirPrometheus 和 Grafana 的卷。这意味着一旦 pod 终止，您将丢失所有数据。
+
+开始之前
+Ingress-Nginx Controller 应该已经根据此处的部署说明进行了部署。
+
+应配置控制器以导出指标。这需要对控制器进行 3 项配置。这些配置是：
+
+控制器.metrics.enabled=true
+controller.podAnnotations。“prometheus.io/scrape”=“true”
+controller.podAnnotations。“prometheus.io/port”=“10254”
+配置控制器以获取指标的最简单方法是通过 helm upgrade。假设您已将 ingress-nginx 控制器安装为名为 ingress-nginx 的 helm 版本，那么您只需键入以下命令即可：
+helm upgrade ingress-nginx ingress-nginx \
+--repo https://kubernetes.github.io/ingress-nginx \
+--namespace ingress-nginx \
+--set controller.metrics.enabled=true \
+--set-string controller.podAnnotations."prometheus\.io/scrape"="true" \
+--set-string controller.podAnnotations."prometheus\.io/port"="10254"
+您可以通过查看已安装版本的值来验证控制器是否已针对指标进行配置，如下所示：
+helm get values ingress-nginx --namespace ingress-nginx
+您应该能够看到下面显示的值：
+..
+controller:
+  metrics:
+    enabled: true
+  podAnnotations:
+    prometheus.io/port: "10254"
+    prometheus.io/scrape: "true"
+..
+如果您不使用 helm，则必须像这样编辑清单：
+服务清单：
+apiVersion: v1
+kind: Service
+..
+spec:
+  ports:
+    - name: prometheus
+      port: 10254
+      targetPort: prometheus
+      ..
+
+部署清单：
+apiVersion: v1
+kind: Deployment
+..
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "10254"
+    spec:
+      containers:
+        - name: controller
+          ports:
+            - name: prometheus
+              containerPort: 10254
+            ..
+部署并配置 Prometheus 服务器
+请注意，本教程中使用的 kustomize 基础存储在GitHub 存储库kubernetes/ingress-nginx的deploy文件夹中。
+
+必须配置 Prometheus 服务器，以便它能够发现服务的端点。如果集群中已运行 Prometheus 服务器，并且配置为可以找到入口控制器 pod，则无需额外配置。
+
+如果没有现有的 Prometheus 服务器正在运行，本教程的其余部分将指导您完成部署正确配置的 Prometheus 服务器所需的步骤。
+
+运行以下命令在 Kubernetes 中部署 prometheus：
+
+kubectl apply --kustomize github.com/kubernetes/ingress-nginx/deploy/prometheus/
+Prometheus 仪表板
+在 Web 浏览器中打开 Prometheus 仪表板：
+
+kubectl get svc -n ingress-nginx
+NAME                   TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                                      AGE
+default-http-backend   ClusterIP   10.103.59.201   <none>        80/TCP                                       3d
+ingress-nginx          NodePort    10.97.44.72     <none>        80:30100/TCP,443:30154/TCP,10254:32049/TCP   5h
+prometheus-server      NodePort    10.98.233.86    <none>        9090:32630/TCP                               1m
+获取正在运行的集群中节点的IP地址：
+kubectl get nodes -o wide
+在某些情况下，如果节点只有内部 IP 地址，我们需要执行：
+kubectl get nodes --selector=kubernetes.io/role!=master -o jsonpath={.items[*].status.addresses[?\(@.type==\"InternalIP\"\)].address}
+10.192.0.2 10.192.0.3 10.192.0.4
+打开浏览器并访问以下 URL：http://{节点 IP 地址}:{prometheus-svc-nodeport}以加载 Prometheus 仪表板。
+
+根据上述示例，此 URL 将是http://10.192.0.3:32630
+
+Prometheus 仪表板
+
+格拉法纳
+使用以下命令安装 grafana
+kubectl apply --kustomize github.com/kubernetes/ingress-nginx/deploy/grafana/
+查看服务
+kubectl get svc -n ingress-nginx
+NAME                   TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                                      AGE
+default-http-backend   ClusterIP   10.103.59.201   <none>        80/TCP                                       3d
+ingress-nginx          NodePort    10.97.44.72     <none>        80:30100/TCP,443:30154/TCP,10254:32049/TCP   5h
+prometheus-server      NodePort    10.98.233.86    <none>        9090:32630/TCP                               10m
+grafana                NodePort    10.98.233.87    <none>        3000:31086/TCP                               10m
+打开浏览器并访问以下 URL：http://{节点 IP 地址}:{grafana-svc-nodeport}以加载 Grafana 仪表板。根据上述示例，此 URL 将为http://10.192.0.3:31086
+用户名和密码是admin
+
+登录后，您可以按照以下步骤从官方仪表板导入 Grafana 仪表板：
+
+导航到 Grafana 的左侧面板
+将鼠标悬停在配置的齿轮图标上，然后单击“数据源”
+点击“添加数据源”
+选择“普罗米修斯”
+输入详细信息（注意：我使用了http：//CLUSTER_IP_PROMETHEUS_SVC：9090）
+左侧菜单（悬停在 + 上）-> 仪表板
+点击“导入”
+输入从https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/grafana/dashboards/nginx.json复制粘贴的 json
+单击“导入 JSON”
+选择 Prometheus 数据源
+点击“导入”
+Grafana 仪表板
+
+注意事项
+通配符入口
+默认情况下，请求指标会用主机名标记。当您有通配符域入口时，该入口将没有指标（以防止指标基数爆炸）。要在这种情况下获取指标，您需要使用以下命令运行入口控制器--metrics-per-host=false（您将失去按主机名标记，但仍有按入口标记）。
+使用入口资源的 Grafana 仪表板
+如果您想使用入口资源公开 grafana 的仪表板，那么您可以：
+将 prometheus-server 服务和 grafana 服务的服务类型更改为“ClusterIP”，如下所示：
+kubectl -n ingress-nginx edit svc grafana
+这将在你的 shell 中配置的默认编辑器 (vi/nvim/nano/other) 中打开当前部署的服务 grafana
+向下滚动到第 34 行，看起来像“type: NodePort”
+将其更改为“type: ClusterIP”。保存并退出。
+创建一个入口资源，后端为“grafana”，端口为“3000”
+类似地，您可以编辑服务“prometheus-server”并添加入口资源。
+使用服务监视器安装 Prometheus 和 Grafana
+本文档假设您正在使用 helm 并使用 kube-prometheus-stack 包来安装 Prometheus 和 Grafana。
+
+验证 Ingress-Nginx Controller 是否已安装
+Ingress-Nginx Controller 应该已经根据此处的部署说明进行了部署。
+
+要检查 Ingress 控制器是否已部署，
+
+kubectl get pods -n ingress-nginx
+结果看起来应该是这样的：
+
+NAME                                        READY   STATUS    RESTARTS   AGE
+ingress-nginx-controller-7c489dc7b7-ccrf6   1/1     Running   0          19h
+验证 Prometheus 是否已安装
+要检查 Prometheus 是否已部署，请运行以下命令：
+
+helm ls -A
+NAME         	NAMESPACE    	REVISION	UPDATED                             	STATUS  	CHART                       	APP VERSION
+ingress-nginx	ingress-nginx	10      	2022-01-20 18:08:55.267373 -0800 PST	deployed	ingress-nginx-4.0.16        	1.1.1
+prometheus   	prometheus   	1       	2022-01-20 16:07:25.086828 -0800 PST	deployed	kube-prometheus-stack-30.1.0	0.53.1
+请注意，prometheus 安装在与 ingress-nginx 不同的命名空间中
+
+如果没有安装prometheus，那么你可以从这里安装
+
+重新配置 Ingress-Nginx 控制器
+需要重新配置 Ingress NGINX 控制器以导出指标。这需要对控制器进行 3 项额外配置。这些配置是：
+
+controller.metrics.enabled=true
+controller.metrics.serviceMonitor.enabled=true
+controller.metrics.serviceMonitor.additionalLabels.release="prometheus"
+最简单的方法是 helm upgrade
+
+helm upgrade ingress-nginx ingress-nginx/ingress-nginx \
+--namespace ingress-nginx \
+--set controller.metrics.enabled=true \
+--set controller.metrics.serviceMonitor.enabled=true \
+--set controller.metrics.serviceMonitor.additionalLabels.release="prometheus"
+此处controller.metrics.serviceMonitor.additionalLabels.release="prometheus"应与 Helm 版本的名称相匹配kube-prometheus-stack
+
+您可以通过查看已安装版本的值来验证控制器是否已成功重新配置为导出指标，如下所示：
+
+helm get values ingress-nginx --namespace ingress-nginx
+controller:
+  metrics:
+    enabled: true
+    serviceMonitor:
+      additionalLabels:
+        release: prometheus
+      enabled: true
+配置 Prometheus
+由于 Prometheus 运行在不同的命名空间中，而不是在 ingress-nginx 命名空间中，因此安装后它将无法发现其他命名空间中的 ServiceMonitors。重新配置 kube-prometheus-stack Helm 安装以将标志设置为 false。默认情况下，Prometheus 仅发现其自身命名空间内的 PodMonitors。应通过将其设置为 falseserviceMonitorSelectorNilUsesHelmValues来禁用此功能podMonitorSelectorNilUsesHelmValues
+所需的配置是：
+prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false
+prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false
+最简单的方法是使用helm upgrade ...
+helm upgrade prometheus prometheus-community/kube-prometheus-stack \
+--namespace prometheus  \
+--set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
+--set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false
+您可以通过查看已安装版本的值来验证 Prometheus 是否已重新配置，如下所示：
+helm get values prometheus --namespace prometheus
+您应该能够看到下面显示的值：
+prometheus:
+  prometheusSpec:
+    podMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelectorNilUsesHelmValues: false
+连接并查看 Prometheus 仪表板
+端口转发到 Prometheus 服务。使用以下命令找出 prometheus 服务的名称：
+
+kubectl get svc -n prometheus
+该命令的执行结果如下：
+
+NAME                                      TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+alertmanager-operated                     ClusterIP   None             <none>        9093/TCP,9094/TCP,9094/UDP   7h46m
+prometheus-grafana                        ClusterIP   10.106.28.162    <none>        80/TCP                       7h46m
+prometheus-kube-prometheus-alertmanager   ClusterIP   10.108.125.245   <none>        9093/TCP                     7h46m
+prometheus-kube-prometheus-operator       ClusterIP   10.110.220.1     <none>        443/TCP                      7h46m
+prometheus-kube-prometheus-prometheus     ClusterIP   10.102.72.134    <none>        9090/TCP                     7h46m
+prometheus-kube-state-metrics             ClusterIP   10.104.231.181   <none>        8080/TCP                     7h46m
+prometheus-operated                       ClusterIP   None             <none>        9090/TCP                     7h46m
+prometheus-prometheus-node-exporter       ClusterIP   10.96.247.128    <none>        9100/TCP                     7h46m
+prometheus-kube-prometheus-prometheus 是我们要转发到的服务。我们可以使用以下命令执行此操作：
+
+kubectl port-forward svc/prometheus-kube-prometheus-prometheus -n prometheus 9090:9090
+当你运行上述命令时，你应该看到类似这样的内容：
+
+Forwarding from 127.0.0.1:9090 -> 9090
+Forwarding from [::1]:9090 -> 9090
+打开浏览器并访问以下 URL http://localhost:{port-forwarded-port}根据上面的例子，它将是http://localhost:9090
+
+Prometheus 仪表板
+
+连接并查看 Grafana 仪表板
+端口转发到 Grafana 服务。使用以下命令找出 Grafana 服务的名称：
+
+kubectl get svc -n prometheus
+该命令的执行结果如下：
+
+NAME                                      TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+alertmanager-operated                     ClusterIP   None             <none>        9093/TCP,9094/TCP,9094/UDP   7h46m
+prometheus-grafana                        ClusterIP   10.106.28.162    <none>        80/TCP                       7h46m
+prometheus-kube-prometheus-alertmanager   ClusterIP   10.108.125.245   <none>        9093/TCP                     7h46m
+prometheus-kube-prometheus-operator       ClusterIP   10.110.220.1     <none>        443/TCP                      7h46m
+prometheus-kube-prometheus-prometheus     ClusterIP   10.102.72.134    <none>        9090/TCP                     7h46m
+prometheus-kube-state-metrics             ClusterIP   10.104.231.181   <none>        8080/TCP                     7h46m
+prometheus-operated                       ClusterIP   None             <none>        9090/TCP                     7h46m
+prometheus-prometheus-node-exporter       ClusterIP   10.96.247.128    <none>        9100/TCP                     7h46m
+prometheus-grafana 是我们要转发到的服务。我们可以使用以下命令执行此操作：
+
+kubectl port-forward svc/prometheus-grafana  3000:80 -n prometheus
+当你运行上述命令时，你应该看到类似这样的内容：
+
+Forwarding from 127.0.0.1:3000 -> 3000
+Forwarding from [::1]:3000 -> 3000
+打开浏览器并访问以下 URL http://localhost:{port-forwarded-port}根据上面的例子，它将是http://localhost:3000 默认用户名/密码是 admin/prom-operator
+
+登录后，您可以按照以下步骤从官方仪表板导入 Grafana 仪表板：
+
+导航到 Grafana 的左侧面板
+将鼠标悬停在配置的齿轮图标上，然后单击“数据源”
+点击“添加数据源”
+选择“普罗米修斯”
+输入详细信息（注意：我使用了http://10.102.72.134:9090，这是 Prometheus 服务的 CLUSTER-IP）
+左侧菜单（悬停在 + 上）-> 仪表板
+点击“导入”
+输入从https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/grafana/dashboards/nginx.json复制粘贴的 json
+单击“导入 JSON”
+选择 Prometheus 数据源
+点击“导入”
+Grafana 仪表板
+
+公开指标
+Prometheus 指标在端口 10254 上公开。
+
+请求指标
+nginx_ingress_controller_request_duration_seconds直方图
+请求处理（从客户端读取第一个字节和将最后一个字节发送到客户端后写入日志之间的时间）时间（以秒为单位）（受客户端速度影响）。nginx
+var：request_time
+
+nginx_ingress_controller_response_duration_seconds直方图
+从上游服务器接收响应所花费的时间（以秒为单位）（当响应大于代理缓冲区时，受客户端速度影响）。注意：由于测量方法不同，
+可能比这个大几毫秒。nginx var：nginx_ingress_controller_request_duration_secondsupstream_response_time
+
+nginx_ingress_controller_header_duration_seconds直方图
+从上游服务器 nginx var 接收第一个标头所花费的时间
+：upstream_header_time
+
+nginx_ingress_controller_connect_duration_seconds直方图
+与上游服务器 nginx var 建立连接所花费的时间
+：upstream_connect_time
+
+nginx_ingress_controller_response_size直方图
+响应长度（包括请求行、标头和请求正文）
+nginx var：bytes_sent
+
+nginx_ingress_controller_request_size直方图
+请求长度（包括请求行、请求头、请求体）
+nginx var:request_length
+
+nginx_ingress_controller_requests计数器
+客户端请求总数
+
+nginx_ingress_controller_bytes_sent直方图
+发送给客户端的字节数。已弃用，使用nginx_ingress_controller_response_size
+nginx var：bytes_sent
+
+nginx_ingress_controller_ingress_upstream_latency_seconds总结
+每个 Ingress 的上游服务延迟。已弃用，请使用nginx_ingress_controller_connect_duration_seconds
+nginx var：upstream_connect_time
+
+# HELP nginx_ingress_controller_bytes_sent The number of bytes sent to a client. DEPRECATED! Use nginx_ingress_controller_response_size
+# TYPE nginx_ingress_controller_bytes_sent histogram
+# HELP nginx_ingress_controller_connect_duration_seconds The time spent on establishing a connection with the upstream server
+# TYPE nginx_ingress_controller_connect_duration_seconds nginx_ingress_controller_connect_duration_seconds
+* HELP nginx_ingress_controller_header_duration_seconds The time spent on receiving first header from the upstream server
+# TYPE nginx_ingress_controller_header_duration_seconds histogram
+# HELP nginx_ingress_controller_ingress_upstream_latency_seconds Upstream service latency per Ingress DEPRECATED! Use nginx_ingress_controller_connect_duration_seconds
+# TYPE nginx_ingress_controller_ingress_upstream_latency_seconds summary
+# HELP nginx_ingress_controller_request_duration_seconds The request processing time in milliseconds
+# TYPE nginx_ingress_controller_request_duration_seconds histogram
+# HELP nginx_ingress_controller_request_size The request length (including request line, header, and request body)
+# TYPE nginx_ingress_controller_request_size histogram
+# HELP nginx_ingress_controller_requests The total number of client requests.
+# TYPE nginx_ingress_controller_requests counter
+# HELP nginx_ingress_controller_response_duration_seconds The time spent on receiving the response from the upstream server
+# TYPE nginx_ingress_controller_response_duration_seconds histogram
+# HELP nginx_ingress_controller_response_size The response length (including request line, header, and request body)
+# TYPE nginx_ingress_controller_response_size histogram
+Nginx 进程指标
+# HELP nginx_ingress_controller_nginx_process_connections current number of client connections with state {active, reading, writing, waiting}
+# TYPE nginx_ingress_controller_nginx_process_connections gauge
+# HELP nginx_ingress_controller_nginx_process_connections_total total number of connections with state {accepted, handled}
+# TYPE nginx_ingress_controller_nginx_process_connections_total counter
+# HELP nginx_ingress_controller_nginx_process_cpu_seconds_total Cpu usage in seconds
+# TYPE nginx_ingress_controller_nginx_process_cpu_seconds_total counter
+# HELP nginx_ingress_controller_nginx_process_num_procs number of processes
+# TYPE nginx_ingress_controller_nginx_process_num_procs gauge
+# HELP nginx_ingress_controller_nginx_process_oldest_start_time_seconds start time in seconds since 1970/01/01
+# TYPE nginx_ingress_controller_nginx_process_oldest_start_time_seconds gauge
+# HELP nginx_ingress_controller_nginx_process_read_bytes_total number of bytes read
+# TYPE nginx_ingress_controller_nginx_process_read_bytes_total counter
+# HELP nginx_ingress_controller_nginx_process_requests_total total number of client requests
+# TYPE nginx_ingress_controller_nginx_process_requests_total counter
+# HELP nginx_ingress_controller_nginx_process_resident_memory_bytes number of bytes of memory in use
+# TYPE nginx_ingress_controller_nginx_process_resident_memory_bytes gauge
+# HELP nginx_ingress_controller_nginx_process_virtual_memory_bytes number of bytes of memory in use
+# TYPE nginx_ingress_controller_nginx_process_virtual_memory_bytes gauge
+# HELP nginx_ingress_controller_nginx_process_write_bytes_total number of bytes written
+# TYPE nginx_ingress_controller_nginx_process_write_bytes_total counter
+控制器指标
+# HELP nginx_ingress_controller_build_info A metric with a constant '1' labeled with information about the build.
+# TYPE nginx_ingress_controller_build_info gauge
+# HELP nginx_ingress_controller_check_success Cumulative number of Ingress controller syntax check operations
+# TYPE nginx_ingress_controller_check_success counter
+# HELP nginx_ingress_controller_config_hash Running configuration hash actually running
+# TYPE nginx_ingress_controller_config_hash gauge
+# HELP nginx_ingress_controller_config_last_reload_successful Whether the last configuration reload attempt was successful
+# TYPE nginx_ingress_controller_config_last_reload_successful gauge
+# HELP nginx_ingress_controller_config_last_reload_successful_timestamp_seconds Timestamp of the last successful configuration reload.
+# TYPE nginx_ingress_controller_config_last_reload_successful_timestamp_seconds gauge
+# HELP nginx_ingress_controller_ssl_certificate_info Hold all labels associated to a certificate
+# TYPE nginx_ingress_controller_ssl_certificate_info gauge
+# HELP nginx_ingress_controller_success Cumulative number of Ingress controller reload operations
+# TYPE nginx_ingress_controller_success counter
+# HELP nginx_ingress_controller_orphan_ingress Gauge reporting status of ingress orphanity, 1 indicates orphaned ingress. 'namespace' is the string used to identify namespace of ingress, 'ingress' for ingress name and 'type' for 'no-service' or 'no-endpoint' of orphanity
+# TYPE nginx_ingress_controller_orphan_ingress gauge
+录取指标
+# HELP nginx_ingress_controller_admission_config_size The size of the tested configuration
+# TYPE nginx_ingress_controller_admission_config_size gauge
+# HELP nginx_ingress_controller_admission_render_duration The processing duration of ingresses rendering by the admission controller (float seconds)
+# TYPE nginx_ingress_controller_admission_render_duration gauge
+# HELP nginx_ingress_controller_admission_render_ingresses The length of ingresses rendered by the admission controller
+# TYPE nginx_ingress_controller_admission_render_ingresses gauge
+# HELP nginx_ingress_controller_admission_roundtrip_duration The complete duration of the admission controller at the time to process a new event (float seconds)
+# TYPE nginx_ingress_controller_admission_roundtrip_duration gauge
+# HELP nginx_ingress_controller_admission_tested_duration The processing duration of the admission controller tests (float seconds)
+# TYPE nginx_ingress_controller_admission_tested_duration gauge
+# HELP nginx_ingress_controller_admission_tested_ingresses The length of ingresses processed by the admission controller
+# TYPE nginx_ingress_controller_admission_tested_ingresses gauge
+直方图桶
+您可以使用以下命令行选项配置直方图指标的存储桶（以下是它们的默认值）：
+
+--time-buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
+--length-buckets=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+--size-buckets=[10, 100, 1000, 10000, 100000, 1e+06, 1e+07]

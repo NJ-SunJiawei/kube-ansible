@@ -1,0 +1,89 @@
+多个 Ingress 控制器
+默认情况下，部署多个 Ingress 控制器（例如ingress-nginx& gce）将导致所有控制器同时以令人困惑的方式竞相更新 Ingress 状态字段。
+
+要解决此问题，请使用IngressClasses。kubernetes.io/ingress.class不建议使用该注释，因为它将来可能会被弃用。最好使用字段ingress.spec.ingressClassName。但是，当用户使用部署时scope.enabled，则不使用入口类资源字段。
+
+使用 IngressClasses
+如果所有 ingress 控制器都尊重 IngressClasses（例如 ingress-nginx v1.0 的多个实例），则可以通过授予它们对两个不同 IngressClasses 的控制权来部署两个 Ingress 控制器，然后使用 从两个 IngressClasses 中选择一个ingressClassName。
+
+首先，确保每个入口控制器上的--controller-class=和--ingress-class设置为不同的值，如果要将附加入口控制器安装在命名空间中，并且其中已经安装了一个/多个入口 nginx 控制器，那么您需要--election-id为控制器的新实例指定不同的唯一值。
+
+# ingress-nginx Deployment/Statefulset
+spec:
+  template:
+     spec:
+       containers:
+         - name: ingress-nginx-internal-controller
+           args:
+             - /nginx-ingress-controller
+             - '--election-id=ingress-controller-leader'
+             - '--controller-class=k8s.io/internal-ingress-nginx'
+             - '--ingress-class=k8s.io/internal-nginx'
+            ...
+然后在 IngressClass 中使用相同的值：
+
+# ingress-nginx IngressClass
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: internal-nginx
+spec:
+  controller: k8s.io/internal-ingress-nginx
+  ...
+并在你的 Ingress 中引用该 IngressClass：
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress
+spec:
+  ingressClassName: internal-nginx
+  ...
+或者如果使用 Helm 安装：
+
+controller:
+  electionID: ingress-controller-leader
+  ingressClass: internal-nginx  # default: nginx
+  ingressClassResource:
+    name: internal-nginx  # default: nginx
+    enabled: true
+    default: false
+    controllerValue: "k8s.io/internal-ingress-nginx"  # default: k8s.io/ingress-nginx
+！！！ 重要的
+
+When running multiple ingress-nginx controllers, it will only process an unset class annotation if one of the controllers uses the default
+`--controller-class` value (see `IsValid` method in `internal/ingress/annotations/class/main.go`), otherwise the class annotation becomes required.
+
+If `--controller-class` is set to the default value of `k8s.io/ingress-nginx`, the controller will monitor Ingresses with no class annotation *and* Ingresses with annotation class set to `nginx`. Use a non-default value for `--controller-class`, to ensure that the controller only satisfied the specific class of Ingresses.
+使用 kubernetes.io/ingress.class 注释（已弃用）
+如果您运行多个入口控制器，其中一个或多个不支持 IngressClasses，则必须kubernetes.io/ingress.class: "nginx"在您希望 ingress-nginx 声明的所有入口中指定注释。
+
+例如，
+
+metadata:
+  name: foo
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+将以 GCE 控制器为目标，强制 Ingress-NGINX 控制器忽略它，而类似这样的注释：
+
+metadata:
+  name: foo
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+将以 Ingress-NGINX 控制器为目标，强制 GCE 控制器忽略它。
+
+您可以通过设置标志将值“nginx”更改为其他值--ingress-class：
+
+spec:
+  template:
+     spec:
+       containers:
+         - name: ingress-nginx-internal-controller
+           args:
+             - /nginx-ingress-controller
+             - --ingress-class=internal-nginx
+kubernetes.io/ingress.class: "internal-nginx"然后在 Ingress 上设置相应的注释。
+
+重申一下，将注释设置为任何与有效入口类不匹配的值都会强制 Ingress-Nginx 控制器忽略您的入口。如果您只运行一个 Ingress-Nginx 控制器，则可以通过将注释设置为除“nginx”或空字符串之外的任何值来实现。
+
+如果您希望同时使用 NGINX 控制器和其他 Ingress 控制器之一，请执行此操作。
