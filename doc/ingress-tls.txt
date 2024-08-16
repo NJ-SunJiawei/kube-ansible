@@ -1,3 +1,4 @@
+https://github.com/kubernetes/ingress-nginx/blob/controller-v1.8.1/docs/user-guide/tls.md
 TLS/HTTPS
 TLS 机密
 任何时候我们引用 TLS 密钥，我们指的是 PEM 编码的 X.509、RSA（2048）密钥。

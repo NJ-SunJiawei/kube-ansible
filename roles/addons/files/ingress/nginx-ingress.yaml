@@ -367,6 +367,10 @@ spec:
 #    port: 3307
 #    targetPort: 3307
 #    protocol: TCP
+  - name: test-tcp
+    port: 9000
+    targetPort: 9000
+    protocol: TCP
   - name: test-dns
     port: 53
     targetPort: 53
@@ -480,14 +484,18 @@ spec:
         - containerPort: 8443
           name: webhook
           protocol: TCP
+        - containerPort: 9000
+          name: test-tcp
+          protocol: TCP
         # hostPort可以直接使用node节点的网络端口暴露服务
-        #- name: test-mysql
-        #  containerPort: 3306
+        #- containerPort: 3306
+        #  name: test-mysql
         #  hostPort: 3306
-        #- name: test-dns
-        #  containerPort: 53
+        #  protocol: TCP
+        - containerPort: 53
+          name: test-dns
         #  hostPort: 53
-        #  protocol: UDP
+          protocol: UDP
         readinessProbe:
           failureThreshold: 3
           httpGet:
@@ -682,5 +690,6 @@ metadata:
   name: tcp-services
   namespace: ingress-nginx
 data:
+  9000: "default/example-go:8080"
 #  3306: "mariadb/mydb-mariadb:3306"  #添加这个配置 命名空间/服务名称：端口
 #  3307: "mariadb/mydb-mariadb-slave:3306"

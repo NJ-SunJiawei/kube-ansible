@@ -1,0 +1,47 @@
+https://www.kancloud.cn/a365541453/kubernetes/3029994
+
+开源 LoadBalancer
+Metallb 介绍
+k8s的LoadBalancer类型的Service依赖于外部的云提供的Load Balancer。
+但是当我们把k8s安装在自己的服务器上的时候，没有外部云服务商提供的k8s的LoadBalancer，这个时候就可以部署开源的Metallb
+
+安装 Metallb
+使用 Metall 需要将k8s默认的iptables改为ipvs（IPVS介绍）
+
+修改kube-proxy配置
+
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: "ipvs"
+ipvs:
+  strictARP: true
+通过yaml安装
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.4/config/manifests/metallb-native.yaml
+配置Metallb，定义要分配的IP
+在添加配置之前，metallb 是一直处于空闲状态
+
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: first-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.222.230-192.168.222.240
+---
+# 要加在metallb官网中没有下面这个
+# 下面的内容是在ingress-nginx官网中
+# 不加下面的内容，其他电脑不能从集群外面访问到LoadBalancer IP)
+
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: first-l2
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - first-pool
+
+
+检查
+可以看到已经有类型是LoadBalancer的 SVC 分配到了IP

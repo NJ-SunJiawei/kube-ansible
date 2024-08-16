@@ -308,6 +308,8 @@ Server: nginx/1.15.2
 We assume the myapp.example.com subdomain above resolves to both 203.0.113.2 and 203.0.113.3 IP addresses.
 
 #####################################################################################################################################
+https://www.kancloud.cn/a365541453/kubernetes/3032503
+
 公开 TCP 和 UDP 服务
 Ingress 不支持 TCP 或 UDP 服务。因此，此 Ingress 控制器使用标志--tcp-services-configmap和--udp-services-configmap指向现有配置映射，其中键是要使用的外部端口，值表示要使用以下格式公开的服务： <namespace/service name>:<service port>:[PROXY]:[PROXY]
 

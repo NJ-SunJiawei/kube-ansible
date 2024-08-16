@@ -1,0 +1,11 @@
+---
+- name: 准备ingress的部署文件
+  copy: src=ingress dest={{ tmp_dir }}
+  tags: addons_delete
+
+- name: 删除ingress部署
+  shell: "kubectl delete -f {{ tmp_dir }}/ingress/ || echo true; sleep 3"
+  tags: addons_delete
+
+- name: 创建ingress部署
+  shell: "kubectl apply -f {{ tmp_dir }}/ingress/"

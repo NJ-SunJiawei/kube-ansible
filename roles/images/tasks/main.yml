@@ -2,14 +2,16 @@
 - block:
     - name: 创建临时目录
       file: dest={{ tmp_dir }}/images state=directory
-  tags: addons_coredns
-  tags: addons_calico
-  tags: addons_metrics
-  tags: addons_dashboard
-  tags: addons_multus
-  tags: addons_prometheus
-  tags: addons_nfs
-  tags: addons_kubesphere
+  tags: 
+    - addons_coredns
+    - addons_calico
+    - addons_metrics
+    - addons_dashboard
+    - addons_multus
+    - addons_prometheus
+    - addons_nfs
+    - addons_kubesphere
+    - addons_ingress
 
 - block:
     - name: 分发镜像（需要花费一些时间...）
@@ -52,6 +54,14 @@
 
 - block:
     - name: 分发镜像（需要花费一些时间...）
+      copy: src={{ software_dir }}/images/ingress dest={{ tmp_dir }}/images
+    - name: 导入ingress镜像（需要花费一些时间...）
+      shell: cd {{ tmp_dir }}/images/ingress && \
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+  tags: addons_ingress
+
+- block:
+    - name: 分发镜像（需要花费一些时间...）
       copy: src={{ software_dir }}/images/dashboard dest={{ tmp_dir }}/images
     - name: 导入dashboard镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/dashboard && \
@@ -67,6 +77,7 @@
              for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
   when: metrics_server_install == "yes"
   tags: addons_metrics
+
 
 - block:
     - name: 分发镜像（需要花费一些时间...）

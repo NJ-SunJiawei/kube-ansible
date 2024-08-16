@@ -15,6 +15,11 @@ kubectl get nodes 查看nodes
 
 kubectl get cm amf.yaml --from-file=amf.yml   基于amf.yml文件创建ConfigMap
 
+kubectl get ing 查看ingress
+
+kubectl get crd 查看自定义crd
+
+kubectl get ep 查看endpoint
 
 kubectl get events 查看K8s启动事件
 
