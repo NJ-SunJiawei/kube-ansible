@@ -4,8 +4,8 @@
   tags: addons_delete
 
 - name: 删除ingress部署
-  shell: "kubectl delete -f {{ tmp_dir }}/ingress/ || echo true; sleep 3"
+  shell: "kubectl delete -f {{ tmp_dir }}/ingress/nginx-ingress.yaml || echo true; sleep 3"
   tags: addons_delete
 
 - name: 创建ingress部署
-  shell: "kubectl apply -f {{ tmp_dir }}/ingress/"
+  shell: "kubectl apply -f {{ tmp_dir }}/ingress/nginx-ingress.yaml"
