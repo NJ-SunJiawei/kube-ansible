@@ -1,17 +1,23 @@
 ---
 - name: 准备dashboard的部署文件
   copy: src=dashboard dest={{ tmp_dir }}
-  tags: addons_delete
+  tags:
+    - addons_delete
+    - addons_delete_dashboard
 
 - name: 生成dashboard yml
   template: src=dashboard/{{ item }} dest={{ tmp_dir }}/dashboard/{{ item.split('.')[:-1]|join('.') }}
   with_items:
    - kubernetes-dashboard.yaml.j2
-  tags: addons_delete
+  tags:
+    - addons_delete
+    - addons_delete_dashboard
 
 - name: 删除dashboard部署
   shell: "kubectl delete -f {{ tmp_dir }}/dashboard/ || echo true; sleep 10"
-  tags: addons_delete
+  tags:
+    - addons_delete
+    - addons_delete_dashboard
 
 - name: 创建dashboard部署
   shell: "kubectl apply -f {{ tmp_dir }}/dashboard/ ; sleep 10"

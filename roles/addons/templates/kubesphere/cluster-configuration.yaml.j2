@@ -138,7 +138,7 @@ spec:
   multicluster:
     clusterRole: {{ kubesphere_clusterRole_others }}  # host | member | none  # You can install a solo cluster, or specify it as the Host or Member Cluster.
     #hostClusterName: <主集群名称>
-	#proxyPublishAddress: http://139.198.120.120:8080 #集群中没有loadbalancer的情况，待验证
+    #proxyPublishAddress: http://139.198.120.120:8080 #集群中没有loadbalancer的情况，待验证
   network:
     networkpolicy: # Network policies allow network isolation within the same cluster, which means firewalls can be set up between certain instances (Pods).
       # Make sure that the CNI network plugin used by the cluster supports NetworkPolicy. There are a number of CNI network plugins that support NetworkPolicy, including Calico, Cilium, Kube-router, Romana and Weave Net.

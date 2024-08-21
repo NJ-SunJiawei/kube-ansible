@@ -1,4 +1,5 @@
 https://www.kancloud.cn/a365541453/kubernetes/3029994
+https://metallb.universe.tf/concepts/
 
 开源 LoadBalancer
 Metallb 介绍

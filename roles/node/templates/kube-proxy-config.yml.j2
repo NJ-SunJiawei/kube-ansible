@@ -6,6 +6,19 @@ clientConnection:
   kubeconfig: {{ k8s_work_dir }}/cfg/kube-proxy.kubeconfig
 hostnameOverride: {{ node_name }} 
 clusterCIDR: {{ pod_cidr }}
+mode: "{{ proxy_mode }}"
+{% if proxy_mode == "ipvs" %}
+ipvs:
+  excludeCIDRs: null
+  minSyncPeriod: 0s
+  scheduler: "{{ ipvs_scheduler_type }}"
+  strictARP: {{ enable_ipvs_strict_arp }}
+  syncPeriod: 30s
+  tcpFinTimeout: 0s
+  tcpTimeout: 0s
+  udpTimeout: 0s
+{% endif %}
+
 #mode: ipvs
 #ipvs:
 #  scheduler: "rr"

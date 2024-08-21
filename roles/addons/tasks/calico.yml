@@ -1,11 +1,17 @@
 ---
 - name: 准备calico的部署文件
-  copy: src=calico dest={{ tmp_dir }}
-  tags: addons_delete
+  template: src=calico/{{ item }} dest={{ tmp_dir }}/calico/{{ item.split('.')[:-1]|join('.') }}
+  with_items:
+   - calico.yaml.j2
+  tags:
+    - addons_delete
+    - addons_delete_calico
 
 - name: 删除calico部署
   shell: "kubectl delete -f {{ tmp_dir }}/calico/ || echo true; sleep 3"
-  tags: addons_delete
+  tags:
+    - addons_delete
+    - addons_delete_calico
 
 - name: 创建calico部署
   shell: "kubectl apply -f {{ tmp_dir }}/calico/"

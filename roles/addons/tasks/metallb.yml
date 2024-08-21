@@ -3,13 +3,13 @@
   copy: src=ingress dest={{ tmp_dir }}
   tags:
     - addons_delete
-    - addons_delete_ingress
+    - addons_delete_metallb
 
 - name: 删除ingress部署
   shell: "kubectl delete -f {{ tmp_dir }}/ingress/nginx-ingress.yaml || echo true; sleep 3"
   tags:
     - addons_delete
-    - addons_delete_ingress
+    - addons_delete_metallb
 
 - name: 创建ingress部署
   shell: "kubectl apply -f {{ tmp_dir }}/ingress/nginx-ingress.yaml"

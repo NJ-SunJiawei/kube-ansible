@@ -11,7 +11,7 @@ cfssl_type: 'arm'
 # 集群网络
 service_cidr: '10.0.0.0/24'
 cluster_dns: '10.0.0.2'   # 与roles/addons/files/coredns.yaml中IP一致，并且是service_cidr中的IP
-pod_cidr: '10.244.0.0/16' # 与roles/addons/files/calico.yaml中网段一致
+pod_cidr: '10.244.0.0/16' # 与calico/flannel中网段一致
 service_nodeport_range: '30000-32767'
 cluster_domain: 'cluster.local'
 
@@ -71,6 +71,23 @@ cert_hosts:
 #    - 192.168.114.34
 #    - 192.168.114.35
 
+############################
+# network
+############################
+multus_install: "yes"
+cluster_network: "calico" #calico/flannel/kube-ovn/
+# ------------------------------------------- flannel
+# [flannel]设置flannel 后端"host-gw","vxlan"等
+flannel_backend: "vxlan"
+direct_routing: false #支持vxlan在相同子网情况下数据包直接通过路由转发,与HOST-GW模式相同
+# ------------------------------------------- calico
+
+############################
+# ipvs
+############################
+proxy_mode: "ipvs" #不填默认为iptables
+enable_ipvs_strict_arp: false #false真实服务器只对来自虚拟服务器 IP 的 ARP 请求做出响应
+ipvs_scheduler_type: "rr"
 
 ############################
 # ha高可用(多master)

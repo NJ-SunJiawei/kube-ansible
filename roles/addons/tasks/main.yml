@@ -23,7 +23,7 @@
   tags: 
     - addons_delete
     - addons_coredns
-    - addons_calico
+    - addons_network
     - addons_metrics
     - addons_dashboard
     - addons_multus
@@ -40,12 +40,22 @@
 #  when: '"coredns" not in pod_info.stdout'
 
 - import_tasks: calico.yml
-  tags: addons_calico
-#  when: '"calico" not in pod_info.stdout'
+  tags: addons_network
+  when:
+    - "cluster_network == 'calico'"
+#    - '"calico" not in pod_info.stdout'
+
+- import_tasks: flannel.yml
+  tags: addons_network
+  when:
+    - "cluster_network == 'flannel'"
+#    - '"flannel" not in pod_info.stdout'
 
 - import_tasks: multus.yml
   tags: addons_multus
-#  when: '"macvlan" not in pod_info.stdout'
+  when:
+    - multus_install == "yes"
+#    - '"macvlan" not in pod_info.stdout'
 
 - import_tasks: nfs.yml
   tags: addons_nfs

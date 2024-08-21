@@ -12,7 +12,7 @@
          kubectl -n kube-federation-system delete FederatedTypeConfig --all
   tags:
     - addons_delete
-    - kubesphere_delete
+    - addons_delete_kubesphere
   ignore_errors: true
 
 - name: 删除kubefed
@@ -20,7 +20,7 @@
          helm --namespace kube-federation-system delete kubefed
   tags:
     - addons_delete
-    - kubesphere_delete
+    - addons_delete_kubesphere
   ignore_errors: true
 
 - name: 删除tower
@@ -28,7 +28,7 @@
          kubectl -n kubesphere-system delete -f {{ tmp_dir }}/ksphere/kubesphere/kubefed/tower.yaml
   tags:
     - addons_delete
-    - kubesphere_delete
+    - addons_delete_kubesphere
   ignore_errors: true
 
 #- name: 删除controllermanager
@@ -36,7 +36,7 @@
 #         kubectl delete -f {{ tmp_dir }}/ksphere/kubesphere/kubefed/kubefed/charts/controllermanager/crds/
 #  tags:
 #    - addons_delete
-#    - kubesphere_delete
+#    - addons_delete_kubesphere
 #  ignore_errors: true
 
 #- name: 删除federatedcrds
@@ -44,7 +44,7 @@
 #         kubectl delete -f {{ tmp_dir }}/ksphere/kubesphere/kubefed/federatedcrds/ -n kube-federation-system
 #  tags:
 #    - addons_delete
-#    - kubesphere_delete
+#    - addons_delete_kubesphere
 #  ignore_errors: true
 
 

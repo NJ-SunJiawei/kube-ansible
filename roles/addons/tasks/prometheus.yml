@@ -6,7 +6,7 @@
   copy: src=prometheus dest={{ tmp_dir }}
   tags:
     - addons_delete
-    - prometheus_delete
+    - addons_delete_prometheus
 
 - block:
     - name: 获取是否已创建命名空间{{ prom_namespace }}
@@ -36,7 +36,7 @@
       shell: "helm delete prometheus -n {{ prom_namespace }} || echo true; sleep 15"
       tags:
         - addons_delete
-        - prometheus_delete
+        - addons_delete_prometheus
       ignore_errors: true
 
 #https://github.com/prometheus-community/helm-charts/issues/2753
@@ -54,7 +54,7 @@
         - thanosrulers.monitoring.coreos.com
       tags:
         - addons_delete
-        - prometheus_delete
+        - addons_delete_prometheus
       ignore_errors: true
 
     - name: helm 创建 kube-prometheus-stack {{ prom_chart_ver }}

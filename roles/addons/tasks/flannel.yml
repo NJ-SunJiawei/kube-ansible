@@ -1,0 +1,17 @@
+---
+- name: 生成flannel yml
+  template: src=flannel/{{ item }} dest={{ tmp_dir }}/flannel/{{ item.split('.')[:-1]|join('.') }}
+  with_items:
+   - kube-flannel.yaml.j2
+  tags:
+    - addons_delete
+    - addons_delete_flannel
+
+- name: 删除flannel部署
+  shell: "kubectl delete -f {{ tmp_dir }}/flannel/ || echo true; sleep 3"
+  tags:
+    - addons_delete
+    - addons_delete_flannel
+
+- name: 创建flannel部署
+  shell: "kubectl apply -f {{ tmp_dir }}/flannel/"
