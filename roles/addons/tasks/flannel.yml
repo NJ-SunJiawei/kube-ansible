@@ -1,4 +1,10 @@
 ---
+- name: 创建临时目录
+  file: dest={{ tmp_dir }}/flannel state=directory
+  tags:
+    - addons_delete
+    - addons_delete_flannel
+
 - name: 生成flannel yml
   template: src=flannel/{{ item }} dest={{ tmp_dir }}/flannel/{{ item.split('.')[:-1]|join('.') }}
   with_items:

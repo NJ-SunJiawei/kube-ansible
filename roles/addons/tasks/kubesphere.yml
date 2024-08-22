@@ -149,7 +149,7 @@
              helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
              helm repo update
 
-    - import_tasks: kubesphere_host.yml
+    - import_tasks: kubesphere-host.yml
 
   tags: addons_kubesphere_host
   when: kubesphere_clusterRole_host == "yes"
