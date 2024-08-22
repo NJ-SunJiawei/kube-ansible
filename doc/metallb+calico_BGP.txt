@@ -1,0 +1,64 @@
+https://www.51cto.com/article/713213.html
+https://metallb.universe.tf/configuration/calico/
+
+
+As of Calico 3.18 (from early 2021), Calico now supports limited integration with MetalLB. Calico can be configured to announce the LoadBalancer IPs via BGP. Simply run MetalLB, apply an IPAddressPool without any BGPAdvertisement CR. When using MetalLB in this way, you can even remove the Speaker pods to save cluster resources, as the controller is the component in charge of assigning the IPs to the services.
+
+See the official Calico docs for reference.
+
+Example:
+
+calicoctl patch BGPConfig default --patch '{"spec": {"serviceLoadBalancerIPs": [{"cidr": "10.11.0.0/16"},{"cidr":"10.1.5.0/24"}]}}'
+Be aware that Calico announces the entire CIDR block provided, not individual LoadBalancer IPs. If you need to announce more specific routes, then explicitly list them in serviceLoadBalancerIPs.
+
+
+https://docs.tigera.io/calico/latest/networking/configuring/advertise-service-ips
+
+以下步骤将配置 Calico 来公布服务status.LoadBalancer.Ingress.IP地址。
+
+确定用于服务负载均衡器地址分配的 IP 范围。
+
+检查您是否有默认的 BGPConfiguration。
+
+calicoctl get bgpconfig default
+
+根据以上结果，更新或创建 BGPConfiguration。
+
+更新默认 BGPConfiguration 使用以下命令修补 BGPConfiguration，添加您自己的服务负载均衡器 IP CIDR：
+
+calicoctl patch bgpconfig default --patch '{"spec": {"serviceLoadBalancerIPs": [{"cidr": "x.x.x.x/16"}]}}'
+
+
+创建默认 BGPConfiguration 使用以下示例命令创建默认 BGPConfiguration。在字段中添加要公布的负载均衡器 IP 的 CIDR 块serviceLoadBalancerIPs。
+
+calicoctl create -f - <<EOF
+apiVersion: projectcalico.org/v3
+kind: BGPConfiguration
+metadata:
+  name: default
+spec:
+  serviceLoadBalancerIPs:
+  - cidr: x.x.x.x/16
+EOF
+
+有关帮助请参阅BGP 配置资源。
+
+服务 LoadBalancer 地址分配超出了 Calico 的当前范围，但可以使用外部控制器实现。您可以构建自己的控制器，也可以使用第三方实现，例如 MetalLB 项目。
+
+要安装用于分配地址的 MetalLB 控制器，请执行以下步骤。
+
+按照MetalLB 文档安装metallb-system/controller资源。
+
+但是，不要安装该metallb-system/speaker组件。speaker 组件也会尝试在节点上建立 BGP 会话，这会与 Calico 发生冲突。
+
+通过创建以下 IPAddressPool（替换x.x.x.x/16为上述步骤中提供给 Calico 的 CIDR）配置 MetalLB 以提供地址。请注意，IPAddressPool 需要 Metallb 0.13+。
+
+kubectl create -f - <<EOF
+kind: IPAddressPool
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  addresses:
+  - x.x.x.x/16
+EOF

@@ -1,15 +1,44 @@
 ---
-- name: 准备ingress的部署文件
-  copy: src=ingress dest={{ tmp_dir }}
+- name: 准备metallb的部署文件
+  copy: src=metallb dest={{ tmp_dir }}
   tags:
     - addons_delete
     - addons_delete_metallb
 
-- name: 删除ingress部署
-  shell: "kubectl delete -f {{ tmp_dir }}/ingress/nginx-ingress.yaml || echo true; sleep 3"
+- name: 删除L2部署
+  shell: "kubectl delete -f {{ tmp_dir }}/metallb/L2.yaml || echo true; sleep 3"
   tags:
     - addons_delete
     - addons_delete_metallb
 
-- name: 创建ingress部署
-  shell: "kubectl apply -f {{ tmp_dir }}/ingress/nginx-ingress.yaml"
+- name: 删除metallb部署
+  shell: "kubectl delete -f {{ tmp_dir }}/metallb/metallb.yaml || echo true; sleep 3"
+  tags:
+    - addons_delete
+    - addons_delete_metallb
+
+#- name: copy metallb tool
+#  shell: >
+#         cd {{ tmp_dir }}/metallb&&
+#         cp metallb-0.14.7.tgz {{ HELM_PATH }}/charts &&
+#         helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
+#         helm repo update
+
+#- name: helm 删除 metallb-0.14.7.tgz
+#  shell: "helm delete metallb -n metallb-system || echo true; sleep 5"
+#  tags:
+#    - addons_delete
+#    - addons_delete_metallb
+#  ignore_errors: true
+
+#- name: 更新部署
+#  shell: >
+#         helm upgrade --install metallb {{ tmp_dir }}/metallb/metallb-0.14.7.tgz
+#         -f {{ tmp_dir }}/metallb/values.yaml
+#         --namespace metallb-system
+
+- name: 创建metallb部署
+  shell: "kubectl apply -f {{ tmp_dir }}/metallb/metallb.yaml"
+
+- name: 创建L2部署
+  shell: "kubectl apply -f {{ tmp_dir }}/metallb/L2.yaml"

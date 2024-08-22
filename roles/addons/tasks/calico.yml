@@ -53,3 +53,8 @@
 
 - import_tasks: calico-rr.yml
   when: 'calico_rr_enable|bool'
+
+#loadbalancer ip暴露
+#calicoctl patch BGPConfig default --patch '{"spec": {"serviceLoadBalancerIPs": [{"cidr": "10.11.0.0/16"},{"cidr":"10.1.5.0/24"}]}}'
+#serviceIP暴露
+#calicoctl patch BGPConfig default --patch '{"spec": {"serviceClusterIPs": [{"cidr": "10.233.0.0/18"}]}}'

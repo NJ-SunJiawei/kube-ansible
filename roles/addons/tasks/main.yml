@@ -23,12 +23,14 @@
   tags: 
     - addons_delete
     - addons_coredns
-    - addons_network
+    - addons_network_calico
+    - addons_network_flannel
     - addons_metrics
     - addons_dashboard
     - addons_multus
     - addons_prometheus
     - addons_nfs
+    - addons_metallb
     - addons_ingress
     - addons_kubesphere
   ignore_errors: true
@@ -40,13 +42,13 @@
 #  when: '"coredns" not in pod_info.stdout'
 
 - import_tasks: calico.yml
-  tags: addons_network
+  tags: addons_network_calico
   when:
     - "cluster_network == 'calico'"
 #    - '"calico" not in pod_info.stdout'
 
 - import_tasks: flannel.yml
-  tags: addons_network
+  tags: addons_network_flannel
   when:
     - "cluster_network == 'flannel'"
 #    - '"flannel" not in pod_info.stdout'
@@ -57,12 +59,19 @@
     - multus_install == "yes"
 #    - '"macvlan" not in pod_info.stdout'
 
-- import_tasks: nfs.yml
-  tags: addons_nfs
-#  when: '"nfs-client-provisioner" not in pod_info.stdout'
+- import_tasks: metallb.yml
+  tags: addons_metallb
+  when:
+    - metallb_install == "yes"
 
 - import_tasks: ingress.yml
   tags: addons_ingress
+  when:
+    - ingress_install == "yes"
+
+- import_tasks: nfs.yml
+  tags: addons_nfs
+#  when: '"nfs-client-provisioner" not in pod_info.stdout'
 
 - import_tasks: metrics-server.yml
   tags: addons_metrics

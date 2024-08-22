@@ -4,13 +4,15 @@
       file: dest={{ tmp_dir }}/images state=directory
   tags: 
     - addons_coredns
-    - addons_network
+    - addons_network_calico
+    - addons_network_flannel
     - addons_metrics
     - addons_dashboard
     - addons_multus
     - addons_prometheus
     - addons_nfs
     - addons_kubesphere
+    - addons_metallb
     - addons_ingress
 
 - block:
@@ -27,7 +29,7 @@
       shell: cd {{ tmp_dir }}/images/calico && \
              for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
   when: "cluster_network == 'calico'"
-  tags: addons_network
+  tags: addons_network_calico
 
 - block:
     - name: 分发镜像（需要花费一些时间...）
@@ -36,7 +38,7 @@
       shell: cd {{ tmp_dir }}/images/flannel && \
              for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
   when: "cluster_network == 'flannel'"
-  tags: addons_network
+  tags: addons_network_flannel
 
 - block:
     - name: 分发镜像（需要花费一些时间...）
@@ -60,7 +62,17 @@
     - name: 导入multus镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/multus && \
              for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+  when: multus_install == "yes"
   tags: addons_multus
+
+- block:
+    - name: 分发镜像（需要花费一些时间...）
+      copy: src={{ software_dir }}/images/metallb dest={{ tmp_dir }}/images
+    - name: 导入ingress镜像（需要花费一些时间...）
+      shell: cd {{ tmp_dir }}/images/metallb && \
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+  when: metallb_install == "yes"
+  tags: addons_metallb
 
 - block:
     - name: 分发镜像（需要花费一些时间...）
@@ -68,6 +80,7 @@
     - name: 导入ingress镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/ingress && \
              for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+  when: ingress_install == "yes"
   tags: addons_ingress
 
 - block:

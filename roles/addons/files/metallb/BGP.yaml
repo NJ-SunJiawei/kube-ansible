@@ -1,0 +1,35 @@
+---
+#如果使用BGP模式，需要准备一台或多台支持BGP的路由器；
+#现在分配给MetalLB的AS编号为64500和192.168.10.0/24的IP地址池，并将其连接到AS编号为64501的地址为10.0.0.1的路由器
+apiVersion: metallb.io/v1beta2
+kind: BGPPeer
+metadata:
+  name: sample
+  namespace: metallb-system
+spec:
+  myASN: 64500
+  peerASN: 64501
+  peerAddress: 10.0.0.1
+---
+
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: first-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 198.51.100.10/24
+
+---
+#https://metallb.universe.tf/configuration/_advanced_bgp_configuration/
+#当配置calico LoadBalancer IP ，以下可以屏蔽
+#calicoctl patch BGPConfig default --patch '{"spec": {"serviceLoadBalancerIPs": [{"cidr": "10.11.0.0/16"},{"cidr":"10.1.5.0/24"}]}}'
+apiVersion: metallb.io/v1beta1
+kind: BGPAdvertisement
+metadata:
+  name: local
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - first-pool

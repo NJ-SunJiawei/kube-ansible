@@ -16,11 +16,12 @@
                 calicoctl patch node "$node_name" \
                   -p "{\"spec\": {\"bgp\": {\"routeReflectorClusterID\": \"244.0.0.1\"}}}"; \
              done'
-
+#https://docs.tigera.io/calico/latest/networking/configuring/bgp
+#每个要充当路由反射器的节点都必须有一个集群 ID - 通常是一个未使用的 IPv4 地址。
     - name: node label
       shell: 'for ip in {{ NODE_IPS }};do \
                 node_name=$(calicoctl get node -owide|grep " $ip/"|cut -d" " -f1) && \
-                {{ base_dir }}/bin/kubectl label node "$node_name" route-reflector=true --overwrite;
+                kubectl label node "$node_name" route-reflector=true --overwrite;
              done'
       connection: local
 

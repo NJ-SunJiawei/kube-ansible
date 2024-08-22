@@ -75,24 +75,28 @@ cert_hosts:
 # network
 ############################
 multus_install: "yes"
+metallb_install: "yes"
+ingress_install: "yes"
 cluster_network: "calico" #calico/flannel/kube-ovn/
 # ------------------------------------------- flannel
 # [flannel]设置flannel 后端"host-gw","vxlan"等
 flannel_backend: "vxlan"
 direct_routing: false #支持vxlan在相同子网情况下数据包直接通过路由转发,与HOST-GW模式相同
 # ------------------------------------------- calico
+calico_ver :v3.26.4
+# [calico]设置calico 网络 backend: bird, vxlan, none
+calico_networking_backend: "bird"
 # [calico] IPIP隧道模式可选项有: [Always, CrossSubnet, Never],跨子网可以配置为Always与CrossSubnet(公有云建议使用always比较省事，其他的话需要修改各自公有云的网络配置，具体可以参考各个公有云说明)
 # 其次CrossSubnet为隧道+BGP路由混合模式可以提升网络性能，同子网配置为Never即可.
 calico_ipv4pool_ipip: "Always"
+calico_vxlan_ipip: "Never"  
 # [calico]设置 calico-node使用的host IP，bgp邻居通过该地址建立，可手工指定也可以自动发现
 ip_autodetection_method: "can-reach={{ groups['master'] }}" #interface=ens.*  cidr=10.20.0.0/24
-# [calico]设置calico 网络 backend: bird, vxlan, none
-calico_networking_backend: "bird"
 # [calico]设置calico 是否使用route reflectors
 # 如果集群规模超过50个节点，建议启用该特性
 calico_rr_enable: false
 # calico_rr_nodes 配置route reflectors的节点，如果未设置默认使用集群master节点 
-# calico_rr_nodes: ["192.168.1.1", "192.168.1.2"]
+# calico_rr_nodes: ["192.168.1.1", "192.168.1.2"]#集群内节点
 calico_rr_nodes: []
 # etcd 集群服务地址列表, 根据etcd组成员自动生成
 tmp_endpoints: "{% for h in groups['etcd'] %}https://{{ h }}:2379,{% endfor %}"
@@ -103,7 +107,7 @@ calico_as_number: 64512
 # ipvs
 ############################
 proxy_mode: "ipvs" #不填默认为iptables
-enable_ipvs_strict_arp: false #false真实服务器只对来自虚拟服务器 IP 的 ARP 请求做出响应
+enable_ipvs_strict_arp: true #true 设置确保负载均衡器只响应那些针对其实际绑定的 IP 地址的 ARP #集群是使用IPVS模式下kube-proxy，则从kubernetes v.1.14.2开始，必须启用ARP模式
 ipvs_scheduler_type: "rr"
 
 ############################

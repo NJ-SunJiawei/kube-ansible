@@ -422,9 +422,9 @@ spec:
             # Enable or Disable VXLAN on the default IP pool.
 {% if calico_networking_backend == "vxlan" %}
             - name: CALICO_IPV4POOL_VXLAN
-              value: "Never"
+              value: "{{ calico_vxlan_ipip }}"
             - name: CALICO_IPV6POOL_VXLAN
-              value: "Never"
+              value: "{{ calico_vxlan_ipip }}"
 {% endif %}
             # Set MTU for tunnel device used if ipip is enabled
             - name: FELIX_IPINIPMTU
@@ -448,7 +448,7 @@ spec:
             # chosen from this range. Changing this value after installation will have
             # no effect. This should fall within `--cluster-cidr`.
             - name: CALICO_IPV4POOL_CIDR
-              value: "{{ CLUSTER_CIDR }}"
+              value: "{{ pod_cidr }}"
             # Disable file logging so `kubectl logs` works.
             - name: CALICO_DISABLE_FILE_LOGGING
               value: "true"
