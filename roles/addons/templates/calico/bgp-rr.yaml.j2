@@ -6,20 +6,3 @@ spec:
   nodeSelector: all()
   peerSelector: route-reflector == 'true'
 #https://docs.tigera.io/calico/latest/networking/configuring/bgp
-
-
-#Calico BGP跨网段(大型网络)
-#https://www.kancloud.cn/a365541453/kubernetes/2791900
-#https://system51.github.io/2020/05/27/using-calico/
-#为机架1上的上联交换机的AS号
-#calicoctl patch node my-node -p '{"spec": {"bgp": {"asNumber": "64514"}}}'
-#设置需要bgp的 calico node
-#kubectl label node my-node rack=rack-1
-#apiVersion: projectcalico.org/v3
-#kind: BGPPeer
-#metadata:
-#  name: rack1-switch
-#spec:
-#  peerIP: 192.20.30.40  # 上联交换机的BGP IP
-#  asNumber: 64514
-#  nodeSelector: rack == 'rack-1'

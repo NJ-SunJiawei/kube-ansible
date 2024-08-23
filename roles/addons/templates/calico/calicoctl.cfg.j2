@@ -4,6 +4,6 @@ metadata:
 spec:
   datastoreType: "etcdv3"
   etcdEndpoints: {{ etcd_endpoints }}
-  etcdKeyFile: {{ k8s_work_dir }}/ssl/etcd/server-key.pem
-  etcdCertFile: {{ k8s_work_dir }}/ssl/etcd/server.pem
-  etcdCACertFile: {{ k8s_work_dir }}/ssl/etcd/ca.pem
+  etcdKeyFile: /etc/calico/ssl/server-key.pem
+  etcdCertFile: /etc/calico/ssl/server.pem
+  etcdCACertFile: /etc/calico/ssl/ca.pem

@@ -35,22 +35,6 @@
     - name: 创建calico部署
       shell: "kubectl apply -f {{ tmp_dir }}/calico/calico.yaml"
 
-- name: 在节点创建相关目录
-  file: name={{ item }} state=directory
-  with_items:
-  - /etc/calico
-
-- name: 下载calicoctl 客户端
-  unarchive: src={{ item }} dest={{ tmp_dir }}/calico mode=0755
-  with_fileglob:
-    - "{{ software_dir }}/calicoctl-linux-arm64-*.tar.gz"
-
-- name: 安装calicoctl二进制文件
-  shell: cd {{ tmp_dir }}/calico && mv calicoctl-linux-arm64 /usr/local/bin/calicoctl && chmod 777 /usr/local/bin/calicoctl
-
-- name: 准备 calicoctl配置文件
-  template: src=calicoctl.cfg.j2 dest=/etc/calico/calicoctl.cfg
-
 - import_tasks: calico-rr.yml
   when: 'calico_rr_enable|bool'
 

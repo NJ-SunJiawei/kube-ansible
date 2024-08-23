@@ -28,6 +28,29 @@
     - name: 导入calico镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/calico && \
              for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+    - name: 在节点创建相关目录
+      file: name={{ item }} state=directory
+      with_items:
+      - /etc/calico
+      - /etc/calico/ssl
+
+    - name: 分发etcd证书
+      copy: src=calico/etcd_cert/{{ item }} dest=/etc/calico/ssl
+      with_items:
+        - ca.pem
+        - server.pem
+        - server-key.pem
+
+    - name: 下载calicoctl 客户端
+      unarchive: src={{ item }} dest={{ tmp_dir }}/calico mode=0755
+      with_fileglob:
+        - "{{ software_dir }}/calicoctl-linux-arm64-*.tar.gz"
+
+    - name: 安装calicoctl二进制文件
+      shell: cd {{ tmp_dir }}/calico && mv calicoctl-linux-arm64 /usr/local/bin/calicoctl && chmod 777 /usr/local/bin/calicoctl
+
+    - name: 准备 calicoctl配置文件
+      template: src=calicoctl.cfg.j2 dest=/etc/calico/calicoctl.cfg
   when: "cluster_network == 'calico'"
   tags: addons_network_calico
 
