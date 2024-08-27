@@ -463,7 +463,7 @@ spec:
             # Set Kubernetes NodePorts: If services do use NodePorts outside Calico’s expected range,
             # Calico will treat traffic to those ports as host traffic instead of pod traffic.
             - name: FELIX_KUBENODEPORTRANGES
-              value: "{{ NODE_PORT_RANGE.split('-')[0] }}:{{ NODE_PORT_RANGE.split('-')[1] }}"
+              value: "{{ service_nodeport_range.split('-')[0] }}:{{ service_nodeport_range.split('-')[1] }}"
             - name: FELIX_PROMETHEUSMETRICSENABLED
               value: "false"
           securityContext:
