@@ -83,7 +83,7 @@ cluster_network: "calico" #calico/flannel/kube-ovn/
 flannel_backend: "vxlan"
 direct_routing: false #支持vxlan在相同子网情况下数据包直接通过路由转发,与HOST-GW模式相同
 # ------------------------------------------- calico
-calico_ver :v3.26.4
+calico_ver: "v3.26.4"
 # [calico]设置calico 网络 backend: bird, vxlan, none
 calico_networking_backend: "bird"
 # [calico] IPIP隧道模式可选项有: [Always, CrossSubnet, Never],跨子网可以配置为Always与CrossSubnet(公有云建议使用always比较省事，其他的话需要修改各自公有云的网络配置，具体可以参考各个公有云说明)
