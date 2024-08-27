@@ -32,9 +32,12 @@ ansible -i ../hosts k8s    -m systemd -a 'name=containerd state=stopped enabled=
 echo "stop kubernetes containerd OK <<<"
 
 #stop docker
+ansible -i ../hosts harbor   -m systemd -a 'docker stop $(docker ps -aq) && docker rm $(docker ps -aq) && docker container prune -f && docker rmi $(docker images -q)'
 ansible -i ../hosts harbor   -m systemd -a 'name=docker state=stopped enabled=no'
-ansible -i ../hosts helm     -m systemd -a 'name=docker state=stopped enabled=no'
 ansible -i ../hosts harbor   -m shell   -a 'rm -rf /usr/local/bin/docker-compose'
+
+ansible -i ../hosts helm     -m systemd -a 'docker stop $(docker ps -aq) && docker rm $(docker ps -aq) && docker container prune -f && docker rmi $(docker images -q)'
+ansible -i ../hosts helm     -m systemd -a 'name=docker state=stopped enabled=no'
 ansible -i ../hosts helm     -m shell   -a 'rm -rf /usr/local/bin/docker-compose'
 echo "stop harbor/helm docker OK <<<"
 
