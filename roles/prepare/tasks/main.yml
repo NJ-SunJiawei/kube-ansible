@@ -60,7 +60,7 @@
          echo "{{ nfs_default_path }} *(rw,sync,no_root_squash)" | sudo tee -a /etc/exports
          systemctl enable nfs-server
          systemctl start nfs-server
-  when: '{{ nfs_default_path }} not in nfs_info.stdout'
+  when: 'nfs_default_path not in nfs_info.stdout'
 
 - name: 查看/etc状态
   shell: ls /etc/

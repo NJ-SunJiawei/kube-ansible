@@ -61,11 +61,6 @@
   tags: update_hosts
 
 
-- name: 复制环境变量文件
-  copy: src={{ item }} dest=/etc/sysctl.d/
-  with_items:
-    - k8s.conf
-
 - name: 加载内核模块
   modprobe: name={{ item }} state=present
   with_items:

@@ -33,6 +33,8 @@
       with_items:
       - /etc/calico
       - /etc/calico/ssl
+    - name: 在节点创建相关目录
+      file: name={{ tmp_dir }}/calico state=directory
 
     - name: 分发etcd证书
       copy: src=calico/etcd_cert/{{ item }} dest=/etc/calico/ssl
@@ -50,7 +52,7 @@
       shell: cd {{ tmp_dir }}/calico && mv calicoctl-linux-arm64 /usr/local/bin/calicoctl && chmod 777 /usr/local/bin/calicoctl
 
     - name: 准备 calicoctl配置文件
-      template: src=calicoctl.cfg.j2 dest=/etc/calico/calicoctl.cfg
+      template: src=calico/calicoctl.cfg.j2 dest=/etc/calico/calicoctl.cfg
   when: "cluster_network == 'calico'"
   tags: addons_network_calico
 

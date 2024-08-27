@@ -43,11 +43,11 @@ ansible -i ../hosts k8s    -m shell   -a 'rm -rf /opt/etcd' || exit 1
 ansible -i ../hosts k8s    -m shell   -a 'rm -rf /opt/kubernetes /usr/bin/kubelet' || exit 1
 ansible -i ../hosts k8s    -m shell   -a 'rm -rf /opt/cni /var/lib/cni /var/lib/calico ' || exit 1
 
-ansible -i ../hosts k8s    -m shell   -a "umount $(df -HT | grep '/var/lib/kubelet/pods' | awk '{print $7}')" || exit 1
-ansible -i ../hosts k8s    -m shell   -a "umount $(df -HT | grep '/run/containerd' | awk '{print $7}')" || exit 1
+ansible -i ../hosts k8s    -m shell   -a "sudo umount $(df -HT | grep '/var/lib/kubelet/pods' | awk '{print $7}') && sleep 3" || exit 1
+ansible -i ../hosts k8s    -m shell   -a "sudo umount $(df -HT | grep '/run/containerd' | awk '{print $7}') && sleep 3" || exit 1
 #nfs手动umount
 #/run/containerd
-ansible -i ../hosts k8s    -m shell   -a "rm -rf /var/lib/kubelet /var/lib/etcd /run/containerd/io.containerd.runtime.v2.task" || exit 1
+ansible -i ../hosts k8s    -m shell   -a "sudo rm -rf /var/lib/kubelet /var/lib/etcd /run/containerd/io.containerd.runtime.v2.task" || exit 1
 
 
 echo "remove kubernetes all OK <<<"

@@ -91,7 +91,7 @@ calico_networking_backend: "bird"
 calico_ipv4pool_ipip: "Always"
 calico_vxlan_ipip: "Never"  
 # [calico]设置 calico-node使用的host IP，bgp邻居通过该地址建立，可手工指定也可以自动发现
-ip_autodetection_method: "can-reach={{ groups['master'] }}" #interface=ens.*  cidr=10.20.0.0/24
+ip_autodetection_method: "interface=enp43s0f.*,eno.*,eth.*" #cidr=10.20.0.0/24  can-reach={{ groups['master'][0] }}
 # [calico]设置calico 是否使用route reflectors
 # 如果集群规模超过50个节点，建议启用该特性
 calico_rr_enable: false
