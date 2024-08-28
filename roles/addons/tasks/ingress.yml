@@ -5,34 +5,41 @@
     - addons_delete
     - addons_delete_ingress
 
-#- name: copy ingress tool
-#  shell: >
-#         cd {{ tmp_dir }}/ingress&&
-#         cp ingress-nginx-4.7.1.tgz {{ HELM_PATH }}/charts &&
-#         helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
-#         helm repo update 
+- name: copy ingress tool
+  shell: >
+         cd {{ tmp_dir }}/ingress&&
+         cp ingress-nginx-4.7.1.tgz {{ HELM_PATH }}/charts &&
+         helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
+         helm repo update 
 
-- name: 删除ingress部署(test)
-  shell: "kubectl delete -f {{ tmp_dir }}/ingress/nginx-ingress.yaml || echo true; sleep 3"
-  tags:
-    - addons_delete
-    - addons_delete_ingress
-
-#- name: helm 删除 ingress-nginx-4.7.1
-#  shell: "helm delete ingress-nginx -n ingress-nginx || echo true; sleep 5"
+#- name: 删除ingress部署(test)
+#  shell: "kubectl delete -f {{ tmp_dir }}/ingress/nginx-ingress.yaml || echo true; sleep 3"
 #  tags:
 #    - addons_delete
 #    - addons_delete_ingress
-#  ignore_errors: true
 
-#- name: 更新部署
-#  shell: >
-#         helm upgrade --install ingress-nginx {{ tmp_dir }}/ingress/ingress-nginx-4.7.1.tgz
-#         --namespace ingress-nginx
+- name: helm 删除 ingress-nginx-4.7.1
+  shell: "helm delete ingress-nginx -n ingress-nginx || echo true; sleep 5"
+  tags:
+    - addons_delete
+    - addons_delete_ingress
+  ignore_errors: true
+
+- name: 创建ingress ns
+  shell: >
+         kubectl create ns ingress-nginx
+  ignore_errors: true
+
+- name: 更新部署
+  shell: >
+         helm upgrade --install ingress-nginx {{ tmp_dir }}/ingress/ingress-nginx-4.7.1.tgz
+         -f {{ tmp_dir }}/ingress/values.yaml
+         --namespace ingress-nginx
 
 #- name: 更新metrics部署
 #  shell: >
 #         helm upgrade ingress-nginx {{ tmp_dir }}/ingress/ingress-nginx-4.7.1.tgz --namespace ingress-nginx
+#         -f {{ tmp_dir }}/ingress/values.yaml
 #         --set controller.metrics.enabled=true
 #         --set controller.metrics.serviceMonitor.enabled=true
 #         --set controller.metrics.serviceMonitor.additionalLabels.release="prometheus"#45.23.0
@@ -45,5 +52,5 @@
 #         --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false
 #         --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false
 
-- name: 创建ingress部署(test)
-  shell: "kubectl apply -f {{ tmp_dir }}/ingress/nginx-ingress.yaml"
+#- name: 创建ingress部署(test)
+#  shell: "kubectl apply -f {{ tmp_dir }}/ingress/nginx-ingress.yaml"

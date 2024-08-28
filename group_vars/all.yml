@@ -103,11 +103,9 @@ calico_rr_enable: false
 # calico_rr_nodes 配置route reflectors的节点，如果未设置默认使用集群master节点 
 # calico_rr_nodes: ["192.168.1.1", "192.168.1.2"]#集群内节点
 calico_rr_nodes: []
-# etcd 集群服务地址列表, 根据etcd组成员自动生成
-tmp_endpoints: "{% for h in groups['etcd'] %}https://{{ h }}:2379,{% endfor %}"
-etcd_endpoints: "{{ tmp_endpoints.rstrip(',') }}"
 # calico AS number
 calico_as_number: 64512
+
 ############################
 # ipvs
 ############################

@@ -63,5 +63,8 @@
 #- name: 创建metallb部署
 #  shell: "kubectl apply -f {{ tmp_dir }}/metallb/metallb.yaml ; sleep 10"
 
+- name: 休息下
+  shell: "sleep 20"
+
 - name: 创建L2部署
-  shell: "sleep 20 && kubectl apply -f {{ tmp_dir }}/metallb/L2.yaml"
+  shell: "kubectl apply -f {{ tmp_dir }}/metallb/L2.yaml"
