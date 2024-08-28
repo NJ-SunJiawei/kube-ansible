@@ -105,6 +105,9 @@ calico_rr_enable: false
 calico_rr_nodes: []
 # calico AS number
 calico_as_number: 64512
+#etcd
+tmp_endpoints: "{% for h in groups['etcd'] %}https://{{ h }}:2379,{% endfor %}"
+etcd_endpoints: "{{ tmp_endpoints.rstrip(',') }}"
 
 ############################
 # ipvs

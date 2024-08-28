@@ -53,7 +53,7 @@ metadata:
   namespace: kube-system
 data:
   # Configure this with the location of your etcd cluster.
-  etcd_endpoints: "{{ etcd_endpoints }}"
+  etcd_endpoints: "{% for host in groups['etcd'] %}https://{{ hostvars[host].inventory_hostname }}:2379{% if not loop.last %},{% endif %}{% endfor %}"
   # If you're using TLS enabled etcd uncomment the following.
   # You must also populate the Secret below with these files.
   etcd_ca: "/calico-secrets/etcd-ca"
@@ -80,7 +80,7 @@ data:
           "type": "calico",
           "log_level": "info",
           "log_file_path": "/var/log/calico/cni/cni.log",
-          "etcd_endpoints": "{{ etcd_endpoints }}",
+          "etcd_endpoints": "{% for host in groups['etcd'] %}https://{{ hostvars[host].inventory_hostname }}:2379{% if not loop.last %},{% endif %}{% endfor %}",
           "etcd_key_file": "/etc/calico/ssl/server-key.pem",
           "etcd_cert_file": "/etc/calico/ssl/server.pem",
           "etcd_ca_cert_file": "/etc/calico/ssl/ca.pem",

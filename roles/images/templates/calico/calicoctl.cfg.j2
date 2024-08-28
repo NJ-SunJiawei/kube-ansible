@@ -3,7 +3,7 @@ kind: CalicoAPIConfig
 metadata:
 spec:
   datastoreType: "etcdv3"
-  etcdEndpoints: {% for host in groups['etcd'] %}https://{{ hostvars[host].inventory_hostname }}:2379{% if not loop.last %},{% endif %}{% endfor %}
+  etcdEndpoints: {{ etcd_endpoints }}
   etcdKeyFile: /etc/calico/ssl/server-key.pem
   etcdCertFile: /etc/calico/ssl/server.pem
   etcdCACertFile: /etc/calico/ssl/ca.pem

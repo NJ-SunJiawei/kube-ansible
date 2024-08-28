@@ -26,7 +26,7 @@
       connection: local
 
     - name: 配置 calico bgp yaml文件
-      template: src={{ item }}.j2 dest=/etc/calico/{{ item }}
+      template: src=calico/{{ item }}.j2 dest=/etc/calico/{{ item }}
       with_items:
       - "bgp-default.yaml"
       - "bgp-rr.yaml"
