@@ -5,5 +5,5 @@ ansible-playbook -i ../hosts ../01_install.yml -uroot -t addons_delete_calico ||
 echo "add calico yaml <<<"
 
 ansible -i ../hosts k8s  -m shell   -a 'rm -rf /etc/calico' || exit 1
-ansible -i ../hosts k8s  -m shell   -a 'rm -rf /var/lib/cni/calico  /etc/cni/net.d/10-calico.conflist' || exit 1
+ansible -i ../hosts k8s  -m shell   -a 'rm -rf /var/lib/cni/calico  /etc/cni/net.d' || exit 1
 echo "add calico OK <<<"
