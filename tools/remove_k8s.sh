@@ -41,6 +41,7 @@ ansible -i ../hosts helm     -m shell   -a 'rm -rf /usr/local/bin/docker-compose
 echo "stop harbor/helm docker OK <<<"
 
 #remove others
+ansible -i ../hosts k8s    -m shell   -a 'rm -rf /root/helm' || exit 1
 ansible -i ../hosts k8s    -m shell   -a 'rm -rf /opt/etcd' || exit 1
 ansible -i ../hosts k8s    -m shell   -a 'rm -rf /opt/kubernetes /usr/bin/kubelet' || exit 1
 ansible -i ../hosts k8s    -m shell   -a 'rm -rf /etc/cni/net.d /opt/cni /var/lib/cni /var/lib/calico' || exit 1

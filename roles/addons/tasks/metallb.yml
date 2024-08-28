@@ -11,34 +11,48 @@
     - addons_delete
     - addons_delete_metallb
 
-- name: 删除metallb部署
-  shell: "kubectl delete -f {{ tmp_dir }}/metallb/metallb.yaml || echo true; sleep 3"
-  tags:
-    - addons_delete
-    - addons_delete_metallb
-
-#- name: copy metallb tool
-#  shell: >
-#         cd {{ tmp_dir }}/metallb&&
-#         cp metallb-0.14.7.tgz {{ HELM_PATH }}/charts &&
-#         helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
-#         helm repo update
-
-#- name: helm 删除 metallb-0.14.7.tgz
-#  shell: "helm delete metallb -n metallb-system || echo true; sleep 5"
+#- name: 删除metallb部署(test)
+#  shell: "kubectl delete -f {{ tmp_dir }}/metallb/metallb.yaml || echo true; sleep 3"
 #  tags:
 #    - addons_delete
 #    - addons_delete_metallb
-#  ignore_errors: true
 
-#- name: 更新部署
-#  shell: >
-#         helm upgrade --install metallb {{ tmp_dir }}/metallb/metallb-0.14.7.tgz
-#         -f {{ tmp_dir }}/metallb/values.yaml
-#         --namespace metallb-system
+- name: copy metallb tool
+  shell: >
+         cd {{ tmp_dir }}/metallb&&
+         cp metallb-0.14.7.tgz {{ HELM_PATH }}/charts &&
+         helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
+         helm repo update
 
-- name: 创建metallb部署
-  shell: "kubectl apply -f {{ tmp_dir }}/metallb/metallb.yaml"
+- name: helm 删除 metallb-0.14.7.tgz
+  shell: "helm delete metallb -n metallb-system || echo true; sleep 5"
+  tags:
+    - addons_delete
+    - addons_delete_metallb
+  ignore_errors: true
+
+- name: 创建metallb ns
+  shell: >
+         kubectl create ns metallb-system
+  ignore_errors: true
+
+- name: 更新部署
+  shell: >
+         helm upgrade --install metallb {{ tmp_dir }}/metallb/metallb-0.14.7.tgz
+         -f {{ tmp_dir }}/metallb/values.yaml
+         --namespace metallb-system
+
+#kubectl get pods -n metallb-system --selector=app=metallb-speaker --field-selector=status.phase!=Running --no-headers | wc -l
+- name: Wait for metallb installer to complete
+  shell: |
+         kubectl get pods -n metallb-system| grep 'metallb-speaker' | grep -v 'Running' | wc -l
+  register: log_output
+  until: log_output.stdout | int == 0
+  retries: 10
+  delay: 5
+
+#- name: 创建metallb部署
+#  shell: "kubectl apply -f {{ tmp_dir }}/metallb/metallb.yaml ; sleep 10"
 
 - name: 创建L2部署
-  shell: "kubectl apply -f {{ tmp_dir }}/metallb/L2.yaml"
+  shell: "sleep 20 && kubectl apply -f {{ tmp_dir }}/metallb/L2.yaml"
