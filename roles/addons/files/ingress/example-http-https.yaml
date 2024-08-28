@@ -60,7 +60,7 @@ kind: Ingress
 metadata:
   name: ingress-myservice-http
   annotations:
-    kubernetes.io/ingress.class: nginx
+    #kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
@@ -74,7 +74,6 @@ spec:
             name: nginx-service
             port:
               number: 80
-
 #https://github.com/easzlab/kubeasz/issues/320           
 #通过host和path定位到某一个service，同时该path 必须是该service中存在的一个路径。
 #所以下面无法生效，除非使用rewrite-target

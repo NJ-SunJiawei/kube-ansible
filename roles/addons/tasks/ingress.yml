@@ -12,14 +12,11 @@
 #         helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
 #         helm repo update 
 
-- name: 删除ingress部署
+- name: 删除ingress部署(test)
   shell: "kubectl delete -f {{ tmp_dir }}/ingress/nginx-ingress.yaml || echo true; sleep 3"
   tags:
     - addons_delete
     - addons_delete_ingress
-
-- name: 创建ingress部署
-  shell: "kubectl apply -f {{ tmp_dir }}/ingress/nginx-ingress.yaml"
 
 #- name: helm 删除 ingress-nginx-4.7.1
 #  shell: "helm delete ingress-nginx -n ingress-nginx || echo true; sleep 5"
@@ -47,3 +44,6 @@
 #         {{ tmp_dir }}/prometheus/kube-prometheus-stack-{{ prom_chart_ver }}.tgz"
 #         --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false
 #         --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false
+
+- name: 创建ingress部署(test)
+  shell: "kubectl apply -f {{ tmp_dir }}/ingress/nginx-ingress.yaml"

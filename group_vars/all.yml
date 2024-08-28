@@ -19,6 +19,11 @@ cluster_domain: 'cluster.local'
 vip: '192.168.114.88'
 nic: 'ens33'  # 修改为实际内网网卡名
 
+#metallb ip池
+metallb_l2_ip_pool: '198.51.100.230-198.51.100.240' #L2最好内网同网段，不然配路由
+metallb_BGP_ip_pool: '198.51.100.10/24'
+metallb_BGP_peer_ip: '10.0.0.1' #BGP路由器ip
+
 # 自签证书可信任IP列表，为方便扩展，可添加多个预留IP
 cert_hosts:
   # 包含所有LB、VIP、Master IP和service_cidr的第一个IP

@@ -9,7 +9,7 @@ metadata:
 spec:
   myASN: 64500
   peerASN: 64501
-  peerAddress: 10.0.0.1
+  peerAddress: {{ metallb_BGP_peer_ip }}
 ---
 
 apiVersion: metallb.io/v1beta1
@@ -19,7 +19,7 @@ metadata:
   namespace: metallb-system
 spec:
   addresses:
-  - 198.51.100.10/24
+  - {{ metallb_BGP_ip_pool }}
 
 ---
 #https://metallb.universe.tf/configuration/_advanced_bgp_configuration/

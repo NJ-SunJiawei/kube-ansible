@@ -7,7 +7,7 @@ metadata:
   namespace: metallb-system
 spec:
   addresses:
-  - 198.51.100.10/24
+  - {{ metallb_l2_ip_pool }}
 
 #apiVersion: metallb.io/v1beta1
 #kind: IPAddressPool
@@ -16,7 +16,7 @@ spec:
 #  namespace: metallb-system
 #spec:
 #  addresses:
-#  - 198.51.100.230-198.51.100.240
+#  - 198.51.100.0/24
 #  autoAssign: false #表示这个地址池中的 IP 地址不会自动分配给服务。这意味着你需要手动指定要使用的 IP 地址
 ---
 # 下面的内容是在ingress-nginx官网中

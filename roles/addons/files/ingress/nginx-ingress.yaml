@@ -379,7 +379,7 @@ spec:
     app.kubernetes.io/component: controller
     app.kubernetes.io/instance: ingress-nginx
     app.kubernetes.io/name: ingress-nginx
-  type: NodePort     #LoadBalancer / NodePort  / hostnetwork
+  type: LoadBalancer     #LoadBalancer / NodePort  / hostnetwork
 ---
 apiVersion: v1
 kind: Service

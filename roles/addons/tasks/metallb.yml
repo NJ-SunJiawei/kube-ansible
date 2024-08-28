@@ -5,6 +5,15 @@
     - addons_delete
     - addons_delete_metallb
 
+- name: 准备metallb的部署文件
+  template: src=metallb/{{ item }} dest={{ tmp_dir }}/metallb/{{ item.split('.')[:-1]|join('.') }}
+  with_items:
+   - BGP.yaml.j2
+   - L2.yaml.j2
+  tags:
+    - addons_delete
+    - addons_delete_calico
+
 - name: 删除L2部署
   shell: "kubectl delete -f {{ tmp_dir }}/metallb/L2.yaml || echo true; sleep 3"
   tags:
@@ -45,7 +54,7 @@
 #kubectl get pods -n metallb-system --selector=app=metallb-speaker --field-selector=status.phase!=Running --no-headers | wc -l
 - name: Wait for metallb installer to complete
   shell: |
-         kubectl get pods -n metallb-system| grep 'metallb-speaker' | grep -v 'Running' | wc -l
+         kubectl get pods -n metallb-system| grep 'metallb' | grep -v 'Running' | wc -l
   register: log_output
   until: log_output.stdout | int == 0
   retries: 10
