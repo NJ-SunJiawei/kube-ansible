@@ -1,7 +1,10 @@
 ---
 - name: 创建临时目录
   file: dest={{ tmp_dir }}/ksphere state=directory
-  tags: addons_kubesphere_host
+  tags: 
+    - addons_kubesphere_host
+    - addons_delete
+    - addons_delete_kubesphere
 
 - name: 生成ksphere yml
   template: src=kubesphere/{{ item }} dest={{ tmp_dir }}/ksphere/{{ item.split('.')[:-1]|join('.') }}
