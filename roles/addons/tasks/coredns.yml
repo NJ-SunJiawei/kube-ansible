@@ -1,12 +1,17 @@
 ---
-- name: 准备DNS的部署文件
-  copy: src=dns dest={{ tmp_dir }}
+- name: 创建临时目录
+  file: dest={{ tmp_dir }}/dns state=directory
   tags:
     - addons_delete
     - addons_delete_coredns
 
-#- name: 准备DNS的部署文件
-#  template: src=coredns.yaml.j2 dest={{ tmp_dir }}/coredns.yaml
+- name: 准备DNS的部署文件
+  template: src=dns/{{ item }} dest={{ tmp_dir }}/dns/{{ item.split('.')[:-1]|join('.') }}
+  with_items:
+   - coredns.yaml.j2
+  tags:
+    - addons_delete
+    - addons_delete_coredns
 
 - name: 删除coredns部署
   shell: "kubectl delete -f {{ tmp_dir }}/dns/ || echo true; sleep 3"

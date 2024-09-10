@@ -1,5 +1,7 @@
 https://www.kancloud.cn/a365541453/kubernetes/2788762
 https://github.com/yangpeng14/DevOps/blob/master/kubernetes/calico%E4%BB%8B%E7%BB%8D-%E5%8E%9F%E7%90%86%E4%B8%8E%E4%BD%BF%E7%94%A8.md
+跨网：https://cloud.tencent.com/developer/article/1909239
+跨网：https://bbs.huaweicloud.com/blogs/428105?utm_source=luntan&utm_medium=bbs-ex&utm_campaign=other&utm_content=content
 ## 什么是 Calico ？
 
 `Calico` 是一套开源的网络和网络安全方案，用于容器、虚拟机、宿主机之前的网络连接，可以用在kubernetes、OpenShift、DockerEE、OpenStrack等PaaS或IaaS平台上。
