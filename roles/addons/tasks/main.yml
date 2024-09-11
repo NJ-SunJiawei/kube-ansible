@@ -25,6 +25,7 @@
     - addons_coredns
     - addons_network_calico
     - addons_network_flannel
+    - addons_network_ovn
     - addons_metrics
     - addons_dashboard
     - addons_multus
@@ -52,6 +53,11 @@
   when:
     - "cluster_network == 'flannel'"
 #    - '"flannel" not in pod_info.stdout'
+
+- import_tasks: kubeovn.yml
+  tags: addons_network_ovn
+  when:
+    - "cluster_network == 'kube-ovn'"
 
 - import_tasks: multus.yml
   tags: addons_multus

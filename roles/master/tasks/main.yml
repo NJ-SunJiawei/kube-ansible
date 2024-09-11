@@ -104,6 +104,10 @@
      # 自动批准kubelet服务端证书续签 
      kubectl create clusterrolebinding node-server-auto-renew-crt --clusterrole=system:certificates.k8s.io:certificatesigningrequests:selfnodeserver --group=system:nodes
 
+- name: role标签
+  shell: |
+          kubectl label node {{ node_name }} kubernetes.io/role=master  --overwrite
+
 - name: 分发label脚本
   template: src=add_label.sh.j2 dest={{ k8s_work_dir }}/add_label.sh mode=u+x
 

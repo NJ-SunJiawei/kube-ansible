@@ -6,6 +6,7 @@
     - addons_coredns
     - addons_network_calico
     - addons_network_flannel
+    - addons_network_ovn
     - addons_metrics
     - addons_dashboard
     - addons_multus
@@ -64,6 +65,15 @@
              for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
   when: "cluster_network == 'flannel'"
   tags: addons_network_flannel
+
+- block:
+    - name: 分发镜像（需要花费一些时间...）
+      copy: src={{ software_dir }}/images/ovn dest={{ tmp_dir }}/images
+    - name: 导入kube-ovn镜像（需要花费一些时间...）
+      shell: cd {{ tmp_dir }}/images/ovn && \
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+  when: "cluster_network == 'kube-ovn'"
+  tags: addons_network_ovn
 
 - block:
     - name: 分发镜像（需要花费一些时间...）

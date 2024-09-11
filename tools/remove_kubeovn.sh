@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo "remove calico start >>>"
+ansible-playbook -i ../hosts ../01_install.yml -uroot -t addons_delete_ovn || exit 1
+echo "add calico yaml <<<"
+
+ansible -i ../hosts k8s  -m shell   -a 'rm -rf /var/run/openvswitch'
+ansible -i ../hosts k8s  -m shell   -a 'rm -rf /var/run/ovn'
+ansible -i ../hosts k8s  -m shell   -a 'rm -rf /etc/origin/openvswitch'
+ansible -i ../hosts k8s  -m shell   -a 'rm -rf /etc/origin/ovn'
+ansible -i ../hosts k8s  -m shell   -a 'rm -rf /etc/cni/net.d/00-kube-ovn.conflist'
+ansible -i ../hosts k8s  -m shell   -a 'rm -rf /etc/cni/net.d/01-kube-ovn.conflist'
+ansible -i ../hosts k8s  -m shell   -a 'rm -rf /var/log/openvswitch'
+ansible -i ../hosts k8s  -m shell   -a 'rm -rf /var/log/ovn'
+ansible -i ../hosts k8s  -m shell   -a 'rm -rf /var/log/kube-ovn'
+echo "add calico OK <<<"
