@@ -88,6 +88,25 @@ data:
         reload
         loadbalance
     }
+    {{ cluster_domain }}.:53 {
+        log
+        errors
+        health {
+            lameduck 5s
+        }
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+            pods insecure
+            fallthrough in-addr.arpa ip6.arpa
+            ttl 30
+        }
+        prometheus :9153
+        forward . /etc/resolv.conf
+        cache 30
+        loop
+        reload
+        loadbalance
+    }
 ---
 apiVersion: apps/v1
 kind: Deployment

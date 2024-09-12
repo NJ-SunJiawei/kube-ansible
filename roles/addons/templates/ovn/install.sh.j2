@@ -12,13 +12,18 @@ ENABLE_MIRROR=${ENABLE_MIRROR:-false}
 VLAN_NIC=${VLAN_NIC:-}
 HW_OFFLOAD=${HW_OFFLOAD:-false}
 ENABLE_LB=${ENABLE_LB:-false}  #Kube-OVN 使用 OVN 中的 L2 LB 来实现 Service 转发，在 Overlay 场景中，用户可以选择使用 kube-proxy 来完成 Service 流量转发,
-ENABLE_NP=${ENABLE_NP:-false}  #Kube-OVN 使用 OVN 中的 ACL 来实现 NetworkPolicy，用户可以选择关闭 NetworkPolicy 功能 或者使用 Cilium Chain 的方式利用 eBPF 实现 NetworkPolicy
 ENABLE_EIP_SNAT=${ENABLE_EIP_SNAT:-false}
 LS_DNAT_MOD_DL_DST=${LS_DNAT_MOD_DL_DST:-true}
 ENABLE_EXTERNAL_VPC=${ENABLE_EXTERNAL_VPC:-true}
-CNI_CONFIG_PRIORITY=${CNI_CONFIG_PRIORITY:-01}
-ENABLE_LB_SVC=${ENABLE_LB_SVC:-true}  #default false 开启该选项来支持 Load Balancer 类型 Service
+ENABLE_LB_SVC=${ENABLE_LB_SVC:-false}  #default false 开启该选项来支持 Load Balancer 类型 Service
 ENABLE_KEEP_VM_IP=${ENABLE_KEEP_VM_IP:-true}
+{% if kubeovn_cilium_enable %}
+ENABLE_NP=${ENABLE_NP:-false}  #Kube-OVN 使用 OVN 中的 ACL 来实现 NetworkPolicy，用户可以选择关闭 NetworkPolicy 功能 或者使用 Cilium Chain 的方式利用 eBPF 实现 NetworkPolicy
+CNI_CONFIG_PRIORITY=${CNI_CONFIG_PRIORITY:-10}
+{% else %}
+ENABLE_NP=${ENABLE_NP:-true}  #Kube-OVN 使用 OVN 中的 ACL 来实现 NetworkPolicy，用户可以选择关闭 NetworkPolicy 功能 或者使用 Cilium Chain 的方式利用 eBPF 实现 NetworkPolicy
+CNI_CONFIG_PRIORITY=${CNI_CONFIG_PRIORITY:-01}
+{% endif %}
 
 # exchange link names of OVS bridge and the provider nic
 # in the default provider-network

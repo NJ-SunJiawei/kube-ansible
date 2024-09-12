@@ -88,6 +88,8 @@ ingress_install: "yes"
 cluster_network: "calico" #calico/flannel/kube-ovn/
 # ------------------------------------------- kube-ovn
 kubeovn_ver: "v1.11.5"
+#kubeovn_loadbalancer_enable: false
+kubeovn_cilium_enable: true
 # ------------------------------------------- flannel
 # [flannel]设置flannel 后端"host-gw","vxlan"等
 flannel_backend: "vxlan"

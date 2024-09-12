@@ -6,6 +6,41 @@
     - addons_delete_ovn
 
 - block:
+    - name: copy cilium tool
+      shell: >
+             cp {{ tmp_dir }}/ovn/cilium-1.11.6.tgz {{ HELM_PATH }}/charts &&
+             helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
+             helm repo update 
+
+    - name: 创建ns
+      shell: | 
+              kubectl create ns kube-system
+      ignore_errors: true
+
+    - name: 卸载cilium-configmap
+      shell: |
+             kubectl delete -f {{ tmp_dir }}/ovn/chaining.yaml || echo true; sleep 3
+      tags:
+        - addons_delete
+        - addons_delete_ovn
+
+    - name: 卸载cilium
+      shell: |
+             helm uninstall cilium --namespace kube-system || echo true; sleep 3
+      tags:
+        - addons_delete
+        - addons_delete_ovn
+
+    - name: 卸载cilium
+      shell: |
+             rm -rf /etc/cni/net.d/05-cilium.conflist || echo true; sleep 5
+      tags:
+        - addons_delete
+        - addons_delete_ovn
+  when: 'kubeovn_cilium_enable|bool'
+
+
+- block:
     - name: 准备安装相关文件
       template: src=ovn/{{ item }} dest={{ tmp_dir }}/ovn/{{ item.split('.')[:-1]|join('.') }}
       with_items:
@@ -14,15 +49,26 @@
         - addons_delete
         - addons_delete_ovn
 
+#    - name: 卸载kube-ovn监控
+#      shell: 'kubectl delete -f {{ tmp_dir }}/ovn/ovn-promuthes.yaml || echo true; sleep 3'
+#      tags:
+#        - addons_delete
+#        - addons_delete_ovn
+
     - name: 卸载kube-ovn网络
       shell: 'cd {{ tmp_dir }}/ovn/ && bash cleanup.sh'
       ignore_errors: true
+      tags:
+        - addons_delete
+        - addons_delete_ovn
 
     - name: 安装kube-ovn网络
       shell: 'cd {{ tmp_dir }}/ovn/ && \
               bash install.sh >> {{ tmp_dir }}/ovn/install-kube-ovn-`date +"%Y%m%d%H%M%S"`.log 2>&1'
-  run_once: true
-  ignore_errors: true
+    
+ #   - name: 安装kube-ovn监控
+ #     shell: 'kubectl apply -f {{ tmp_dir }}/ovn/ovn-promuthes.yaml'
+
 
 
 # 等待网络插件部署成功
@@ -33,4 +79,29 @@
   retries: 15
   delay: 8
   ignore_errors: true
-  tags: force_change_certs
+  
+- block:
+    - name: 安装cilium-configmap
+      shell: |
+              kubectl apply -f {{ tmp_dir }}/ovn/chaining.yaml
+
+    - name: 部署cilium
+      shell: >
+             helm install cilium --namespace kube-system {{ tmp_dir }}/ovn/cilium-1.12.18.tgz
+                 -f {{ tmp_dir }}/ovn/values.yaml
+                 --set cni.chainingMode=generic-veth
+                 --set cni.customConf=true
+                 --set cni.configMap=cni-configuration
+                 --set tunnel=disabled
+                 --set enableIPv4Masquerade=false
+                 --set enableIdentityMark=false
+
+    - name: 更新cilium
+      shell: >
+             helm upgrade cilium --namespace kube-system {{ tmp_dir }}/ovn/cilium-1.12.18.tgz
+                 -f {{ tmp_dir }}/ovn/values.yaml
+                 --reuse-values
+                 --set hubble.relay.enabled=true
+                 --set hubble.ui.enabled=true
+                 --set hubble.metrics.enabled="{dns,drop,tcp,flow,icmp,http}"
+  when: 'kubeovn_cilium_enable|bool'
