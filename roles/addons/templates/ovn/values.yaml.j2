@@ -1163,9 +1163,9 @@ hubble:
       # -- Annotations to be added for the Hubble UI service
       annotations: {}
       # --- The type of service used for Hubble UI access, either ClusterIP or NodePort.
-      type: ClusterIP
+      type: {{ kubeovn_cilium_ui_svc_type }}
       # --- The port to use when the service type is set to NodePort.
-      nodePort: 31235
+      nodePort: {{ kubeovn_cilium_ui_nodeport }}
 
     # -- Defines base url prefix for all hubble-ui http requests.
     # It needs to be changed in case if ingress for hubble-ui is configured under some sub-path.

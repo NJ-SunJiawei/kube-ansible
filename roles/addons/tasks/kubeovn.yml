@@ -17,6 +17,14 @@
               kubectl create ns kube-system
       ignore_errors: true
 
+    - name: 准备安装相关文件
+      template: src=ovn/{{ item }} dest={{ tmp_dir }}/ovn/{{ item.split('.')[:-1]|join('.') }}
+      with_items:
+        - "values.yaml.j2"
+      tags:
+        - addons_delete
+        - addons_delete_ovn
+
     - name: 卸载cilium-configmap
       shell: |
              kubectl delete -f {{ tmp_dir }}/ovn/chaining.yaml || echo true; sleep 3
