@@ -10,7 +10,7 @@
       shell: >
              cp {{ tmp_dir }}/ovn/cilium-1.12.18.tgz {{ HELM_PATH }}/charts &&
              helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
-             helm repo update 
+             helm repo update
 
     - name: 创建ns
       shell: | 
@@ -31,9 +31,13 @@
         - addons_delete
         - addons_delete_ovn
 
-    - name: 卸载cilium
+    - name: 卸载cilium旧的配置
       shell: |
-             rm -rf /etc/cni/net.d/05-cilium.conflist || echo true; sleep 5
+             rm -rf /etc/cni/net.d/05-cilium.conflist
+             mv /etc/cni/net.d/10-kube-ovn.conflist.cilium_bak /etc/cni/net.d/10-kube-ovn.conflist || echo true
+      delegate_to: "{{ item }}"
+      with_items: ["{{ groups.k8s }}"]
+      ignore_errors: true
       tags:
         - addons_delete
         - addons_delete_ovn
@@ -88,20 +92,20 @@
     - name: 部署cilium
       shell: >
              helm install cilium --namespace kube-system {{ tmp_dir }}/ovn/cilium-1.12.18.tgz
-                 -f {{ tmp_dir }}/ovn/values.yaml
-                 --set cni.chainingMode=generic-veth
-                 --set cni.customConf=true
-                 --set cni.configMap=cni-configuration
-                 --set tunnel=disabled
-                 --set enableIPv4Masquerade=false
-                 --set enableIdentityMark=false
+             -f {{ tmp_dir }}/ovn/values.yaml
+             --set cni.chainingMode=generic-veth
+             --set cni.customConf=true
+             --set cni.configMap=cni-configuration
+             --set tunnel=disabled
+             --set enableIPv4Masquerade=false
+             --set enableIdentityMark=false
 
     - name: 更新cilium
       shell: >
              helm upgrade cilium --namespace kube-system {{ tmp_dir }}/ovn/cilium-1.12.18.tgz
-                 -f {{ tmp_dir }}/ovn/values.yaml
-                 --reuse-values
-                 --set hubble.relay.enabled=true
-                 --set hubble.ui.enabled=true
-                 --set hubble.metrics.enabled="{dns,drop,tcp,flow,icmp,http}"
+             -f {{ tmp_dir }}/ovn/values.yaml
+             --reuse-values
+             --set hubble.relay.enabled=true
+             --set hubble.ui.enabled=true
+             --set hubble.metrics.enabled="{dns,drop,tcp,flow,icmp,http}"
   when: 'kubeovn_cilium_enable|bool'
