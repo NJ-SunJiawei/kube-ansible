@@ -8,7 +8,7 @@
 - block:
     - name: copy cilium tool
       shell: >
-             cp {{ tmp_dir }}/ovn/cilium-1.11.6.tgz {{ HELM_PATH }}/charts &&
+             cp {{ tmp_dir }}/ovn/cilium-1.12.18.tgz {{ HELM_PATH }}/charts &&
              helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
              helm repo update 
 
