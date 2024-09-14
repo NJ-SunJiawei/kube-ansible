@@ -114,7 +114,7 @@ image:
   pullPolicy: "IfNotPresent"
   # cilium-digest
   # digest: "sha256:71218d52b2b9a63525e31e9be716810605696cbc02008e658953212f638d6b6b"
-  useDigest: true
+  useDigest: false  #true
 
 # -- Affinity for cilium-agent.
 affinity:
@@ -798,7 +798,7 @@ hubble:
       #                 certificates not provided by the user at installation
       #                 time.
       # - certmanager:  This method use cert-manager to generate & rotate certificates.
-      method: helm
+      method: cronJob
       # -- Generated certificates validity duration in days.
       certValidityDuration: 1095
       # -- Schedule for certificates regeneration (regardless of their expiration date).
@@ -851,7 +851,7 @@ hubble:
       tag: "v1.12.18"
        # hubble-relay-digest
       #digest: "sha256:c82cc7843cbc13314fdc3e0c1e8e584200ca30d9afefbbaaf7a3abb4e1246083"
-      useDigest: true
+      useDigest: false #true
       pullPolicy: "IfNotPresent"
 
     # -- Specifies the resources for the hubble-relay pods
@@ -946,7 +946,7 @@ hubble:
       server:
         # When set to true, enable TLS on for Hubble Relay server
         # (ie: for clients connecting to the Hubble Relay API).
-        enabled: false
+        enabled: true
         # These values need to be set manually if hubble.tls.auto.enabled is false.
         cert: ""
         key: ""
@@ -1657,7 +1657,7 @@ operator:
     #awsDigest: "sha256:b106b24c317ba95d16ad55fa81c9058ccc5a5961c40afaa504eb28cd29d88422"
     # operator-alibabacloud-digest
     #alibabacloudDigest: "sha256:1fa4cb0a255d45080c35d4fd92adb68700c864669d58ce396e18aa57488fc4fb"
-    useDigest: true
+    useDigest: false #true
     pullPolicy: "IfNotPresent"
     suffix: ""
 
@@ -1908,7 +1908,7 @@ preflight:
     tag: "v1.12.18"
     # cilium-digest
     #digest: "sha256:71218d52b2b9a63525e31e9be716810605696cbc02008e658953212f638d6b6b"
-    useDigest: true
+    useDigest: false #true
     pullPolicy: "IfNotPresent"
 
   # -- The priority class to use for the preflight pod.
@@ -2054,7 +2054,7 @@ clustermesh:
       tag: "v1.12.18"
       # clustermesh-apiserver-digest
       #digest: "sha256:237371c5e75c97389b81b5e44b6d39fd141e631efacf93fabafa6efa5174fa3a"
-      useDigest: true
+      useDigest: false #true
       pullPolicy: "IfNotPresent"
 
     etcd:

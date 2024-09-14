@@ -42,6 +42,10 @@
   tags: addons_coredns
 #  when: '"coredns" not in pod_info.stdout'
 
+- import_tasks: nfs.yml
+  tags: addons_nfs
+#  when: '"nfs-client-provisioner" not in pod_info.stdout'
+
 - import_tasks: calico.yml
   tags: addons_network_calico
   when:
@@ -74,10 +78,6 @@
   tags: addons_ingress
   when:
     - ingress_install == "yes"
-
-- import_tasks: nfs.yml
-  tags: addons_nfs
-#  when: '"nfs-client-provisioner" not in pod_info.stdout'
 
 - import_tasks: metrics-server.yml
   tags: addons_metrics

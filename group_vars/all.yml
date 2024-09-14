@@ -90,6 +90,8 @@ cluster_network: "calico" #calico/flannel/kube-ovn/
 kubeovn_ver: "v1.11.5"
 #kubeovn_loadbalancer_enable: false
 kubeovn_cilium_enable: true
+kubeovn_cilium_ui_svc_type: "NodePort"
+kubeovn_cilium_ui_nodeport: 31235
 # ------------------------------------------- flannel
 # [flannel]设置flannel 后端"host-gw","vxlan"等
 flannel_backend: "vxlan"
