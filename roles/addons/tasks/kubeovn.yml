@@ -82,6 +82,7 @@
  #     shell: 'kubectl apply -f {{ tmp_dir }}/ovn/ovn-promuthes.yaml'
 
 
+#issues hubble每次卸载后请重启
 
 # 等待网络插件部署成功
 - name: 轮询等待kube-ovn 运行，视下载镜像速度而定
