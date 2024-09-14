@@ -42,10 +42,6 @@
   tags: addons_coredns
 #  when: '"coredns" not in pod_info.stdout'
 
-- import_tasks: nfs.yml
-  tags: addons_nfs
-#  when: '"nfs-client-provisioner" not in pod_info.stdout'
-
 - import_tasks: calico.yml
   tags: addons_network_calico
   when:
@@ -62,6 +58,10 @@
   tags: addons_network_ovn
   when:
     - "cluster_network == 'kube-ovn'"
+
+- import_tasks: nfs.yml
+  tags: addons_nfs
+#  when: '"nfs-client-provisioner" not in pod_info.stdout'
 
 - import_tasks: multus.yml
   tags: addons_multus
