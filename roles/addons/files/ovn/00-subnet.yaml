@@ -1,0 +1,30 @@
+---
+apiVersion: kubeovn.io/v1
+kind: Subnet
+metadata:
+  name: subnet66
+spec:
+  protocol: IPv4
+  cidrBlock: 10.66.0.0/16
+  excludeIps:
+  - 10.66.0.1..10.66.0.10
+  - 10.66.0.101..10.66.0.151
+  gateway: 10.66.0.1
+  gatewayType: distributed
+  natOutgoing: true
+  namespaces:
+  - ns1
+  - ns2
+  #private: true #子网隔离
+  #allowSubnets: #allowSubnets 内的网段和该子网可以双向互访
+  #- 10.16.0.0/16
+  #- 10.18.0.0/16
+  #acls: #允许 IP 地址为 10.10.0.2 的 Pod 访问所有地址，但不允许其他地址主动访问自己的 ACL 规则
+  #  - action: drop
+  #    direction: to-lport
+  #    match: ip4.dst == 10.10.0.2 && ip
+  #    priority: 1002
+  #  - action: allow-related
+  #    direction: from-lport
+  #    match: ip4.src == 10.10.0.2 && ip
+  #    priority: 1002
