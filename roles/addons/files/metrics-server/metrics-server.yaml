@@ -140,6 +140,7 @@ spec:
             namespaces:
             - kube-system
             topologyKey: kubernetes.io/hostname
+      hostNetwork: true
       containers:
       - args:
         - --cert-dir=/tmp
@@ -147,7 +148,7 @@ spec:
         - --kubelet-insecure-tls
         - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname,InternalDNS,ExternalDNS
         - --kubelet-use-node-status-port
-        - --metric-resolution=15s
+        - --metric-resolution=30s
         image: registry.aliyuncs.com/google_containers/metrics-server:v0.7.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
