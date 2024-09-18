@@ -783,7 +783,7 @@ hubble:
     # -- Enable mutual TLS for listenAddress. Setting this value to false is
     # highly discouraged as the Hubble API provides access to potentially
     # sensitive network flow metadata and is exposed on the host network.
-    enabled: true
+    enabled: false
     # -- Configure automatic TLS certificates generation.
     auto:
       # -- Auto-generate certificates.
@@ -946,7 +946,7 @@ hubble:
       server:
         # When set to true, enable TLS on for Hubble Relay server
         # (ie: for clients connecting to the Hubble Relay API).
-        enabled: true
+        enabled: false
         # These values need to be set manually if hubble.tls.auto.enabled is false.
         cert: ""
         key: ""

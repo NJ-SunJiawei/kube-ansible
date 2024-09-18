@@ -42,6 +42,12 @@
   tags: addons_coredns
 #  when: '"coredns" not in pod_info.stdout'
 
+- import_tasks: multus.yml
+  tags: addons_multus
+  when:
+    - multus_install == "yes"
+#    - '"macvlan" not in pod_info.stdout'
+
 - import_tasks: calico.yml
   tags: addons_network_calico
   when:
@@ -62,12 +68,6 @@
 - import_tasks: nfs.yml
   tags: addons_nfs
 #  when: '"nfs-client-provisioner" not in pod_info.stdout'
-
-- import_tasks: multus.yml
-  tags: addons_multus
-  when:
-    - multus_install == "yes"
-#    - '"macvlan" not in pod_info.stdout'
 
 - import_tasks: metallb.yml
   tags: addons_metallb
