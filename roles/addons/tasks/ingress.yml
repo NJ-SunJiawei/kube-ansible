@@ -32,9 +32,7 @@
 
 - name: 更新部署
   shell: >
-         helm upgrade --install ingress-nginx {{ tmp_dir }}/ingress/ingress-nginx-4.7.1.tgz
-         -f {{ tmp_dir }}/ingress/values.yaml
-         --namespace ingress-nginx
+         helm upgrade --install ingress-nginx {{ tmp_dir }}/ingress/ingress-nginx-4.7.1.tgz  --namespace ingress-nginx
 
 #- name: 更新metrics部署
 #  shell: >

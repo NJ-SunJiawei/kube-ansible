@@ -17,6 +17,14 @@
     - addons_delete
     - addons_delete_multus
 
+- name: 删除multus配置文件
+  shell: |
+          rm -rf /etc/cni/net.d/00-multus.conf
+          rm -rf /etc/cni/net.d/multus.d
+  tags:
+    - addons_delete
+    - addons_delete_multus
+
 - name: 创建multus部署
   shell: "kubectl apply -f {{ tmp_dir }}/multus/multus-daemonset.yml"
 
