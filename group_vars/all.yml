@@ -117,7 +117,10 @@ calico_as_number: 64512
 #etcd
 tmp_endpoints: "{% for h in groups['etcd'] %}https://{{ h }}:2379,{% endfor %}"
 etcd_endpoints: "{{ tmp_endpoints.rstrip(',') }}"
-
+#cilium
+calico_cilium_enable: false
+calico_cilium_ui_svc_type: "NodePort"
+calico_cilium_ui_nodeport: 31236
 ############################
 # ipvs
 ############################

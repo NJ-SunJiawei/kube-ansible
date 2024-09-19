@@ -1,11 +1,56 @@
 ---
+- name: 创建临时目录
+  copy: src=calico dest={{ tmp_dir }}
+  tags:
+    - addons_delete
+    - addons_delete_calico
+
 - block:
-    - name: 创建临时目录
-      file: dest={{ tmp_dir }}/calico state=directory
+    - name: copy cilium tool
+      shell: >
+             cp {{ tmp_dir }}/calico/cilium-1.12.18.tgz {{ HELM_PATH }}/charts &&
+             helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
+             helm repo update
+
+    - name: 创建ns
+      shell: | 
+              kubectl create ns kube-system
+      ignore_errors: true
+
+    - name: 准备安装相关文件
+      template: src=calico/{{ item }} dest={{ tmp_dir }}/calico/{{ item.split('.')[:-1]|join('.') }}
+      with_items:
+        - "values.yaml.j2"
       tags:
         - addons_delete
         - addons_delete_calico
 
+    - name: 卸载cilium-configmap
+      shell: |
+             kubectl delete -f {{ tmp_dir }}/calico/chaining.yaml || echo true; sleep 3
+      tags:
+        - addons_delete
+        - addons_delete_calico
+
+    - name: 卸载cilium
+      shell: |
+             helm uninstall cilium --namespace kube-system || echo true; sleep 3
+      tags:
+        - addons_delete
+        - addons_delete_calico
+
+    - name: 卸载cilium旧的配置
+      shell: |
+             rm -rf /etc/cni/net.d/05-cilium.conflist
+      delegate_to: "{{ item }}"
+      with_items: ["{{ groups.k8s }}"]
+      ignore_errors: true
+      tags:
+        - addons_delete
+        - addons_delete_calico
+  when: 'kubeovn_cilium_enable|bool'
+
+- block:
     - name: 删除旧 calico-etcd-secrets
       shell: "kubectl -n kube-system delete secrets calico-etcd-secrets || echo NotFound"
       tags:
@@ -26,6 +71,18 @@
         - addons_delete
         - addons_delete_calico
 
+    - name: 卸载calico旧的配置
+      shell: |
+             rm -rf /etc/cni/net.d/10-calico.conflist
+             rm -rf /etc/cni/net.d/calico-kubeconfig || echo true
+             rm -rf /etc/cni/net.d/calico-tls || echo true
+      delegate_to: "{{ item }}"
+      with_items: ["{{ groups.k8s }}"]
+      ignore_errors: true
+      tags:
+        - addons_delete
+        - addons_delete_calico
+
     - name: 创建 calico-etcd-secrets
       shell: "kubectl create secret generic -n kube-system calico-etcd-secrets \
               --from-file=etcd-ca={{ k8s_work_dir }}/ssl/etcd/ca.pem \
@@ -37,6 +94,26 @@
 
 - import_tasks: calico-rr.yml
   when: 'calico_rr_enable|bool'
+
+- block:
+    - name: 安装cilium-configmap
+      shell: |
+              kubectl apply -f {{ tmp_dir }}/calico/chaining.yaml
+
+    - name: 部署cilium
+      shell: >
+             helm install cilium --namespace kube-system {{ tmp_dir }}/calico/cilium-1.12.18.tgz
+             -f {{ tmp_dir }}/calico/values.yaml
+             --set cni.chainingMode=generic-veth
+             --set cni.customConf=true
+             --set cni.configMap=cni-configuration
+             --set routingMode=native
+             --set enableIPv4Masquerade=false
+             --set enableIdentityMark=false
+             --set hubble.relay.enabled=true
+             --set hubble.ui.enabled=true
+             --set hubble.metrics.enabled="{dns,drop,tcp,flow,icmp,http}"
+  when: 'calico_cilium_enable|bool'
 
 #loadbalancer ip暴露
 #calicoctl patch BGPConfig default --patch '{"spec": {"serviceLoadBalancerIPs": [{"cidr": "10.11.0.0/16"},{"cidr":"10.1.5.0/24"}]}}'
