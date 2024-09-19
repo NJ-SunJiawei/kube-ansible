@@ -64,7 +64,15 @@
 #  shell: "kubectl apply -f {{ tmp_dir }}/metallb/metallb.yaml ; sleep 10"
 
 - name: 休息下
-  shell: "sleep 20"
+  shell: "sleep 10"
+
+- name: Wait for metallb weebhook installer to complete
+  shell: |
+         kubectl get endpoints -n metallb-system| grep 'metallb-webhook-service' | wc -l
+  register: webhook_output
+  until: webhook_output.stdout | int != 0
+  retries: 30
+  delay: 5
 
 - name: 创建L2部署
   shell: "kubectl apply -f {{ tmp_dir }}/metallb/L2.yaml"
