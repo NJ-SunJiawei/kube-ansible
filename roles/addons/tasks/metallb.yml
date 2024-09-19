@@ -12,7 +12,7 @@
    - L2.yaml.j2
   tags:
     - addons_delete
-    - addons_delete_calico
+    - addons_delete_metallb
 
 - name: 删除L2部署
   shell: "kubectl delete -f {{ tmp_dir }}/metallb/L2.yaml || echo true; sleep 3"
