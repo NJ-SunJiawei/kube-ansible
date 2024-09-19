@@ -30,6 +30,10 @@
         - addons_delete
         - addons_delete_ovn
 
+    - name: 卸载hubble cli
+      shell: |
+             kubectl delete -f {{ tmp_dir }}/ovn/hubble-cli.yaml -n kube-system || echo true; sleep 3
+
     - name: 卸载cilium-configmap
       shell: |
              kubectl delete -f {{ tmp_dir }}/ovn/chaining.yaml || echo true; sleep 3
@@ -150,8 +154,14 @@
       ignore_errors: true
 
     - name: 部署hubble ui
-      shell: >
+      shell: |
              /usr/local/bin/cilium hubble enable --ui
+      tags:
+        - addons_hubble_update
+
+    - name: 部署hubble cli
+      shell: |
+             kubectl apply -f {{ tmp_dir }}/ovn/hubble-cli.yaml -n kube-system
       tags:
         - addons_hubble_update
 
