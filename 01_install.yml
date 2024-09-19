@@ -87,4 +87,5 @@
   hosts: master
   roles:
     - addons
+  run_once: true
   tags: addons

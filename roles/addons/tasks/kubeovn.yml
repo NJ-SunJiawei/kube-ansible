@@ -8,9 +8,14 @@
 - block:
     - name: copy cilium tool
       shell: >
-             cp {{ tmp_dir }}/ovn/cilium-1.12.18.tgz {{ HELM_PATH }}/charts &&
+             cp {{ tmp_dir }}/ovn/cilium-1.16.1.tgz {{ HELM_PATH }}/charts &&
              helm repo index {{ HELM_PATH }}/charts --url http://{{ groups['helm'][0] }}:{{ HELM_PORT }}/charts &&
              helm repo update
+
+    - name: 分发并解压cilium cli二进制包
+      unarchive: src={{ item }} dest=/usr/local/bin
+      with_fileglob:
+        - "{{ software_dir }}/cilium-linux-*.tar.gz"
 
     - name: 创建ns
       shell: | 
@@ -104,21 +109,50 @@
   ignore_errors: true
   
 - block:
+#https://docs.cilium.io/en/stable/installation/cni-chaining-calico/
     - name: 安装cilium-configmap
       shell: |
               kubectl apply -f {{ tmp_dir }}/ovn/chaining.yaml
 
     - name: 部署cilium
       shell: >
-             helm install cilium --namespace kube-system {{ tmp_dir }}/ovn/cilium-1.12.18.tgz
+             helm install cilium --namespace kube-system {{ tmp_dir }}/ovn/cilium-1.16.1.tgz
              -f {{ tmp_dir }}/ovn/values.yaml
              --set cni.chainingMode=generic-veth
              --set cni.customConf=true
              --set cni.configMap=cni-configuration
-             --set tunnel=disabled
+             --set routingMode=native
              --set enableIPv4Masquerade=false
              --set enableIdentityMark=false
-             --set hubble.relay.enabled=true
-             --set hubble.ui.enabled=true
-             --set hubble.metrics.enabled="{dns,drop,tcp,flow,icmp,http}"
+
+
+    - name: 轮询等待cilium 运行
+      shell: "/usr/local/bin/cilium status"
+      register: cilium_status
+      until: cilium_status.stdout.count('OK') == 3
+      retries: 15
+      delay: 10
+      ignore_errors: true
+
+#https://docs.cilium.io/en/latest/observability/hubble/setup/
+    - name: 部署hubble
+      shell: >
+             /usr/local/bin/cilium hubble enable
+      tags:
+        - addons_hubble_update
+
+    - name: 轮询等待cilium 运行
+      shell: "/usr/local/bin/cilium status"
+      register: cilium_status
+      until: cilium_status.stdout.count('OK') == 4
+      retries: 15
+      delay: 10
+      ignore_errors: true
+
+    - name: 部署hubble ui
+      shell: >
+             /usr/local/bin/cilium hubble enable --ui
+      tags:
+        - addons_hubble_update
+
   when: 'kubeovn_cilium_enable|bool'
