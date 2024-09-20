@@ -87,11 +87,11 @@
 
 #问题解决：nvidia-device-plugin           nvdp-nvidia-device-plugin                      0         0         0       0            0           <none>                        144m
 #https://github.com/NVIDIA/k8s-device-plugin/issues/708
-
+#dcgm-exporter会匹配到nvidia.com/gpu.present存在的node，无需指定值
     - name: 打nsp标签
       shell: |
-             kubectl label nodes {{ hostvars[item].node_name }} feature.node.kubernetes.io/pci-10de.present=false  --overwrite
-             kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/gpu.present=false  --overwrite
+             kubectl label nodes {{ hostvars[item].node_name }} feature.node.kubernetes.io/pci-10de.present-
+             kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/gpu.present-
       when: "hostvars[item].gpu_label == 'nsp'"
       with_items: ["{{ groups.master }}", "{{ groups.node }}"]  
 
