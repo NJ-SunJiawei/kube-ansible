@@ -41,8 +41,8 @@ yum install nfs-utils rpcbind -y
 
 下载准备好软件包（包含所有涉及文件和镜像，比较大），解压到指定目录：
 ```
-链接：https://pan.baidu.com/s/1I09BeIDG2nIgA9caPhTuiA 
-提取码：1234
+链接：https://pan.baidu.com/s/14GaKYy-uyyjFtTM1gMiCAQ 
+提取码：h1zd
 ```
 ### 3、修改Ansible文件
 
