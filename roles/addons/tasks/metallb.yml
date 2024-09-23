@@ -74,5 +74,8 @@
   retries: 30
   delay: 5
 
+- name: 休息下
+  shell: "sleep 30"
+
 - name: 创建L2部署
   shell: "kubectl apply -f {{ tmp_dir }}/metallb/L2.yaml"
