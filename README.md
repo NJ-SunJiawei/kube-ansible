@@ -1,3 +1,6 @@
+![image](https://github.com/user-attachments/assets/64886840-473e-4b8d-8d7c-0fafbe62b5ee)
+
+
 ### 0、集群安装环境
 
 <img width="662" alt="0891e363822b6aa9dbb355f066af4f9" src="https://github.com/user-attachments/assets/2ff36409-2e59-4be1-af16-176c7cabd066">
@@ -38,8 +41,7 @@ yum install nfs-utils rpcbind -y
 
 下载准备好软件包（包含所有涉及文件和镜像，比较大），解压到指定目录：
 ```
-链接：https://pan.baidu.com/s/1I09BeIDG2nIgA9caPhTuiA 
-提取码：1234
+链接：https://pan.baidu.com/s/14GaKYy-uyyjFtTM1gMiCAQ 
 ```
 ### 3、修改Ansible文件
 
