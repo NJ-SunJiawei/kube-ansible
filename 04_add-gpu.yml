@@ -133,7 +133,7 @@
       with_items: ["{{ groups.master }}", "{{ groups.node }}"]
 
 #时间分片和 MPS 的使用是互相排斥的,可以集群不同node混部，默认配置mps
-    - name: 更新部署
+    - name: 更新部署type1
       shell: >
              helm upgrade -i nvdp
              {{ tmp_dir }}/nvidia/nvidia-device-plugin-{{ nvidia_gpu_plugin_ver }}.tgz
@@ -144,6 +144,22 @@
              --set-file config.map.config0={{ tmp_dir }}/nvidia/dp-only-one-config.yaml
              --set-file config.map.config1={{ tmp_dir }}/nvidia/dp-mps-config.yaml
              --set-file config.map.config2={{ tmp_dir }}/nvidia/dp-time-slicing-config.yaml
+      when:
+        - "cluster_network != 'kube-ovn'"
+#when use ovn ,error gfd:grpc: addrConn.createTransport failed to connect to {Addr: "nvdp-node-feature-discovery-master:8080", ServerName: "nvdp-node-feature-discovery-master:8080", }
+#gfd bug fix: 使用ovn网络时候会冲突，直接屏蔽--set gfd.enabled=true
+    - name: 更新部署type2
+      shell: >
+             helm upgrade -i nvdp
+             {{ tmp_dir }}/nvidia/nvidia-device-plugin-{{ nvidia_gpu_plugin_ver }}.tgz
+             --namespace nvidia-device-plugin
+             --create-namespace
+             --set config.default=config0
+             --set-file config.map.config0={{ tmp_dir }}/nvidia/dp-only-one-config.yaml
+             --set-file config.map.config1={{ tmp_dir }}/nvidia/dp-mps-config.yaml
+             --set-file config.map.config2={{ tmp_dir }}/nvidia/dp-time-slicing-config.yaml
+      when:
+        - "cluster_network == 'kube-ovn'"
 
 #--set compatWithCPUManager=true #启用兼容性CPUManager并以 100ms 的 CPU 时间请求和 512MB 内存限制运行
 #--set resources.requests.cpu=100m
