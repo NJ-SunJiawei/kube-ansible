@@ -21,14 +21,14 @@
       copy: src={{ software_dir }}/images/base dest={{ tmp_dir }}/images
     - name: 导入base镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/base && \
-             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;sleep 0.5;done
 
 - block:
     - name: 分发镜像（需要花费一些时间...）
       copy: src={{ software_dir }}/images/calico dest={{ tmp_dir }}/images
     - name: 导入calico镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/calico && \
-             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;sleep 0.5;done
     - name: 在节点创建相关目录
       file: name={{ item }} state=directory
       with_items:
@@ -62,7 +62,7 @@
       copy: src={{ software_dir }}/images/flannel dest={{ tmp_dir }}/images
     - name: 导入flannel镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/flannel && \
-             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;sleep 0.5;done
   when: "cluster_network == 'flannel'"
   tags: addons_network_flannel
 
@@ -71,7 +71,7 @@
       copy: src={{ software_dir }}/images/ovn dest={{ tmp_dir }}/images
     - name: 导入kube-ovn镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/ovn && \
-             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;sleep 0.5;done
   when: "cluster_network == 'kube-ovn'"
   tags: addons_network_ovn
 
@@ -80,7 +80,7 @@
       copy: src={{ software_dir }}/images/dns dest={{ tmp_dir }}/images
     - name: 导入dns镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/dns && \
-             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;sleep 0.5;done
   tags: addons_coredns
 
 - block:
@@ -88,7 +88,7 @@
       copy: src={{ software_dir }}/images/nfs dest={{ tmp_dir }}/images
     - name: 导入nfs镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/nfs && \
-             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;sleep 0.5;done
   tags: addons_nfs
 
 - block:
@@ -96,7 +96,7 @@
       copy: src={{ software_dir }}/images/multus dest={{ tmp_dir }}/images
     - name: 导入multus镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/multus && \
-             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;sleep 0.5;done
   when: multus_install == "yes"
   tags: addons_multus
 
@@ -105,7 +105,7 @@
       copy: src={{ software_dir }}/images/metallb dest={{ tmp_dir }}/images
     - name: 导入metallb镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/metallb && \
-             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;sleep 0.5;done
   when: metallb_install == "yes"
   tags: addons_metallb
 
@@ -114,7 +114,7 @@
       copy: src={{ software_dir }}/images/ingress dest={{ tmp_dir }}/images
     - name: 导入ingress镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/ingress && \
-             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;sleep 0.5;done
   when: ingress_install == "yes"
   tags: addons_ingress
 
@@ -123,7 +123,7 @@
       copy: src={{ software_dir }}/images/dashboard dest={{ tmp_dir }}/images
     - name: 导入dashboard镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/dashboard && \
-             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;sleep 0.5;done
   when: dashboard_install == "yes"
   tags: addons_dashboard
 
@@ -132,7 +132,7 @@
       copy: src={{ software_dir }}/images/metrics dest={{ tmp_dir }}/images
     - name: 导入metrics-server镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/metrics && \
-             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;sleep 0.5;done
   when: metrics_server_install == "yes"
   tags: addons_metrics
 
@@ -142,7 +142,7 @@
       copy: src={{ software_dir }}/images/prometheus dest={{ tmp_dir }}/images
     - name: 导入prometheus镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/prometheus && \
-             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;sleep 0.5;done
   when: prom_install == "yes"
   tags: addons_prometheus
 
@@ -154,6 +154,6 @@
       copy: src={{ software_dir }}/images/kubesphere/registry.zjy.com_tsz_kubesphere_ks-console_v3.3.2.tar dest={{ tmp_dir }}/images/kubesphere
     - name: 导入kubesphere镜像（需要花费一些时间...）
       shell: cd {{ tmp_dir }}/images/kubesphere && \
-             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+             for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;sleep 0.5;done
   when: kubesphere_install == "yes"
   tags: addons_kubesphere

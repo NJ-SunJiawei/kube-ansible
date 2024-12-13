@@ -140,7 +140,7 @@ spec:
             namespaces:
             - kube-system
             topologyKey: kubernetes.io/hostname
-      hostNetwork: true
+      hostNetwork: true #https://blog.csdn.net/weixin_44227567/article/details/128112062
       containers:
       - args:
         - --cert-dir=/tmp

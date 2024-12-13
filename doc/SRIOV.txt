@@ -1,0 +1,73 @@
+#https://support.huawei.com/enterprise/zh/doc/EDOC1100063070/23e4177e
+#https://cloud.tencent.com/developer/article/2010030
+#https://www.cnblogs.com/dream397/p/13932065.html
+#https://www.chenshaowen.com/blog/sr-iov-technique.html
+
+https://github.com/k8snetworkplumbingwg/sriov-network-operator
+
+dmesg | grep -i iommu
+dmesg | grep -i smmu
+cat /proc/iomem | grep -i smmu
+
+
+1. 修改Bios enable SR-IOV
+只支持pcie虚拟化
+高级—PCIE设备信息和配置—PCIE配置—SR-IOV支持；
+高级—兼容模式—PCIE SMMU开启
+这两个选项在bios setup下默认是关闭
+
+2、查找宿主机上是否有支持SR-IOV的智能网卡
+lspci -v | grep -i SR-IOV
+
+lspci -nn | grep Eth
+lspci -s 0000:0b:00.0  -vvv | grep Capabilities
+'''
+	Capabilities: [40] Power Management version 3
+	Capabilities: [50] MSI: Enable- Count=1/1 Maskable+ 64bit+
+	Capabilities: [70] MSI-X: Enable+ Count=129 Masked-
+	Capabilities: [a0] Express (v2) Endpoint, MSI 00
+	Capabilities: [e0] Vital Product Data
+	Capabilities: [100 v2] Advanced Error Reporting
+	Capabilities: [140 v1] Device Serial Number 59-ad-67-ff-ff-c4-c2-9c
+	Capabilities: [150 v1] Alternative Routing-ID Interpretation (ARI)
+	Capabilities: [160 v1] Single Root I/O Virtualization (SR-IOV)  ！！！！！有这行说明网卡支持SRIOV
+	Capabilities: [1a0 v1] Transaction Processing Hints
+	Capabilities: [1b0 v1] Access Control Services
+	Capabilities: [1d0 v1] Secondary PCI Express
+'''
+
+3、
+CONFIG_ARM_SMMU=y
+CONFIG_ARM_SMMU_V3=y
+
+modprobe -v vfio-pci
+
+cat /proc/cmdline 
+'''
+iommu=on(默认是打开的，写不写无所谓) iommu.passthrough=on(透传模式)
+'''
+修改 /etc/default/grub：
+
+iommu.passthrough=on	启用所有设备的 IOMMU 直通模式，绕过地址翻译。	系统全局，所有 IOMMU 设备。	降低安全性，但提高性能。
+(更好)smmu.bypassdev=0x1000:0x17	针对指定设备禁用 SMMU 地址翻译功能。	单个 SMMU 设备（通过 BDF 指定）。	仅影响指定设备的安全性。
+lspci -nn | grep 1000:0017查找smmu.bypassdev设备
+
+4、确定设备的厂商号、设备号和驱动信息
+cat /sys/bus/pci/devices/0000:0d:00.0/sriov_totalvfs
+cat /sys/bus/pci/devices/0000:0d:00.0/sriov_numvfs
+lspci | grep "Virtual Function"
+find /sys/kernel/iommu_groups/ -type l
+lspci -vvt
+ 
+选择一张SR-IOV设备，
+生成vf设备：     echo 4 > /sys/bus/pci/devices/0000:0d:00.0/sriov_numvfs
+关闭SR-IOV功能： echo 0 > /sys/bus/pci/devices/0000:0d:00.0/sriov_numvfs
+查看设备驱动：ls -l /sys/class/pci_bus/0000:0d/device/0000:0d:02.0 | grep driver
+
+5、基于以太网口名字配置 enp13s0f0（网卡名字是可能变de）
+ls /sys/class/net/
+cat /sys/class/net/enp13s0f0/device/sriov_numvfs
+echo 8 > /sys/class/net/enp13s0f0/device/sriov_numvfs
+echo 0 > /sys/class/net/enp13s0f0/device/sriov_numvfs
+ip link show enp13s0f0
+ethtool -i enp13s0f0v0 可以看到驱动类型
