@@ -1,0 +1,23 @@
+---
+- name: 创建临时目录
+  copy: src=sriov dest={{ tmp_dir }}
+  tags:
+    - addons_delete
+    - addons_delete_sriov
+
+- name: sriov yml
+  template: src=sriov/{{ item }} dest={{ tmp_dir }}/sriov/{{ item.split('.')[:-1]|join('.') }}
+  with_items:
+   - sriovdp-config.yml.j2
+  tags:
+    - addons_delete
+    - addons_delete_sriov
+
+- name: 删除sriov部署
+  shell: "kubectl delete -f {{ tmp_dir }}/sriov/ || echo true; sleep 3"
+  tags:
+    - addons_delete
+    - addons_delete_sriov
+
+- name: 创建sriov部署
+  shell: "kubectl apply -f {{ tmp_dir }}/sriov/"

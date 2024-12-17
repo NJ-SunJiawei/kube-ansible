@@ -85,8 +85,11 @@ cert_hosts:
 multus_install: "yes"
 metallb_install: "yes"
 ingress_install: "yes"
+sriov_install: "yes"
 cluster_network: "calico" #calico/flannel/kube-ovn/
-# ------------------------------------------- kube-ovn
+# -------------------------------------------sriov
+sriov_vf_nums: 8
+# -------------------------------------------kube-ovn
 kubeovn_ver: "v1.11.5"
 #kubeovn_loadbalancer_enable: false
 kubeovn_cilium_enable: true

@@ -2,8 +2,10 @@
 #https://cloud.tencent.com/developer/article/2010030
 #https://www.cnblogs.com/dream397/p/13932065.html
 #https://www.chenshaowen.com/blog/sr-iov-technique.html
+#https://segmentfault.com/a/1190000021061494?sort=votes
 
 https://github.com/k8snetworkplumbingwg/sriov-network-operator
+https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin/blob/master/docs/vf-setup.md
 
 dmesg | grep -i iommu
 dmesg | grep -i smmu
@@ -20,7 +22,7 @@ cat /proc/iomem | grep -i smmu
 lspci -v | grep -i SR-IOV
 
 lspci -nn | grep Eth
-lspci -s 0000:0b:00.0  -vvv | grep Capabilities
+lspci -s 0000:0d:00.0  -vvv | grep Capabilities
 '''
 	Capabilities: [40] Power Management version 3
 	Capabilities: [50] MSI: Enable- Count=1/1 Maskable+ 64bit+
@@ -58,16 +60,28 @@ cat /sys/bus/pci/devices/0000:0d:00.0/sriov_numvfs
 lspci | grep "Virtual Function"
 find /sys/kernel/iommu_groups/ -type l
 lspci -vvt
+
+查看设备驱动：ls -l /sys/class/pci_bus/0000:0d/device/0000:0d:02.0 | grep driver
+查看厂商号和设备号是:lspci -n | grep 0000:0d:02.0
  
 选择一张SR-IOV设备，
 生成vf设备：     echo 4 > /sys/bus/pci/devices/0000:0d:00.0/sriov_numvfs
 关闭SR-IOV功能： echo 0 > /sys/bus/pci/devices/0000:0d:00.0/sriov_numvfs
-查看设备驱动：ls -l /sys/class/pci_bus/0000:0d/device/0000:0d:02.0 | grep driver
+
 
 5、基于以太网口名字配置 enp13s0f0（网卡名字是可能变de）
 ls /sys/class/net/
 cat /sys/class/net/enp13s0f0/device/sriov_numvfs
 echo 8 > /sys/class/net/enp13s0f0/device/sriov_numvfs
 echo 0 > /sys/class/net/enp13s0f0/device/sriov_numvfs
+lspci | grep "Virtual Function"
+lspci -vvt
 ip link show enp13s0f0
-ethtool -i enp13s0f0v0 可以看到驱动类型
+ip a|grep enp13s0f0v
+可以看到驱动类型: ethtool -i enp13s0f0v0
+确认支持 SR-IOV: lspci -s 0000:0d:00.0  -vvv | grep SR-IOV
+查看厂商、设备 ID: lspci -s 0000:0d:00.0 -n
+
+
+/etc/rc.local
+某些使用 的卡ixgbe可能需要额外的配置:modprobe -r ixgbe; modprobe ixgbe max_vfs=8

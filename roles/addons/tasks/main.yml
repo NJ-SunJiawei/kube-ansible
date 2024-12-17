@@ -34,6 +34,7 @@
     - addons_metallb
     - addons_ingress
     - addons_kubesphere
+    - addons_sriov
   ignore_errors: true
 
 - debug: var=pod_info.stdout_lines
@@ -64,6 +65,11 @@
   when:
     - multus_install == "yes"
 #    - '"macvlan" not in pod_info.stdout'
+
+- import_tasks: sriov.yml
+  tags: addons_sriov
+  when:
+    - sriov_install == "yes"
 
 - import_tasks: nfs.yml
   tags: addons_nfs

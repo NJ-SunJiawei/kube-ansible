@@ -14,6 +14,7 @@ kubectl get pods -n sset-5g-simulation -o wide 查看pod信息
 kubectl get nodes 查看nodes
 
 kubectl get cm amf.yaml --from-file=amf.yml   基于amf.yml文件创建ConfigMap
+kubectl edit cm sriovdp-config -n kube-system
 
 kubectl get ing 查看ingress
 
@@ -34,6 +35,7 @@ kubectl exec -it  cn-deploy-0 -n sset-5g-simulation  -c  容器名  /bin/bash  进入
 
 kubectl logs -f --tail=100 cn-deploy-0 -n sset-5g-simulation -c  容器名  查看pod日志
 
+kubectl get node k8s-node1 -o json | jq '.status.allocatable'
 -c  指定容器
 
 docker inspect 容器名  -- 查询k8s emptyDir{}
