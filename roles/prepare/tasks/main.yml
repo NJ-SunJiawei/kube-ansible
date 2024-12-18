@@ -16,19 +16,17 @@
 #- name: 创建临时目录
 #  file: dest={{ tmp_dir }} state=directory
 
-#- name: 分发依赖包
-#  copy: src={{ software_dir }}/{{ item }} dest={{ tmp_dir }}
-#  with_items:
-#    - rpm-tools
+- name: 分发依赖包
+  copy: src={{ software_dir }}/{{ item }} dest={{ tmp_dir }}
+  with_items:
+    - rpm-tools
 #    - vbbu
-#  when: "node_label == 'c2000'"
 
-#- name: 安装rpm-tools包
-#  shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
-#  with_items:
-#    - rpm-tools
-#  ignore_errors: true
-#  when: "node_label == 'c2000'"
+- name: 安装rpm-tools包
+  shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
+  with_items:
+    - rpm-tools
+  ignore_errors: true
 
 #- name: 安装vbbu包
 #  shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
@@ -45,6 +43,10 @@
 #    - dpdk-devbind.py
 #  when: "node_label == 'c2000'"
 
+- import_tasks: sriov.yml
+  tags: addons_sriov
+  when:
+    - sriov_install == "yes"
 
 - name: 查看nfs状态
   shell: "exportfs -v"
