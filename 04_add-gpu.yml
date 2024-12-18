@@ -1,4 +1,13 @@
 ---
+- name: test0
+  gather_facts: false
+  hosts: k8s
+  tasks:
+    - name: test
+      debug:
+        msg:
+          - "{{ groups.k8s }}"
+
 - name: test1
   gather_facts: false
   hosts: k8s
@@ -6,8 +15,9 @@
     - name: test
       debug:
         msg:
-          - "{{ gpu_label }}"
-          - "{{ groups.k8s }}"
+          - "{{ item.gpu_label }}"
+      loop: "{{ gpu_interfaces }}"
+      when: inventory_hostname == item.ip
 
 - name: test2
   gather_facts: false
@@ -16,11 +26,12 @@
     - name: test
       debug:
         msg:
-          - "{{ hostvars[item].gpu_label }}"
-          - "{{ hostvars[item].node_name }}"
-      when: "hostvars[item].gpu_label == 'sp_t4'"
-      with_items: ["{{ groups.master }}", "{{ groups.node }}"] 
-
+          - "{{ item.gpu_label }}"
+          - "{{ hostvars[item.ip].node_name }}"
+      loop: "{{ gpu_interfaces }}"
+      when: 
+        - inventory_hostname == item.ip
+        - item.gpu_label == 'sp_t4'
 
 - name: 00安装gpu 依赖
   gather_facts: false
@@ -90,47 +101,53 @@
 #dcgm-exporter会匹配到nvidia.com/gpu.present存在的node，无需指定值
     - name: 打nsp标签
       shell: |
-             kubectl label nodes {{ hostvars[item].node_name }} feature.node.kubernetes.io/pci-10de.present-
-             kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/gpu.present-
-      when: "hostvars[item].gpu_label == 'nsp'"
-      with_items: ["{{ groups.master }}", "{{ groups.node }}"]  
-
+             kubectl label nodes {{ hostvars[item.ip].node_name }} feature.node.kubernetes.io/pci-10de.present-
+             kubectl label nodes {{ hostvars[item.ip].node_name }} nvidia.com/gpu.present-
+      loop: "{{ gpu_interfaces }}"
+      when: 
+        - inventory_hostname == item.ip
+        - item.gpu_label == 'nsp'
 
 #0x10de 是PCI vender ID，是分配给 NVIDIA 的供应商ID
     - name: 打nvidia标签
       shell: |
-             kubectl label nodes {{ hostvars[item].node_name }} feature.node.kubernetes.io/pci-10de.present=true  --overwrite
-             kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/gpu.present=true  --overwrite
+             kubectl label nodes {{ hostvars[item.ip].node_name }} feature.node.kubernetes.io/pci-10de.present=true  --overwrite
+             kubectl label nodes {{ hostvars[item.ip].node_name }} nvidia.com/gpu.present=true  --overwrite
 #kubectl label nodes {{ hostvars[item].node_name }} feature.node.kubernetes.io/cpu-model.vendor_id=NVIDIA  --overwrite
-      when: "hostvars[item].gpu_label == 'sp_t4'"
-      with_items: ["{{ groups.master }}", "{{ groups.node }}"]    
+      loop: "{{ gpu_interfaces }}"
+      when: 
+        - inventory_hostname == item.ip
+        - item.gpu_label == 'sp_t4'
 
     - name: 打GPU独占标签
       shell: |
-             kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=false  --overwrite
-             kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config0 --overwrite
-      when:
-        - "hostvars[item].gpu_label == 'sp_t4'"
-        - "hostvars[item].gpu_share_label == 'sp_one'"
-      with_items: ["{{ groups.master }}", "{{ groups.node }}"]  
+             kubectl label nodes {{ hostvars[item.ip].node_name }} nvidia.com/mps.capable=false  --overwrite
+             kubectl label nodes  {{ hostvars[item.ip].node_name }} nvidia.com/device-plugin.config=config0 --overwrite
+      loop: "{{ gpu_interfaces }}"
+      when: 
+        - inventory_hostname == item.ip
+        - item.gpu_label == 'sp_t4'
+        - item.gpu_share_label == 'sp_one'
 
     - name: 打mps标签
       shell: |
-             kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=true  --overwrite
-             kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config1 --overwrite
-      when:
-        - "hostvars[item].gpu_label == 'sp_t4'"
-        - "hostvars[item].gpu_share_label == 'sp_mps'"
-      with_items: ["{{ groups.master }}", "{{ groups.node }}"]  
+             kubectl label nodes {{ hostvars[item.ip].node_name }} nvidia.com/mps.capable=true  --overwrite
+             kubectl label nodes  {{ hostvars[item.ip].node_name }} nvidia.com/device-plugin.config=config1 --overwrite
+      loop: "{{ gpu_interfaces }}"
+      when: 
+        - inventory_hostname == item.ip
+        - item.gpu_label == 'sp_t4'
+        - item.gpu_share_label == 'sp_mps'
 
     - name: 打time-slicing标签
       shell: |
-             kubectl label nodes {{ hostvars[item].node_name }} nvidia.com/mps.capable=false  --overwrite
-             kubectl label nodes  {{ hostvars[item].node_name }} nvidia.com/device-plugin.config=config2 --overwrite
-      when:
-        - "hostvars[item].gpu_label == 'sp_t4'"
-        - "hostvars[item].gpu_share_label == 'sp_time'"
-      with_items: ["{{ groups.master }}", "{{ groups.node }}"]
+             kubectl label nodes {{ hostvars[item.ip].node_name }} nvidia.com/mps.capable=false  --overwrite
+             kubectl label nodes  {{ hostvars[item.ip].node_name }} nvidia.com/device-plugin.config=config2 --overwrite
+      when: 
+        - inventory_hostname == item.ip
+        - item.gpu_label == 'sp_t4'
+        - item.gpu_share_label == 'sp_time'
+      loop: "{{ gpu_interfaces }}"
 
 #时间分片和 MPS 的使用是互相排斥的,可以集群不同node混部，默认配置mps
     - name: 更新部署type1

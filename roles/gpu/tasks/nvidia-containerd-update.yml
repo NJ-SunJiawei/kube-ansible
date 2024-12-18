@@ -1,0 +1,53 @@
+---
+- name: 创建临时目录
+  file: dest={{ tmp_dir }}/nvidia state=directory
+
+- name: 分发nvidia-container-toolkit安装包
+  unarchive: src={{ item }} dest={{ tmp_dir }}/nvidia
+  with_fileglob:
+    - "{{ software_dir }}/gpu/nvidia/rpm/nvidia-container-toolkit_{{ nvidia_toolkit_ver }}_rpm_aarch64.tar.gz"
+
+- name: 安装nvidia rpm包
+  shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/nvidia/release-v{{ nvidia_toolkit_ver }}-stable/packages/centos7/aarch64/*.rpm
+
+#https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+#官方方案一：有缺陷，未修改"default-runtime"
+#docker run --rm --runtime=nvidia 指定runtime，或者在daemon.json中配置
+#- name: 配置cri-o
+#  shell: >
+#         nvidia-ctk runtime configure --runtime=crio &&
+#         systemctl restart crio
+
+#- name: 配置docker
+#  shell: >
+#         nvidia-ctk runtime configure --runtime=docker &&
+#         systemctl restart docker
+
+#- name: 配置rootless模式 docker
+#  shell: >
+#         nvidia-ctk runtime configure --runtime=docker --config=$HOME/.config/docker/daemon.json
+#         systemctl --user restart docker
+#         nvidia-ctk config --set nvidia-container-cli.no-cgroups --in-place        
+
+#- name: 配置contarinerd
+#  shell: >
+#         nvidia-ctk runtime configure --runtime=containerd
+#         systemctl restart containerd
+
+#https://zhangguanzhang.github.io/2024/04/08/nvidia-container-toolkit/#/%E4%BD%BF%E7%94%A8-nvidia-ctk-%E9%85%8D%E7%BD%AE
+#方案二：我自己改
+#- name: 重配 docker 文件
+#  template: src=daemon.json.j2 dest=/etc/docker/daemon.json
+
+#- name: 重启docker
+#  shell: >
+#         systemctl restart docker
+
+#测试方法：docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi
+
+- name: 重配 containerd 文件
+  template: src=config.toml.j2 dest=/etc/containerd/config.toml
+
+- name: 重启contarinerd
+  shell: >
+         systemctl restart containerd

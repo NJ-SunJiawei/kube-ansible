@@ -1,0 +1,62 @@
+---
+- name: 匹配服务器 IP 地址和网卡配置
+  set_fact:
+    sriov_config: "{{ sriov_interfaces | selectattr('ip', 'equalto', inventory_hostname) | first }}"
+  failed_when: false  # 防止失败时中止执行
+
+- name: 打印 sriov_config 变量
+  debug:
+    msg: "sriov_config: {{ sriov_config }}"
+  when: sriov_config is defined
+
+- name: 检查是否找到匹配的配置
+  debug:
+    msg: "没有找到匹配的网卡配置，跳过后续操作"
+  when: sriov_config is not defined
+
+- name: 获取当前服务器上的网络接口信息
+  command: "ip link show"
+  register: ip_link_output
+  changed_when: false
+  when: sriov_config is defined  # 只有在找到匹配配置时才执行
+
+- name: 检查 ixgbe 驱动是否已加载
+  command: "lsmod | grep ixgbe"
+  register: ixgbe_check
+  changed_when: false
+  ignore_errors: yes
+  when: sriov_config is defined  # 只有在找到匹配配置时才执行
+
+- name: 如果 ixgbe 驱动存在，设置 max_vfs
+  block:
+    - name: 设置 ixgbe 驱动的 max_vfs
+      copy:
+        dest: /etc/modprobe.d/ixgbe.conf
+        content: "options ixgbe max_vfs={{ sriov_config.ixgbe_max_vfs }}"
+
+    - name: 重新加载 ixgbe 模块以应用新配置
+      command: "modprobe -r ixgbe && modprobe ixgbe"
+
+  when: ixgbe_check.stdout != '' and sriov_config is defined  # 只有在找到匹配配置且 ixgbe 驱动已加载时执行
+
+- name: 配置 SR-IOV 参数
+  block:
+    - name: 为每个网卡设置 sriov_numvfs
+      set_fact:
+        sriov_vfs_to_configure: "{{ sriov_config.interface }}"
+
+    - name: 配置虚拟功能（VF）数量
+      shell: |
+        echo 0 > /sys/class/net/{{ item.name }}/device/sriov_numvfs
+        echo {{ item.vf_count }} > /sys/class/net/{{ item.name }}/device/sriov_numvfs
+      loop: "{{ sriov_config.interface }}"
+      when: "'{{ item.name }}' in ip_link_output.stdout"
+
+    - name: 在 /etc/rc.local 配置开机自动设置 sriov_numvfs
+      lineinfile:
+        path: /etc/rc.local
+        line: "echo 0 > /sys/class/net/{{ item.name }}/device/sriov_numvfs && echo {{ item.vf_count }} > /sys/class/net/{{ item.name }}/device/sriov_numvfs"
+        create: yes
+      loop: "{{ sriov_config.interface }}"
+      when: "'{{ item.name }}' in ip_link_output.stdout"
+  when: sriov_config is defined  # 只有在找到匹配配置时才执行

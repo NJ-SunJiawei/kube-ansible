@@ -80,6 +80,19 @@ cert_hosts:
 #    - 192.168.114.35
 
 ############################
+# gpu 
+# gpu_label= nsp/sp_t4
+# gpu_share_label = nsp/sp_one/sp_mps/sp_time
+############################
+gpu_interfaces:
+  - ip: 192.168.114.112
+    gpu_label: nsp
+    gpu_share_label: nsp
+  - ip: 192.168.114.33
+    gpu_label: sp_t4
+    gpu_share_label: sp_mps
+
+############################
 # network
 ############################
 multus_install: "yes"
@@ -88,7 +101,26 @@ ingress_install: "yes"
 sriov_install: "yes"
 cluster_network: "calico" #calico/flannel/kube-ovn/
 # -------------------------------------------sriov
-sriov_vf_nums: 8
+sriov_interfaces:
+  - ip: 192.168.114.33
+    interface:
+      - name: enp13s0f0
+        vf_count: 4
+      - name: enp13s0f1
+        vf_count: 4
+    ixgbe_max_vfs: 8
+  - ip: 192.168.114.112
+    interface:
+      - name: enp43s0f3
+        vf_count: 4
+      - name: enp35s0f0np0
+        vf_count: 4
+    ixgbe_max_vfs: 8
+
+sr_vf_vendors: '["8086", "14e4"]'
+sr_vf_devices: '["154c", "10ed", "1889", "16dc", "1520"]'
+sr_vf_drivers: '["iavf", "i40evf", "igbvf", "ixgbevf", "bnxt_en"]'
+sr_pf_name: '["enp13s0f0", "enp13s0f1", "enp43s0f3", "enp35s0f0np0"]' #all ip-name
 # -------------------------------------------kube-ovn
 kubeovn_ver: "v1.11.5"
 #kubeovn_loadbalancer_enable: false

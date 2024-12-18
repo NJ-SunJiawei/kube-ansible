@@ -1,5 +1,9 @@
 ---
 # 这个剧本在所有节点上运行
+- import_tasks: sriov.yml
+  tags: addons_sriov
+  when:
+    - sriov_install == "yes"
 
 - name: 创建临时目录
   file: dest={{ tmp_dir }} state=directory
