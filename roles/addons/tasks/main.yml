@@ -29,6 +29,7 @@
     - addons_metrics
     - addons_dashboard
     - addons_multus
+    - addons_multus_net
     - addons_prometheus
     - addons_nfs
     - addons_metallb
@@ -40,77 +41,110 @@
 - debug: var=pod_info.stdout_lines
 
 - import_tasks: coredns.yml
-  tags: addons_coredns
+  tags:
+    - addons_coredns
+    - addons_coredns1
 #  when: '"coredns" not in pod_info.stdout'
 
 - import_tasks: calico.yml
-  tags: addons_network_calico
+  tags:
+    - addons_network_calico
+    - addons_network_calico1
   when:
     - "cluster_network == 'calico'"
 #    - '"calico" not in pod_info.stdout'
 
 - import_tasks: flannel.yml
-  tags: addons_network_flannel
+  tags:
+    - addons_network_flannel
+    - addons_network_flannel1
   when:
     - "cluster_network == 'flannel'"
 #    - '"flannel" not in pod_info.stdout'
 
 - import_tasks: kubeovn.yml
-  tags: addons_network_ovn
+  tags:
+    - addons_network_ovn
+    - addons_network_ovn1
   when:
     - "cluster_network == 'kube-ovn'"
 
 - import_tasks: multus.yml
-  tags: addons_multus
+  tags:
+    - addons_multus
+    - addons_multus1
   when:
     - multus_install == "yes"
 #    - '"macvlan" not in pod_info.stdout'
 
 - import_tasks: sriov.yml
-  tags: addons_sriov
+  tags:
+    - addons_sriov
+    - addons_sriov1
   when:
     - sriov_install == "yes"
 
 - import_tasks: nfs.yml
-  tags: addons_nfs
+  tags:
+    - addons_nfs
+    - addons_nfs1
 #  when: '"nfs-client-provisioner" not in pod_info.stdout'
 
 - import_tasks: metallb.yml
-  tags: addons_metallb
+  tags:
+    - addons_metallb
+    - addons_metallb1
   when:
     - metallb_install == "yes"
 
 - import_tasks: ingress.yml
-  tags: addons_ingress
+  tags:
+    - addons_ingress
+    - addons_ingress1
   when:
     - ingress_install == "yes"
 
 - import_tasks: metrics-server.yml
-  tags: addons_metrics
+  tags:
+    - addons_metrics
+    - addons_metrics1
   when:
     - metrics_server_install == "yes" 
 #    - '"metrics-server" not in pod_info.stdout'
 
 - import_tasks: dashboard.yml
-  tags: addons_dashboard
+  tags:
+    - addons_dashboard
+    - addons_dashboard1
   when:
     - dashboard_install == "yes"
 #    - '"kubernetes-dashboard" not in pod_info.stdout'
 
 - import_tasks: prometheus.yml
-  tags: addons_prometheus
+  tags:
+    - addons_prometheus
+    - addons_prometheus1
   when:
     - prom_install == "yes"
 #    - '"prometheus" not in pod_info.stdout'
 
 - import_tasks: kubesphere.yml
-  tags: addons_kubesphere
+  tags:
+    - addons_kubesphere
+    - addons_kubesphere
   when:
     - kubesphere_install == "yes"
 #    - '"kubesphere" not in pod_info.stdout'
+
+- import_tasks: multus-net.yml
+  tags:
+    - addons_multus_net
 
 - name: 查看Pod状态
   shell: kubectl get all --all-namespaces
   register: getall
 - debug: var=getall.stdout_lines
 
+- import_tasks: multus-demo.yml
+  tags:
+    - addons_demo
