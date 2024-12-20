@@ -2,8 +2,10 @@
 - name: Gather grub cmdline parameters
   command: "grep ^GRUB_CMDLINE_LINUX /etc/default/grub"
   register: grub_cmdline
-  when: inventory_hostname == item.ip
-  loop: "{{ gpu_interfaces }}"
+
+- name: printf GRUB_CMDLINE_LINUX
+  debug:
+    msg: "{{ grub_cmdline.stdout }}"
 
 - name: Set IOMMU parameters if not present
   lineinfile:
@@ -11,11 +13,8 @@
     regexp: '^GRUB_CMDLINE_LINUX=.*'
     line: 'GRUB_CMDLINE_LINUX="{{ grub_cmdline.stdout }} iommu=on iommu.passthrough=on"'
     backrefs: yes
-  when: inventory_hostname == item.ip and "'iommu=on'" not in grub_cmdline.stdout
-  loop: "{{ gpu_interfaces }}"
-  notify: Update grub configuration
+  when: "'iommu=on' not in grub_cmdline.stdout"
 
-handlers:
-  - name: Update grub configuration
-    command: grub2-mkconfig -o /boot/grub2/grub.cfg
-    listen: "Update grub configuration"
+- name: Update grub configuration
+  command: grub2-mkconfig -o /boot/grub2/grub.cfg
+  when: "'iommu=on' not in grub_cmdline.stdout"

@@ -43,9 +43,11 @@
 #    - dpdk-devbind.py
 #  when: "node_label == 'c2000'"
 
-- import_tasks: sriov.yml
+- include_tasks: sriov.yml
   tags: addons_sriov
+  loop: "{{ sriov_interfaces }}"
   when:
+    - inventory_hostname == item.ip
     - sriov_install == "yes"
 
 - name: 查看nfs状态
@@ -67,7 +69,7 @@
 - name: 查看/etc状态
   shell: ls /etc/
   register: etc_info
-- debug: var=etc_info.stdout_lines
+#- debug: var=etc_info.stdout_lines
 
 - name: 分发resolv.conf文件
   copy: src=resolv.conf dest=/etc/
