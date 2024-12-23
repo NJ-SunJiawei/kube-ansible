@@ -9,18 +9,20 @@ spec:
   config: '{
   "type": "sriov",
   "cniVersion": "0.3.1",
-  "name": "sriov-network",
-  "ipam": {
-    "type": "host-local",
-    "subnet": "10.56.217.0/24",
-    "rangeStart": "10.56.217.150",
-    "rangeEnd": "10.56.217.189", 
-    "routes": [{
-      "dst": "0.0.0.0/0"
-    }],
-    "gateway": "10.56.217.1"
-  }
+  "name": "sriov-network"
 }'
 
-#ipam插件使用的是host-local，host-local的话，只能做单节点的ip分配，这会导致不同节点上的pod的SR-IOV网卡的ip地址存在冲突的可能。
-#这个问题的根源是缺少集中式ip地址分配的机制。whereabouts插件就是一个集中式的ip地址管理插件。
+#apiVersion: "k8s.cni.cncf.io/v1"
+#kind: NetworkAttachmentDefinition
+#metadata:
+#  name: sriov-dpdk-net2000
+#  annotations:
+#    k8s.v1.cni.cncf.io/resourceName: intel.com/intel_x710vfio
+#spec:
+#  config: '{
+#    "type": "sriov",
+#    "name": "sriov-vfio2000",
+#    "vlan": 2000
+#}'
+
+#https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin/blob/master/docs/dpdk/crd-dpdk-net2000.yaml

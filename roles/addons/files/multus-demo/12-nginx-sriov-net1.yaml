@@ -20,8 +20,11 @@ spec:
 # Deployment类型放此处
       annotations:
         k8s.v1.cni.cncf.io/networks: '[
-             { "name" : "sriov-net1",
+             { "name" : "default/sriov-net1",
                "interface": "sriovnet2"
+             },
+             { "name" : "default/sriov-net1",
+               "interface": "sriovnet3"
              }
         ]'
     spec:
@@ -36,9 +39,9 @@ spec:
           privileged: true
         resources:
           requests:
-            intel.com/intel_sriov_vfnetdevice: '1'
+            intel.com/intel_sriov_vfnetdevice: '2'
           limits:
-            intel.com/intel_sriov_vfnetdevice: '1'
+            intel.com/intel_sriov_vfnetdevice: '2'
       #nodeSelector:
         #model: c5000
         #kubernetes.io/hostname: k8s-master1  

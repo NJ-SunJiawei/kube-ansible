@@ -86,6 +86,8 @@ ip a|grep enp13s0f0v
 /etc/rc.local
 某些使用 的卡ixgbe可能需要额外的配置:modprobe -r ixgbe; modprobe ixgbe max_vfs=8
 
+
+dpdk-devbind.py参考
 echo "0000:2b:10.7" >> /sys/bus/pci/drivers/igbvf/unbind
 echo "0000:2b:10.7" >> /sys/bus/pci/drivers/vfio-pci/bind
 通过上述命令，就可以把PCI总线地址为0000:02:00.0的PCI设备使用的驱动从XXX切换为YYY

@@ -1,29 +1,26 @@
-apiVersion: "k8s.cni.cncf.io/v1" 
-kind: NetworkAttachmentDefinition 
-metadata: 
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
   name: sriov-net2
+  namespace: default
   annotations: 
     k8s.v1.cni.cncf.io/resourceName: intel.com/intel_sriov_vfnetdevice 
-spec: 
-  config: '{ 
-    cniVersion": "0.3.1", 
-    name": "sriov-network", 
-    plugins": [ 
-         { 
-             "type": "sriov", 
-             "ipam": { 
-                 "type": "host-local", # 使用host-local作为ipam插件 
-                 "subnet": "192.168.133.0/24", # 设置子网 
-                 "rangeStart": "192.168.133.150", # 设置可分配的ip段 
-                 "rangeEnd": "192.168.133.189", 
-                 "routes": [ 
-                     { "dst": "0.0.0.0/0" } 
-                 ],
-                 "gateway": "192.168.133.254" 
-             } 
-         },
-         {
-             "type": "sbr" #设置sbr 
-         } 
-     ] 
-  }'
+spec:
+  config: '{
+  "type": "sriov",
+  "cniVersion": "0.3.1",
+  "name": "sriov-network",
+  "ipam": {
+    "type": "host-local",
+    "subnet": "10.56.217.0/24",
+    "rangeStart": "10.56.217.150",
+    "rangeEnd": "10.56.217.189", 
+    "routes": [{
+      "dst": "0.0.0.0/0"
+    }],
+    "gateway": "10.56.217.1"
+  }
+}'
+
+#ipam插件使用的是host-local，host-local的话，只能做单节点的ip分配，这会导致不同节点上的pod的SR-IOV网卡的ip地址存在冲突的可能。
+#这个问题的根源是缺少集中式ip地址分配的机制。whereabouts插件就是一个集中式的ip地址管理插件。
