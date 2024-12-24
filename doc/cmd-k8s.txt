@@ -53,3 +53,5 @@ kubectl get pods -n [namespace] | grep ContainerStatusUnknown | awk '{print $1}'
 
 获取所有非 Running 状态下的 pod，并删除:
 kubectl get pods -A  | grep -v Running | awk '{print $2}' | xargs kubectl delete pod -n kubesphere-system
+
+mongo                 4.4.9

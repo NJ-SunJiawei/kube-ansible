@@ -20,10 +20,12 @@ spec:
 # Deployment类型放此处
       annotations:
         k8s.v1.cni.cncf.io/networks: '[
-             { "name" : "default/sriov-net1",
+             { "name" : "sriov-net1",
+               "namespace": "default",
                "interface": "sriovnet2"
              },
-             { "name" : "default/sriov-net1",
+             { "name" : "sriov-net1",
+               "namespace": "default",
                "interface": "sriovnet3"
              }
         ]'

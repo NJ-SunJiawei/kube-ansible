@@ -1,0 +1,80 @@
+---
+#如果需要给类型资源如 Deployment，StatefulSet 绑定子网，需要将 ovn.kubernetes.io/logical_switch Annotation 设置在 spec.template.metadata.annotations。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rj-cu-test
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: bbu
+  replicas: 1 # 指定Pod副本数
+  template:
+    metadata:
+      labels:
+        app: bbu
+# Deployment类型放此处
+      annotations:
+        k8s.v1.cni.cncf.io/networks: '[
+             { "name" : "sriov-net1",
+               "namespace": "default",
+               "interface": "enp13s0f0"
+             },
+             { "name" : "sriov-net1",
+               "namespace": "default",
+               "interface": "enp13s0f1"
+             },
+             { "name" : "sriov-net1",
+               "namespace": "default",
+               "interface": "enp1s0f1"
+             }
+        ]'
+    spec:
+      containers:
+      - name: rj-cu
+        image: openeuler-22.03-lts:rj3
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/bash", "-c", "while true; do echo hello; sleep 3600000; done"]
+        #command: ["/usr/sbin/init"]
+        securityContext:
+          privileged: true
+#        securityContext:
+#          capabilities:
+#            add:
+#            - SYS_ADMIN # 设置容器权限
+#          privileged: false # 非特权
+        volumeMounts:
+        - mountPath: /mnt/huge_1GB
+          name: hugepage
+        - mountPath: /dev
+          name: dev
+#        - mountPath: /sys/fs/cgroup
+#          name: cgroup
+#          readOnly: true # 只读方式挂载 cgroup 目录
+        resources:
+          requests:
+            memory: 4Gi
+            hugepages-1Gi: 4Gi
+            cpu: 10
+            intel.com/intel_sriov_vfnetdevice: '3'
+          limits:
+            memory: 4Gi
+            hugepages-1Gi: 4Gi
+            cpu: 10
+            intel.com/intel_sriov_vfnetdevice: '3'
+      nodeSelector:
+#        model: c5000
+        kubernetes.io/hostname: k8s-node1 
+      volumes:
+      - name: hugepage
+        emptyDir:
+          medium: HugePages
+#      - name: cgroup
+#        hostPath:
+#          path: /sys/fs/cgroup
+#          type: ""
+      - name: dev
+        hostPath:
+          path: /dev
+          type: Directory

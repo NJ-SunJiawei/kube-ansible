@@ -1,2 +1,15 @@
 https://docs.redhat.com/zh-cn/documentation/openshift_container_platform/4.13/html/networking/using-dpdk-and-rdma#example-vf-use-in-dpdk-mode-intel_using-dpdk-and-rdma
 https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin/blob/master/docs/dpdk/pod_testpmd.yaml
+
+grep -i HugePages_Total /proc/meminfo     查询是否启动大页
+mount |grep hugetlbfs                     查看是否挂载了 hugetlbfs
+cat /proc/meminfo |grep Huge              查询大页是否配置
+
+mkdir /mnt/huge_1GB  && mount -t hugetlbfs pagesize=1GB /mnt/huge_1GB 临时挂载使用大页
+echo "nodev /mnt/huge_1GB hugetlbfs pagesize=1GB 0 0" >> /etc/fstab 永久挂载
+
+
+libvirt虚拟机会使用/dev/hugepages
+systemctl stop dev-hugepages.mount
+systemctl disable dev-hugepages.mount
+

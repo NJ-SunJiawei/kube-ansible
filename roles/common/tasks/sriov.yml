@@ -49,7 +49,7 @@
       shell: |
         echo 0 > /sys/class/net/{{ item.name }}/device/sriov_numvfs
         echo {{ item.vf_count }} > /sys/class/net/{{ item.name }}/device/sriov_numvfs
-      loop: "{{ sriov_config.interface }}"
+      loop: "{{ sriov_vfs_to_configure }}"
       when: "'{{ item.name }}' in ip_link_output.stdout"
 
     - name: 在 /etc/rc.local 配置开机自动设置 sriov_numvfs
@@ -57,6 +57,14 @@
         path: /etc/rc.local
         line: "echo 0 > /sys/class/net/{{ item.name }}/device/sriov_numvfs && echo {{ item.vf_count }} > /sys/class/net/{{ item.name }}/device/sriov_numvfs"
         create: yes
-      loop: "{{ sriov_config.interface }}"
+      loop: "{{ sriov_vfs_to_configure }}"
       when: "'{{ item.name }}' in ip_link_output.stdout"
   when: sriov_config is defined  # 只有在找到匹配配置时才执行
+
+- import_tasks: sriov-driver.yml
+  vars:
+    sriov_config_var: "{{sriov_config}}" #传参
+  when:
+    - sriov_config is defined
+    - sriov_config.pci_map is defined
+    - sriov_dpdk_driver == "yes"

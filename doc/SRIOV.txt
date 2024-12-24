@@ -91,3 +91,11 @@ dpdk-devbind.py参考
 echo "0000:2b:10.7" >> /sys/bus/pci/drivers/igbvf/unbind
 echo "0000:2b:10.7" >> /sys/bus/pci/drivers/vfio-pci/bind
 通过上述命令，就可以把PCI总线地址为0000:02:00.0的PCI设备使用的驱动从XXX切换为YYY
+
+#echo "0000:XX:XX.X" > /sys/bus/pci/devices/0000:XX:XX.X/driver/unbind
+#echo "vfio-pci" > /sys/class/net/enp11s0f0v0/device/driver_override
+#echo "0000:XX:XX.X" > /sys/bus/pci/drivers/vfio-pci/bind
+
+
+python3 dpdk-devbind.py -b vfio-pci enp11s0f0v0
+python3 dpdk-devbind.py -b iavf     0000:0b:02.0

@@ -99,8 +99,10 @@ multus_install: "yes"
 metallb_install: "yes"
 ingress_install: "yes"
 sriov_install: "yes"
+sriov_dpdk_driver: "no" #need install python3
 cluster_network: "calico" #calico/flannel/kube-ovn/
 # -------------------------------------------sriov
+#启用sriov后，dpdk的vf驱动使用vfio-pci
 sriov_interfaces:
   - ip: 192.168.114.33
     interface:
@@ -109,6 +111,7 @@ sriov_interfaces:
       - name: enp13s0f1
         vf_count: 4
     ixgbe_max_vfs: 8
+    pci_map: "/root/.pci-eth" #有此配置会更换vf驱动为vfio-pci
   - ip: 192.168.114.112
     interface:
       - name: enp43s0f3
@@ -119,7 +122,7 @@ sriov_interfaces:
 
 sr_vf_vendors: '["8086", "14e4"]'
 sr_vf_devices: '["154c", "10ed", "1889", "16dc", "1520"]'
-sr_vf_drivers: '["iavf", "i40evf", "igbvf", "ixgbevf", "bnxt_en"]'
+sr_vf_drivers: '["iavf", "i40evf", "igbvf", "ixgbevf", "bnxt_en", "vfio-pci"]'
 sr_pf_name: '["enp13s0f0", "enp13s0f1", "enp43s0f3", "enp35s0f0np0"]' #all ip-name
 # -------------------------------------------kube-ovn
 kubeovn_ver: "v1.11.5"

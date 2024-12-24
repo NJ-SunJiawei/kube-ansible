@@ -1,0 +1,30 @@
+---
+- name: Copy dpdk-devbind.py to /usr/sbin
+  copy:
+    src: dpdk-devbind.py
+    dest: /usr/sbin/dpdk-devbind.py
+    mode: '0755'
+
+- name: Run dpdk-devbind.py to list PCI devices and save to /root/.pci-eth
+  shell: /usr/sbin/dpdk-devbind.py -s
+  register: dpdk_output
+  changed_when: false
+
+- name: Save dpdk-devbind.py output to /root/.pci-eth
+  copy:
+    content: "{{ dpdk_output.stdout }}"
+    dest: "{{sriov_config_var.pci_map}}"
+    mode: '0644'
+
+- name: Bind SR-IOV VFs to vfio-pci if not already bound
+  shell: >
+    grep -E 'Ethernet Virtual Function' {{ sriov_config_var.pci_map }} |
+    while read -r line; do
+      drv=$(echo $line | awk '{print $6}' | cut -d '=' -f 2);
+      interface=$(echo $line | awk '{print $1}');
+      if [ "$drv" != "vfio-pci" ]; then
+        /usr/sbin/dpdk-devbind.py -b vfio-pci "$interface";
+      fi;
+    done
+  become: yes
+  when: dpdk_output.stdout != ""
