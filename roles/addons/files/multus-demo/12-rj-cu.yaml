@@ -35,23 +35,20 @@ spec:
       - name: rj-cu
         image: openeuler-22.03-lts:rj3
         imagePullPolicy: IfNotPresent
-        command: ["/bin/bash", "-c", "while true; do echo hello; sleep 3600000; done"]
-        #command: ["/usr/sbin/init"]
+        ##https://www.alibabacloud.com/help/zh/ack/ack-managed-and-ack-dedicated/user-guide/run-dpdk-applications
+        command: ["/bin/sh", "-c"] 
+        ##while true; do echo hello; sleep 3600000; done;
+        args:
+        - echo "rj-cu starting";
+          mount -o remount,rw /sys/;
+          /usr/sbin/init;
         securityContext:
           privileged: true
-#        securityContext:
-#          capabilities:
-#            add:
-#            - SYS_ADMIN # 设置容器权限
-#          privileged: false # 非特权
         volumeMounts:
         - mountPath: /mnt/huge_1GB
           name: hugepage
         - mountPath: /dev
           name: dev
-#        - mountPath: /sys/fs/cgroup
-#          name: cgroup
-#          readOnly: true # 只读方式挂载 cgroup 目录
         resources:
           requests:
             memory: 4Gi
@@ -64,16 +61,11 @@ spec:
             cpu: 10
             intel.com/intel_sriov_vfnetdevice: '3'
       nodeSelector:
-#        model: c5000
         kubernetes.io/hostname: k8s-node1 
       volumes:
       - name: hugepage
         emptyDir:
           medium: HugePages
-#      - name: cgroup
-#        hostPath:
-#          path: /sys/fs/cgroup
-#          type: ""
       - name: dev
         hostPath:
           path: /dev

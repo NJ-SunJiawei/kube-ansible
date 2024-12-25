@@ -1,0 +1,35 @@
+---
+- name: 00更新tls
+  gather_facts: false
+  hosts: localhost
+  roles:
+    - tls
+  tags: harbor
+
+
+- name: 01安装harbor
+  gather_facts: false
+  hosts: node
+  roles:
+    - docker
+
+- name: 02更新harbor dns
+  gather_facts: false
+  hosts: 
+    - node
+  tasks:
+    - name: /etc/hosts添加DNS
+      lineinfile:
+        dest: /etc/hosts
+        state: present
+        regexp: '{{ HARBOR_DOMAIN }}'
+        line: "{{ groups['harbor'][0] }} {{ HARBOR_DOMAIN }}"
+
+- name: 03 docker登录harbor
+  gather_facts: false
+  hosts: 
+    - node
+  tasks:
+    - name: docker登录harbor
+      shell: echo {{ HARBOR_PASSWORD }} | docker login -u admin --password-stdin https://{{ HARBOR_REGISTRY }}
+#退出登录 rm -rf /root/.docker/config.json

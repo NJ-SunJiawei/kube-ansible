@@ -1,6 +1,17 @@
 https://docs.redhat.com/zh-cn/documentation/openshift_container_platform/4.13/html/networking/using-dpdk-and-rdma#example-vf-use-in-dpdk-mode-intel_using-dpdk-and-rdma
 https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin/blob/master/docs/dpdk/pod_testpmd.yaml
 
+pod安全上下文
+https://kubernetes.io/zh-cn/docs/tasks/configure-pod-container/security-context/
+https://www.cnblogs.com/fanggege/p/12204952.html
+
+dpdk-devbind 在 pod 容器中执行失败
+bash: /sys/bus/pci/drivers/iavf/unbind: Read-only file system
+https://www.alibabacloud.com/help/zh/ack/ack-managed-and-ack-dedicated/user-guide/run-dpdk-applications
+
+取消绑定 kubernetes pod 中的 dpdk 接口不会反映/返回到 pod 接口中
+https://stackoverflow.com/questions/77979453/unbind-an-dpdk-interface-in-kubernetes-pod-not-reflect-back-in-the-pod-interface
+
 grep -i HugePages_Total /proc/meminfo     查询是否启动大页
 mount |grep hugetlbfs                     查看是否挂载了 hugetlbfs
 cat /proc/meminfo |grep Huge              查询大页是否配置

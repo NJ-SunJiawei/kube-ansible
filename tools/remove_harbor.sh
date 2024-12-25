@@ -11,4 +11,5 @@ ansible -i ../hosts harbor   -m shell -a 'rm -rf /var/log/harbor' -uroot || exit
 ansible -i ../hosts harbor   -m shell -a 'rm -rf {{ HARBOR_PATH }}/harbor' -uroot || exit 1
 ansible -i ../hosts harbor   -m shell -a 'rm -rf {{ HARBOR_PATH }}/database' -uroot || exit 1
 ansible -i ../hosts harbor   -m shell -a 'rm -rf {{ HARBOR_PATH }}/registry' -uroot || exit 1
+ansible -i ../hosts harbor   -m shell -a 'rm -rf /root/.docker/config.json' -uroot || exit 1
 echo "remove harbor all OK <<<"
