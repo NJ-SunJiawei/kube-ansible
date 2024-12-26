@@ -50,6 +50,15 @@
     - inventory_hostname == item.ip
     - sriov_install == "yes"
 
+- include_tasks: dpdk.yml
+  vars:
+    dpdk_config_var: "{{item}}" #传参
+  tags: addons_dpdk
+  loop: "{{ dpdk_interfaces }}"
+  when:
+    - inventory_hostname == item.ip
+    - dpdk_pre_install == "yes"
+
 - name: 查看nfs状态
   shell: "exportfs -v"
   register: nfs_info

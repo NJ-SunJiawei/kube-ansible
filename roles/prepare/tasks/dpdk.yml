@@ -1,0 +1,80 @@
+---
+- name: Gather grub cmdline parameters
+  command: "grep ^GRUB_CMDLINE_LINUX /etc/default/grub"
+  register: grub_cmdline
+
+- name: Print GRUB_CMDLINE_LINUX
+  debug:
+    msg: "{{ grub_cmdline.stdout }}"
+
+- name: Configure hugepages in grub configuration
+  lineinfile:
+    path: /etc/default/grub
+    regexp: '^GRUB_CMDLINE_LINUX=.*'
+    line: 'GRUB_CMDLINE_LINUX="{{ grub_cmdline.stdout }} default_hugepagesz={{ dpdk_config_var.default_hugepagesz }} hugepagesz={{ dpdk_config_var.hugepagesz }} hugepages={{ dpdk_config_var.hugepages }}"'
+    backrefs: yes
+  when: "'default_hugepagesz' not in grub_cmdline.stdout"
+
+- name: Update grub configuration
+  command: grub2-mkconfig -o /boot/grub2/grub.cfg
+  when: "'default_hugepagesz' not in grub_cmdline.stdout"
+
+- name: Check if /lib/modules/{{ ansible_kernel }}/extra/ directory exists
+  stat:
+    path: "/lib/modules/{{ ansible_kernel }}/extra/"
+  register: extra_dir_stat
+
+- name: Create /lib/modules/{{ ansible_kernel }}/extra/ directory if it does not exist
+  file:
+    path: "/lib/modules/{{ ansible_kernel }}/extra/"
+    state: directory
+    mode: '0644'
+  when: not extra_dir_stat.stat.exists
+
+- name: Copy custom kernel modules to system directory
+  copy:
+    src: "{{ item }}"
+    dest: "/lib/modules/{{ ansible_kernel }}/extra/"
+    mode: '0644'
+  with_items:
+    - dpdk_driver_arm64/igb_uio.ko
+    - dpdk_driver_arm64/rte_kni.ko
+
+- name: Update ko depmod
+  command: depmod -a
+
+- name: Check if rte_kni module is already loaded
+  shell: lsmod | grep -w rte_kni
+  register: rte_kni_loaded
+  changed_when: false
+  failed_when: false
+
+- name: Check if igb_uio module is already loaded
+  shell: lsmod | grep -w igb_uio
+  register: igb_uio_loaded
+  changed_when: false
+  failed_when: false
+
+- name: Load rte_kni.ko module if not loaded
+  modprobe:
+    name: rte_kni
+    state: present
+  when: rte_kni_loaded.stdout == ""
+
+- name: Load igb_uio.ko module if not loaded
+  modprobe:
+    name: igb_uio
+    state: present
+  when: igb_uio_loaded.stdout == ""
+
+- name: Ensure rte_kni module is loaded on boot
+  copy:
+    content: "rte_kni\n"
+    dest: "/etc/modules-load.d/rte_kni.conf"
+  when: rte_kni_loaded.stdout == ""
+
+- name: Ensure igb_uio module is loaded on boot
+  copy:
+    content: "igb_uio\n"
+    dest: "/etc/modules-load.d/igb_uio.conf"
+  when: igb_uio_loaded.stdout == ""

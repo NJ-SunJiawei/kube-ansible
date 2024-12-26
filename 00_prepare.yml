@@ -1,6 +1,6 @@
 ---
 - name: 0.vbbu内核补丁安装
-  gather_facts: false
+  gather_facts: yes
   hosts: 
     - k8s
   roles:

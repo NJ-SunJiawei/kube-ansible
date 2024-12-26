@@ -49,6 +49,8 @@ spec:
           name: hugepage
         - mountPath: /dev
           name: dev
+        #cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us
+        #cat /sys/fs/cgroup/memory/memory.limit_in_bytes
         resources:
           requests:
             memory: 4Gi

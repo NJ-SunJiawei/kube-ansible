@@ -98,9 +98,22 @@ gpu_interfaces:
 multus_install: "yes"
 metallb_install: "yes"
 ingress_install: "yes"
+dpdk_pre_install: "yes"
 sriov_install: "yes"
-sriov_dpdk_driver: "no" #need install python3
+sriov_dpdk_driver: "no" #vf网卡自动切换为vfio-pci(need install python3)
 cluster_network: "calico" #calico/flannel/kube-ovn/
+# -------------------------------------------dpdk
+dpdk_interfaces:
+  - ip: 192.168.114.33
+    interface:
+      - default_hugepagesz: 1G
+        hugepagesz: 1G
+        hugepages: 8
+  - ip: 192.168.114.112
+    interface:
+      - default_hugepagesz: 512M
+        hugepagesz: 512M
+        hugepages: 20
 # -------------------------------------------sriov
 #启用sriov后，dpdk的vf驱动使用vfio-pci
 sriov_interfaces:

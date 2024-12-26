@@ -41,8 +41,12 @@ spec:
           privileged: true
         resources:
           requests:
+            memory: 4Gi
+            cpu: 2            
             intel.com/intel_sriov_vfnetdevice: '2'
           limits:
+            memory: 4Gi
+            cpu: 2  
             intel.com/intel_sriov_vfnetdevice: '2'
       #nodeSelector:
         #model: c5000
