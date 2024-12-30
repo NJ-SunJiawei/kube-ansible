@@ -67,4 +67,3 @@
   when:
     - sriov_config is defined
     - sriov_config.pci_map is defined
-    - sriov_dpdk_driver == "yes"

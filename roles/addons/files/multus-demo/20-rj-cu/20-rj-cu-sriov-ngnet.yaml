@@ -1,0 +1,28 @@
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: sriov-ngnet
+  namespace: default
+  annotations: 
+    k8s.v1.cni.cncf.io/resourceName: intel.com/intel_sriov_ngnet 
+spec:
+  config: '{
+  "type": "sriov",
+  "cniVersion": "0.3.1",
+  "name": "sriov-network"
+}'
+
+#apiVersion: "k8s.cni.cncf.io/v1"
+#kind: NetworkAttachmentDefinition
+#metadata:
+#  name: sriov-dpdk-net2000
+#  annotations:
+#    k8s.v1.cni.cncf.io/resourceName: intel.com/intel_x710vfio
+#spec:
+#  config: '{
+#    "type": "sriov",
+#    "name": "sriov-vfio2000",
+#    "vlan": 2000
+#}'
+
+#https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin/blob/master/docs/dpdk/crd-dpdk-net2000.yaml

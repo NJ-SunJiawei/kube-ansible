@@ -17,15 +17,15 @@ spec:
 # Deployment类型放此处
       annotations:
         k8s.v1.cni.cncf.io/networks: '[
-             { "name" : "sriov-net1",
+             { "name" : "sriov-ngnet",
                "namespace": "default",
                "interface": "enp13s0f0"
              },
-             { "name" : "sriov-net1",
+             { "name" : "sriov-othernet",
                "namespace": "default",
                "interface": "enp13s0f1"
              },
-             { "name" : "sriov-net1",
+             { "name" : "sriov-othernet",
                "namespace": "default",
                "interface": "enp1s0f1"
              }
@@ -56,12 +56,14 @@ spec:
             memory: 4Gi
             hugepages-1Gi: 4Gi
             cpu: 10
-            intel.com/intel_sriov_vfnetdevice: '3'
+            intel.com/intel_sriov_ngnet: '1'
+            intel.com/intel_sriov_othernet: '2'
           limits:
             memory: 4Gi
             hugepages-1Gi: 4Gi
             cpu: 10
-            intel.com/intel_sriov_vfnetdevice: '3'
+            intel.com/intel_sriov_ngnet: '1'
+            intel.com/intel_sriov_othernet: '2'
       nodeSelector:
         kubernetes.io/hostname: k8s-node1 
       volumes:

@@ -1,3 +1,6 @@
+dpdk基础
+https://www.coderss.cn/2023/02/08/dpdk/#%E8%AE%A4%E8%AF%86DPDK
+
 https://docs.redhat.com/zh-cn/documentation/openshift_container_platform/4.13/html/networking/using-dpdk-and-rdma#example-vf-use-in-dpdk-mode-intel_using-dpdk-and-rdma
 https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin/blob/master/docs/dpdk/pod_testpmd.yaml
 

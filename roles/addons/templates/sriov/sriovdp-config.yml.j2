@@ -26,17 +26,6 @@ data:
 #pciAddress 提供精确控制能力，适合高性能需求,用于指定一个或多个虚拟功能 (VF) 的 PCI 地址。
 #pfNames和rootDevices 扩展选择器在虚拟机部署中将不起作用。可以使用通用选择器pciAddress来选择虚拟设备。
 #lsmod | grep vhost_net #"needVhostNet": true
-
-#            {   
-#                "resourceName": "intel_sriov_pfnetdevice",
-#                "resourcePrefix": "intel.com",
-#                "selectors": { 
-#                    "vendors": ["8086"], 
-#                    "devices": ["1572"], 
-#                    "drivers": ["i40e"]
-#                } 
-#            }
-
 #https://www.chenshaowen.com/blog/sr-iov-technique.html
 #https://cloud.tencent.com/developer/article/2010030
 #https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin?tab=readme-ov-file#configurations

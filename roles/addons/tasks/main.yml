@@ -139,12 +139,16 @@
 - import_tasks: multus-net.yml
   tags:
     - addons_multus_net
+  when:
+    - multus_net_install == "yes"
+
+- import_tasks: multus-demo.yml
+  tags:
+    - addons_demo
+  when:
+    - multus_net_install == "yes"
 
 - name: 查看Pod状态
   shell: kubectl get all --all-namespaces
   register: getall
 - debug: var=getall.stdout_lines
-
-- import_tasks: multus-demo.yml
-  tags:
-    - addons_demo

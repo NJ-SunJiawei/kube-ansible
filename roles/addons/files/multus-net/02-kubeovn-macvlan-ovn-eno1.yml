@@ -1,7 +1,7 @@
 apiVersion: "k8s.cni.cncf.io/v1" 
 kind: NetworkAttachmentDefinition 
 metadata: 
-  name: macvlan-conf-eno1
+  name: macvlan-net-eno1
 spec: 
   config: '{ 
     "cniVersion": "0.3.1", 
