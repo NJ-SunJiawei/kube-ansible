@@ -63,9 +63,9 @@
 
 - block:
     - name: 准备安装相关文件
-      template: src=ovn/{{ item }} dest={{ tmp_dir }}/ovn/{{ item.split('.')[:-1]|join('.') }}
+      template: src=ovn/{{ item }} dest={{ tmp_dir }}/ovn/install.sh
       with_items:
-        - "install.sh.j2"
+        - "install.sh-{{ kubeovn_ver }}.j2"
       tags:
         - addons_delete
         - addons_delete_ovn
@@ -77,7 +77,7 @@
 #        - addons_delete_ovn
 
     - name: 卸载kube-ovn网络
-      shell: 'cd {{ tmp_dir }}/ovn/ && bash cleanup.sh'
+      shell: 'cd {{ tmp_dir }}/ovn/ && bash cleanup-{{ kubeovn_ver }}.sh'
       ignore_errors: true
       tags:
         - addons_delete

@@ -138,7 +138,7 @@ sr_vf_devices: '["154c", "10ed", "1889", "16dc", "1520"]'
 sr_vf_drivers: '["iavf", "i40evf", "igbvf", "ixgbevf", "bnxt_en", "vfio-pci"]'
 sr_pf_name: '["enp43s0f3", "enp35s0f0np0"]' #all ip-name
 # -------------------------------------------kube-ovn
-kubeovn_ver: "v1.11.5"
+kubeovn_ver: "v1.13.2" #v1.11.5
 #kubeovn_loadbalancer_enable: false
 kubeovn_cilium_enable: true
 kubeovn_cilium_ui_svc_type: "NodePort"
