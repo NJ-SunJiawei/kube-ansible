@@ -1,0 +1,3 @@
+kubectl create namespace ns1
+kubectl create namespace ns2
+kubectl get ns 

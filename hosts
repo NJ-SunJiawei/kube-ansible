@@ -25,7 +25,7 @@ node
 
 [lb]
 # 如果部署单Master，该项忽略
-#192.168.114.71 lb_name=lb-master
+#192.168.114.112 lb_name=lb-master
 #192.168.114.72 lb_name=lb-backup
 
 [harbor]

@@ -1,0 +1,22 @@
+---
+kind: Subnet
+apiVersion: kubeovn.io/v1
+metadata:
+  name: net1
+spec:
+  vpc: test-vpc-1
+  cidrBlock: 10.0.1.0/24
+  protocol: IPv4
+  namespaces:
+    - ns1
+---
+kind: Subnet
+apiVersion: kubeovn.io/v1
+metadata:
+  name: net2
+spec:
+  vpc: test-vpc-2
+  cidrBlock: 10.0.1.0/24
+  protocol: IPv4
+  namespaces:
+    - ns2

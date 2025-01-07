@@ -6,12 +6,12 @@
 
 - block:
     - name: 删除sriov-demo部署
-      shell: "kubectl delete -f {{ tmp_dir }}/multus-demo/10-nginx-sriov-net1.yaml || echo true; sleep 5"
+      shell: "kubectl delete -f {{ tmp_dir }}/multus-demo/12-nginx-sriov-net1.yaml || echo true; sleep 5"
       tags:
         - addons_delete
         - addons_delete_demo
 
     - name: 创建sriov-demo部署
-      shell: "kubectl apply -f {{ tmp_dir }}/multus-demo/10-nginx-sriov-net1.yaml || echo true; sleep 5"
+      shell: "kubectl apply -f {{ tmp_dir }}/multus-demo/12-nginx-sriov-net1.yaml || echo true; sleep 5"
   when:
     - sriov_install == "yes"

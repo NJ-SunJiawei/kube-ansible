@@ -40,6 +40,7 @@
 
 - debug: var=pod_info.stdout_lines
 
+#todo nodelocaldns
 - import_tasks: coredns.yml
   tags:
     - addons_coredns
