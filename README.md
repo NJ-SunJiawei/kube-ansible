@@ -17,7 +17,8 @@ NVIDIA：Tesla T4
 Driver Version: 550.54.15
 CUDA Version: 12.4
 ```
-<img width="761" alt="818f62181fc150751be1d332b499edb" src="https://github.com/user-attachments/assets/a47a0253-7844-425e-a185-0a6e80c745c0">
+![image](https://github.com/user-attachments/assets/d6c387b8-973b-40ed-87a1-22ed8fc47eed)
+
 
 
 ### 1、找一台服务器安装Ansible
