@@ -1,0 +1,47 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: ns1
+  name: vpc1-pod
+spec:
+  replicas: 1                 # 可选：指定副本数量，默认为 1
+  selector:                   # 必需字段：选择器用来匹配管理的 Pod
+    matchLabels:
+      app: vpc1-app           # 标签选择器，与模板中的标签相匹配
+  template:                   # 必需字段：Pod 模板规范
+    metadata:
+      labels:
+        app: vpc1-app         # 为 Pod 设置标签，以便 selector 能够匹配
+      annotations:
+        ovn.kubernetes.io/logical_switch: net1
+    spec:
+      containers:
+      - name: vpc1-container  # 容器名称应与 Pod 名称区分开来
+        image: ubuntu:latest
+        imagePullPolicy: IfNotPresent  # 优先使用本地镜像
+        command: ["/bin/bash", "-c", "while true; do echo hello; sleep 360000; done"] # 保持容器运行
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: ns2
+  name: vpc2-pod
+spec:
+  replicas: 1                 # 可选：指定副本数量，默认为 1
+  selector:                   # 必需字段：选择器用来匹配管理的 Pod
+    matchLabels:
+      app: vpc2-app           # 标签选择器，与模板中的标签相匹配
+  template:                   # 必需字段：Pod 模板规范
+    metadata:
+      labels:
+        app: vpc2-app         # 为 Pod 设置标签，以便 selector 能够匹配
+      annotations:
+        ovn.kubernetes.io/logical_switch: net2
+    spec:
+      containers:
+      - name: vpc2-container  # 容器名称应与 Pod 名称区分开来
+        image: ubuntu:latest
+        imagePullPolicy: IfNotPresent  # 优先使用本地镜像
+        command: ["/bin/bash", "-c", "while true; do echo hello; sleep 360000; done"] # 保持容器运行

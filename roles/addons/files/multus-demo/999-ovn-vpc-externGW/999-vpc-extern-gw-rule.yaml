@@ -1,0 +1,63 @@
+#创建 EIP
+#EIP 为外部网络段的某个 IP 分配给 VPC 网关后可进行 DNAT，SNAT 和浮动 IP 操作
+#---
+#kind: IptablesEIP
+#apiVersion: kubeovn.io/v1
+#metadata:
+#  name: eip01
+#spec:
+#  natGwDp: gw1
+#  v4ip: 192.168.0.111   #可选，固定 EIP 地址分配
+#  externalSubnet: ovn-vpc-external-network  #EIP 所在外部网络名称，如果不指定则默认为 ovn-vpc-external-network，如果指定则必须为所在 VPC 网关的 externalSubnets 中的一个。
+  
+#创建 DNAT 规则
+#通过 DNAT 规则，外部可以通过一个 EIP 加端口的方式来访问 VPC 内的一个 IP 和端口。
+---
+kind: IptablesEIP
+apiVersion: kubeovn.io/v1
+metadata:
+  name: eip01
+spec:
+  natGwDp: gw1
+  qosPolicy: qos-eip-example
+---
+kind: IptablesDnatRule
+apiVersion: kubeovn.io/v1
+metadata:
+  name: dnat01
+spec:
+  eip: eip01
+  externalPort: '8888'
+  internalIp: 10.0.1.10
+  internalPort: '80'
+  protocol: tcp
+
+#创建 SNAT 规则
+#通过 SNAT 规则，VPC 内的 Pod 访问外部的地址时将会通过对应 EIP 进行 SNAT。
+---
+kind: IptablesSnatRule
+apiVersion: kubeovn.io/v1
+metadata:
+  name: snat01
+spec:
+  eip: eip01
+  internalCIDR: 10.0.1.0/24
+
+#创建浮动 IP
+#通过浮动 IP 规则，VPC 内的一个 IP 会和 EIP 进行完全映射，外部可以通过这个 EIP 访问 VPC 内的 IP，VPC 内的这个 IP 访问外部地址时也会 SNAT 成这个 EIP。
+---
+kind: IptablesEIP
+apiVersion: kubeovn.io/v1
+metadata:
+  name: eipf01
+spec:
+  natGwDp: gw1
+
+---
+kind: IptablesFIPRule
+apiVersion: kubeovn.io/v1
+metadata:
+  name: fip01
+spec:
+  eip: eipf01
+  internalIp: 10.0.1.5

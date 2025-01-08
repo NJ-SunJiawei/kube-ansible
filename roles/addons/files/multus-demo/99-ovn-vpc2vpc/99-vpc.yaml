@@ -1,0 +1,31 @@
+---
+kind: Vpc
+apiVersion: kubeovn.io/v1
+metadata:
+  name: vpc-1
+spec: 
+  vpcPeerings:
+    - remoteVpc: vpc-2
+      localConnectIP: 169.254.0.1/30
+  staticRoutes:
+    - cidr: 172.31.0.0/16
+      nextHopIP: 169.254.0.2
+      policy: policyDst
+---
+kind: Vpc
+apiVersion: kubeovn.io/v1
+metadata:
+  name: vpc-2
+spec:
+  vpcPeerings:
+    - remoteVpc: vpc-1
+      localConnectIP: 169.254.0.2/30
+  staticRoutes:
+    - cidr: 10.0.0.0/16
+      nextHopIP: 169.254.0.1
+      policy: policyDst
+      
+#remoteVpc: 互联的另一个 VPC 的名字。
+#localConnectIP: 作为互联端点的 IP 地址和 CIDR，注意两端 IP 应属于同一 CIDR，且不能和已有子网冲突。
+#cidr：另一端 Subnet 的 CIDR。
+#nextHopIP：互联 VPC 另一端的 localConnectIP。

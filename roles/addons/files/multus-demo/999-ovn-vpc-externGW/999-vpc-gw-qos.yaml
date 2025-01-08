@@ -1,0 +1,50 @@
+---
+apiVersion: kubeovn.io/v1
+kind: QoSPolicy
+metadata:
+  name: qos-natgw-example
+spec:
+  shared: true
+  bindingType: NATGW
+  bandwidthLimitRules:
+  - name: net1-ingress
+    interface: net1
+    rateMax: "10" # Mbps
+    burstMax: "10" # Mbps
+    priority: 3
+    direction: ingress
+  - name: net1-egress
+    interface: net1
+    rateMax: "10" # Mbps
+    burstMax: "10" # Mbps
+    priority: 3
+    direction: egress
+
+---
+apiVersion: kubeovn.io/v1
+kind: QoSPolicy
+metadata:
+  name: qos-natgw-example
+spec:
+  shared: true
+  bindingType: NATGW
+  bandwidthLimitRules:
+  - name: net1-extip-ingress
+    interface: net1
+    rateMax: "5" # Mbps
+    burstMax: "5" # Mbps
+    priority: 2
+    direction: ingress
+    matchType: ip
+    matchValue: src 172.18.11.22/32
+  - name: net1-extip-egress
+    interface: net1
+    rateMax: "5" # Mbps
+    burstMax: "5" # Mbps
+    priority: 2
+    direction: egress
+    matchType: ip
+    matchValue: dst 172.18.11.23/32
+
+#kubectl get vpc-nat-gw
+#kubectl get qos -A

@@ -1,0 +1,22 @@
+---
+apiVersion: kubeovn.io/v1
+kind: QoSPolicy
+metadata:
+  name: qos-eip-example
+spec:
+  shared: false
+  bindingType: EIP
+  bandwidthLimitRules:
+  - name: eip-ingress
+    rateMax: "1" # Mbps
+    burstMax: "1" # Mbps
+    priority: 1
+    direction: ingress
+  - name: eip-egress
+    rateMax: "1" # Mbps
+    burstMax: "1" # Mbps
+    priority: 1
+    direction: egress
+
+#kubectl get eip
+#kubectl get qos -A

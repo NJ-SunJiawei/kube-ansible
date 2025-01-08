@@ -1,0 +1,3 @@
+kubectl create namespace ns3
+kubectl get ns
+kubectl delete namespace ns3

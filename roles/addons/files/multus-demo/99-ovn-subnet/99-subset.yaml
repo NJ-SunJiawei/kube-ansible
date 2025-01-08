@@ -1,0 +1,31 @@
+---
+apiVersion: kubeovn.io/v1
+kind: Subnet
+metadata:
+  name: subnet1
+spec:
+  protocol: IPv4
+  cidrBlock: 10.66.0.0/16
+  excludeIps:
+  - 10.66.0.1..10.66.0.10
+  - 10.66.0.101..10.66.0.151
+  gateway: 10.66.0.1
+  gatewayType: distributed
+  natOutgoing: true    #可以控制是否能访问外网
+  routeTable: ""
+  namespaces:
+  - ns3
+  #- ns4
+  private: true   #可选 开启子网隔离
+  allowSubnets:   #可选 allowSubnets 内的网段和该子网可以双向互访
+  - 10.244.0.0/16
+#  allowEWTraffic: false #可选（子网内部Pod之间的通信） 某些场景下用户希望配置了 ACL 规则的子网内部网络通信不受影响，可以通过配置 allowEWTraffic: true 来实现。
+#  acls:                 #可选允许 IP 地址为 10.10.0.2 的 Pod 访问所有地址，但不允许其他地址主动访问自己的 ACL 规则
+#    - action: drop
+#      direction: to-lport
+#      match: ip4.dst == 10.10.0.2 && ip
+#      priority: 1002
+#    - action: allow-related
+#      direction: from-lport
+#      match: ip4.src == 10.10.0.2 && ip
+#      priority: 1002

@@ -1,0 +1,28 @@
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: lb-svc-attachment
+  namespace: kube-system
+spec:
+  config: '{
+      "cniVersion": "0.3.0",
+      "type": "macvlan",
+      "master": "eth0",                         //物理网卡，根据实际情况配置
+      "mode": "bridge"
+    }'
+---
+apiVersion: kubeovn.io/v1
+kind: Subnet
+metadata:
+  name: attach-subnet
+spec:
+  protocol: IPv4
+  provider: lb-svc-attachment.kube-system    # provider 格式固定，由上一步创建的 NetworkAttachmentDefinition 资源的 Name.Namespace 组成
+  cidrBlock: 172.18.0.0/16   #外网可访问IP网段
+  gateway: 172.18.0.1
+  excludeIps:
+  - 172.18.0.0..172.18.0.10
+
+#Subnet 中 provider 参数以 ovn 或者以 .ovn 为后缀结束，表示该子网是由 Kube-OVN 管理使用，需要对应创建 logical switch 记录。
+#provider 非 ovn 或者非 .ovn 为后缀结束，则 Kube-OVN 只提供 IPAM 功能，记录 IP 地址分配情况，不对子网做业务逻辑处理。

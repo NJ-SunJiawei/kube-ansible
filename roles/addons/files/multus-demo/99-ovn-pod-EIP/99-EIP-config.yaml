@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ovn-external-gw-config
+  namespace: kube-system
+data:
+  enable-external-gw: "true"
+  external-gw-nodes: "k8s-master1,k8s-node1"
+  external-gw-nic: "eth1"
+  external-gw-addr: "192.68.0.1/16"
+  nic-ip: "192.68.0.254/16"
+  nic-mac: "16:52:f3:13:6a:25"
+
+#enable-external-gw: 是否开启 SNAT 和 EIP 功能。
+#type: centrailized 或 distributed， 默认为 centralized 如果使用 distributed，则集群所有节点都需要有同名网卡来承担网关功能。
+#external-gw-nodes: centralized 模式下，承担网关作用的节点名，逗号分隔。
+#external-gw-nic: 节点上承担网关作用的网卡名。
+#external-gw-addr: 物理网络网关的 IP 和掩码。
+#nic-ip,nic-mac: 分配给逻辑网关端口的 IP 和 Mac，需为物理段未被占用的 IP 和 Mac

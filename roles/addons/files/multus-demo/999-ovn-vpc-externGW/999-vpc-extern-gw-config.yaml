@@ -1,0 +1,51 @@
+#通过Macvlan附属网卡将数据包直接通过该节点网卡访问外网
+#配置外部网络
+---
+apiVersion: kubeovn.io/v1
+kind: Subnet
+metadata:
+  name: ovn-vpc-external-network
+spec:
+  protocol: IPv4
+  provider: ovn-vpc-external-network.kube-system
+  cidrBlock: 192.168.0.0/24
+  gateway: 192.168.0.1  # IP address of the physical gateway
+  excludeIps:
+  - 192.168.0.1..192.168.0.10
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: ovn-vpc-external-network
+  namespace: kube-system
+spec:
+  config: '{
+      "cniVersion": "0.3.0",
+      "type": "macvlan",
+      "master": "eth1",
+      "mode": "bridge",
+      "ipam": {
+        "type": "kube-ovn",
+        "server_socket": "/run/openvswitch/kube-ovn-daemon.sock",
+        "provider": "ovn-vpc-external-network.kube-system"
+      }
+    }'
+#开启 VPC 网关功能
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ovn-vpc-nat-config
+  namespace: kube-system
+data:
+  image: 'docker.io/kubeovn/vpc-nat-gateway:v1.13.1' #网关 Pod 所使用的镜像
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ovn-vpc-nat-gw-config
+  namespace: kube-system
+data:
+  enable-vpc-nat-gw: 'true' #控制是否启用 VPC 网关功能
+
+#https://blog.csdn.net/liruonian/article/details/133709371

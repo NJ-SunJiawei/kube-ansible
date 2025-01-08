@@ -1,0 +1,4 @@
+修改 kube-system namespace 下的 deployment kube-ovn-controller，在 args 中增加参数 --enable-lb-svc=true，开启功能开关，该参数默认为 false。
+或者在安装时候配置ENABLE_LB
+
+pod内部应用ip可以通过service dns解析：my-service.default.svc.cluster.local

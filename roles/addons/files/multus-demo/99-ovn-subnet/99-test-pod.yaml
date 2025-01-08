@@ -1,0 +1,28 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: ns3
+  name: subset-pod
+spec:
+  replicas: 1                 # 可选：指定副本数量，默认为 1
+  selector:                   # 必需字段：选择器用来匹配管理的 Pod
+    matchLabels:
+      app: subset-app           # 标签选择器，与模板中的标签相匹配
+  template:                   # 必需字段：Pod 模板规范
+    metadata:
+      labels:
+        app: subset-app         # 为 Pod 设置标签，以便 selector 能够匹配
+      annotations:
+        ovn.kubernetes.io/logical_switch: subnet1
+        ovn.kubernetes.io/ingress_rate: "3"  #Mbit/s
+        ovn.kubernetes.io/egress_rate: "1"   #Mbit/s
+    spec:
+      containers:
+      - name: subset-container  # 容器名称应与 Pod 名称区分开来
+        image: docker.io/library/nginx:latest #ubuntu:latest
+        imagePullPolicy: IfNotPresent  # 优先使用本地镜像
+        command: ["/bin/bash", "-c", "while true; do echo hello; sleep 360000; done"] # 保持容器运行
+
+#默认情况下 Pod 会从 Namespace 所属的子网内分配 IP 地址
+#Deployment，StatefulSet 需要指定ovn.kubernetes.io/logical_switch

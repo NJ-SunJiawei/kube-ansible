@@ -1,0 +1,25 @@
+---
+kind: Vpc
+apiVersion: kubeovn.io/v1
+metadata:
+  name: test-vpc-exgw
+spec:
+  namespaces:
+  - ns4
+  staticRoutes:
+  - cidr: 0.0.0.0/0
+    nextHopIP: 10.1.1.254
+    policy: policyDst
+
+#路由策略 https://kubeovn.github.io/docs/v1.13.x/guide/vpc/
+---
+kind: Subnet
+apiVersion: kubeovn.io/v1
+metadata:
+  name: net4
+spec:
+  vpc: test-vpc-exgw
+  cidrBlock: 10.0.1.0/24
+  protocol: IPv4
+  namespaces:
+    - ns4
