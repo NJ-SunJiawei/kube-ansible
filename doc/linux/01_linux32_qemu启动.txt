@@ -1,0 +1,210 @@
+apt-get install qemu-system-arrch64
+
+参考：https://zhuanlan.zhihu.com/p/626683569
+参考：https://www.cnblogs.com/pengdonglin137/p/12194548.html
+
+编译器下载地址：https://releases.linaro.org/components/toolchain/binaries/
+BusyBOX下载：https://busybox.net/downloads/
+u-boot下载地址：git clone https://source.denx.de/u-boot/u-boot.git
+u-boot下载地址：https://ftp.denx.de/pub/u-boot/
+linux下载网址：https://mirrors.edge.kernel.org/pub/linux/kernel/v5.x/
+linux说明：https://www.kernel.org/doc/html/
+################################################################
+################################################################
+全路径引用
+CC=/home/ctools/arm-2011.03/bin/arm-none-linux-gnueabi-
+make CROSS_COMPILE=$CC ARCH=arm uImage
+
+环境变量引用
+export PATH=$PATH:/usr/local/arm/3.3.2/bin
+export PATH=$PATH:/交叉编译器路径
+########################ROOTFS##################################
+################################################################
+busybox 1.36.0 + gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi
+
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi/bin/arm-linux-gnueabi- ARCH=arm menuconfig
+#设置Busybox 
+Busybox Settings --->
+Build Options --->
+    [ *]Build BusyBox as a static binary (no shared libs)
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi/bin/arm-linux-gnueabi- ARCH=arm -j16
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi/bin/arm-linux-gnueabi- ARCH=arm install
+
+++++++++++++++++++++++++++++++++++++++++++
+cd busybox-1_36_0
+mkdir -p ~/rootfs 
+cp _install/* ~/rootfs/ -rf
+cd ~/rootfs/
+
+# 创建init文件
+rm linuxrc
+ln -s bin/busybox init
+
+# 创建控制台设备文件
+mkdir dev
+mkdir proc
+mkdir sys
+mkdir config
+mkdir debug
+sudo mknod -m 600 dev/console c 5 1
+sudo mknod dev/tty1 c 4 1
+sudo mknod dev/tty2 c 4 2
+sudo mknod dev/tty3 c 4 3
+sudo mknod dev/tty4 c 4 4
+
+# 创建配置文件目录及文件
+mkdir etc
+touch etc/inittab
+
+#修改 vim etc/inittab 的内容如下
+::sysinit:/etc/init.d/rcS
+::askfirst:-/bin/sh
+::restart:/sbin/init
+::ctrlaltdel:/sbin/reboot
+::shutdown:/bin/umount -a -r
+::shutdown:/sbin/swapoff -a
+
+#创建初始化脚本
+mkdir -p etc/init.d/
+touch etc/init.d/rcS
+chmod +x etc/init.d/rcS
+
+#初始化脚本 rcS 的内容为,注意sysfs,debugfs和configfs的mount
+
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/bin:/usr/sbin;
+echo "minisystem start..."
+mount -t sysfs sysfs /sys
+mount -t proc procfs /proc
+mount -t debugfs debugfsfs /debug
+mount -t configfs configfs /config
+mount -o rw,remount /
+
+#制作raw格式的最小根文件系统镜像,生成rootfs.img
+cd ~/rootfs 
+find . | cpio -o -H newc | gzip > ../rootfs.img
+
+#######################UBOOT+KERNEL#############################
+################################################################
+++++++++++++++++++++++++++++++++++++++++++
+u-boot-v2020.04 /u-boot-2019.10 + gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi/bin/arm-linux-gnueabi- ARCH=arm distclean
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi/bin/arm-linux-gnueabi- ARCH=arm vexpress_ca9x4_defconfig 
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi/bin/arm-linux-gnueabi- ARCH=arm -j4
+
+ifconfig ens33 down
+brctl addbr br0
+brctl addif br0 ens33
+brctl stp br0 off
+brctl setfd br0 1
+brctl sethello br0 1
+ifconfig br0 0.0.0.0 promisc up
+ifconfig ens33 0.0.0.0 promisc up
+
+dhclient br0
+或者
+ifconfig br0 192.168.1.69 netmask 255.255.255.0
+route add -net 0.0.0.0 netmask 0.0.0.0 gw 192.168.1.255
+route add -net default gw 192.168.1.255
+
+tunctl -t tap0 -u root
+brctl addif br0 tap0
+ifconfig tap0 0.0.0.0 promisc up
+
+qemu-system-arm \
+-M vexpress-a9 \
+-cpu cortex-a9 \
+-smp 1 \
+-m 1G \
+-kernel u-boot \
+-nographic \
+-net nic -net tap,ifname=tap0,script=no,downscript=no
+
+++++++++++++++++++++++++++++++++++++++++++
+入口地址解析：https://www.cnblogs.com/dream397/p/15629694.html
+linux5.1.8 + gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi/bin/arm-linux-gnueabi- ARCH=arm distclean
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi/bin/arm-linux-gnueabi- ARCH=arm vexpress_defconfig 
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi/bin/arm-linux-gnueabi- ARCH=arm bzImage -j4
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi/bin/arm-linux-gnueabi- ARCH=arm dtbs
+
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi/bin/arm-linux-gnueabi- ARCH=arm modules_install = ??? -j4
+
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi/bin/arm-linux-gnueabi- ARCH=arm LOADADDR=0x60003000 uImage -j4
+生成uImage才需要设置加载地址，zImage不需要，因为解压代码位置无关！！！！
+zImage是位置无关的,解压之后的内核的物理启动地址是ZRELADDR。
+zImage的物理地址可以认为烧写指定、makefile配置、make编译传入!!!
+
+可以这样理解,如果bootloader是在flash运行之后,分nand和nor两种：
+nand的话,需要把bootloader的后半部分以及kernel都拷到ram里运行,这样bootloader执行完了之后会跳到压缩内核,然后执行zImage里的解压部分,zImage是位置无关的,解压之后的内核要放到指定位置ZRELADDR.
+nor flash的话,则既可以在flash上运行完bootloader,然后把压缩内核拷到ram,这样不需要指定ZTEXTADDR,也可以一直运行到执行解压缩操作,然后把内核解压到ZRELADDR,这样需要指定ZTEXTADDR.
+++++++++++++++++++++++++++++++++++++++++++
+
+qemu-system-arm \
+-M vexpress-a9 \
+-m 512M \
+-kernel ./zImage \
+-dtb ./dts/vexpress-v2p-ca9.dtb \
+-append "console=ttyAMA0" \
+-initrd rootfs.img \
+-nographic
+
+########################SD+UBOOT+KERNEL#########################
+################################################################
+参考：https://zhuanlan.zhihu.com/p/681323420
+
+#创建空的SD镜像
+dd if=/dev/zero of=boot.disk bs=1M count=1024
+
+#创建GPT分区，一个用来存放kernel和设备树，另一个存放根文件系统
+sgdisk -n 0:0:+100M -c 0:kernel boot.disk
+sgdisk -n 0:0:0 -c 0:rootfs boot.disk
+
+#查看分区
+sgdisk -p boot.disk
+
+#寻找一个空闲的loop设备
+losetup -f 
+ 
+#将SD卡镜像映射到loop设备上
+sudo losetup /dev/loop8 boot.disk
+sudo partprobe /dev/loop8
+
+#格式化
+sudo mkfs.ext4 /dev/loop8p1
+sudo mkfs.ext4 /dev/loop8p2
+
+#挂载
+mkdir p1
+mkdir p2
+sudo mount -t ext4 /dev/loop8p1 p1/
+sudo mount -t ext4 /dev/loop8p2 p2/
+
+#拷贝文件并制作根文件系统
+sudo cp ./zImage p1/
+sudo cp ./dts/vexpress-v2*.dtb p1/
+sudo cp -raf /root/rootfs/* ./p2
+
+#卸载
+sudo umount p1 p2
+sudo losetup -d /dev/loop8
+
+#启动uboot
+qemu-system-arm -M vexpress-a9 -m 1024M -smp 1 -nographic -kernel /media/sjw/111/u-boot-2019.10/u-boot -sd ./boot.disk
+
+#进入uboot命令行，切换mmc dev号
+ mmc dev 0
+ ls mmc 0:1
+ ls mmc 0:2
+
+#从SD分区load zImage和dtb
+load mmc 0:1 0x60008000 zImage  
+load mmc 0:1 0x61000000 vexpress-v2p-ca9.dtb  
+或者
+ext4load mmc 0:1 0x60008000 zImage 
+ext4load mmc 0:1 0x61000000 vexpress-v2p-ca9.dtb
+
+#设置内核启动参数
+setenv bootargs 'root=/dev/mmcblk0p2 rw rootfstype=ext4 rootwait earlycon console=tty0 console=ttyAMA0 init=/linuxrc ignore_loglevel'
+#启动内核
+bootz 0x60008000 - 0x61000000

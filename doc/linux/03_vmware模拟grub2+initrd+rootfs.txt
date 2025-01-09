@@ -1,0 +1,462 @@
+https://arttnba3.cn/2023/11/29/CODE-0X03-OSDEV64-I_UEFI-GRUB/
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+initrd的作用：内核早期运行驱动和文件，也可用于故障修复（救援系统）
+
+linux内核的链接地址是虚拟地址
+
+uImage才会有搬运的情况，因为有信息头：
+mkimage 生成内核镜像（uImage）文件的话，会在内核的前头加上了 64 bytes 的信息头，供建立 tag 之用。
+bootm 命令会首先判断 bootm xxx（烧写地址/加载地址） 和入口地址（编译或者makefile指定）是否相同，否则需要搬运。
+
+lsblk -f/df -T查看磁盘文件格式
+（SD卡，例子里分为5个分区）
+嵌入式：uboot-------------------------->boot------------------------------->roofts
+        /dev/mmcblk0p1----------------->/dev/mmcblk0p4 -------------------->/dev/mmcblk0p5   
+        /dev/mmcblk0p2
+        默认格式----------------------->vfat------------------------------->ext4
+		uboot通过bootargs参数得到------>kernel加载到内存------------------->直接挂载根目录运行
+		rootfs在SD卡位置，
+		通过bootz引导kernel位置
+        kernel和rootfs是主动烧写的
+
+
+服务器(SICI磁盘)：boot和rootfs可以在一个分区,initrd为cpio或者gzip格式
+ESP的本质是一个FAT分区，只不过分区程序在给GPT磁盘分区的时候提醒你建立ESP，并且你同意了，那么程序将建立一个指定大小的FAT分区，
+并且命名为"ESP"，从这里我们可以看出 ESP分区可以用任意位置的任意大小的任意FAT分区代替。
+真实机器：/boot/efi------------------->/boot-------------------------->rootfs
+          (/dev/sda1)----------------->(/dev/sda2)-------------------->(/dev/sda3)
+		或(/dev/sda1)----------------->(/dev/sda2)-------------------->(/dev/sda2)
+		  vfat(ESP)------------------->ext4--------------------------->ext4
+		  uefi和grub2安装一起，------->linux和initrd运行-------------->运行真实rootfs
+		  读取grub.conf获取            加载必要驱动，                  在/etc/fstab中挂载所有磁盘，
+		  内存加载initrd和vmlinuxz     挂载真实根目录，切根，          开始运行
+
+vmware虚拟机(bois)：/boot-------------------------------------->rootfs
+                    (/dev/sda2)-------------------------------->(/dev/sda3)
+			        读取/boot/grub/grub.conf获取--------------->运行真实rootfs
+		            linux和initrd运行                           在/etc/fstab中挂载所有磁盘，
+		            加载必要驱动，                              开始运行		                  
+		            挂载真实根目录，切根，            
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+update-initramfs -u 好像也是生成initrd.img
+dracut -f -v /boot/initrd-$(uname -r).img   # lsinitrd /boot/initrd-$(uname -r).img
+cd /tmp  && cpio -idmv < /boot/initrd-5.15.0-122-generic.img
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+在ubuntu20.04上的虚拟机上测试+使用新建磁盘分区
+
+注意：编译的内核的需要支持virto虚拟驱动（qemu虚拟磁盘）、blk驱动、ext2/3/4驱动、PCi驱动，否则initrd会错误。
+blk驱动：/lib/modules/$(uname -r)/kernel   mptbase.ko mptspi.ko
+lspci -v | grep -i -A 10 'storage\|sata\|scsi\|ide' 查看使用驱动类型
+
+grub-install --bootloader-id=grub2 --recheck 查看grub安装信息（分区）
+cat /etc/default/grub中的GRUB_INSTALL_DEVICE
+
+GRUB2 通常安装在 EFI 系统分区（ESP，EFI System Partition）上。
+这个分区通常是一个 FAT32 格式的分区，用于存储启动加载器文件。
+efibootmgr查看EFI信息
+
+#df -h也能看到efi和grub2分区
+#lsblk也能看到
+#lsblk -f/df -T查看磁盘文件格式
+#fdisk -l /home/test/virtual_disk.img 
+#parted /home/test/virtual_disk.img print
+#blkid   获取UUID
++++++++++++++++++++制作initrd.img++++++++++++++++++++++++++++++++++++
+busybox 1.36.0 
+make menuconfig
+#设置Busybox 
+Busybox Settings --->
+Build Options --->
+    [ *]Build BusyBox as a static binary (no shared libs)
+make -j16
+make install 
+------------------------
+mkdir initramfs
+cp -R busybox-1.36.0/_install/* initramfs/ 
+cd initramfs
+------------------------
+（1）测试一：使用linuxrc的内容作为启动脚本(grub和boot目录复用ubuntu系统)
+mv linuxrc init
+mkdir dev etc lib mnt proc sys
+cp -R ../busybox-1.36.0/examples/bootfloppy/etc/* etc/
+
+修改vim etc/fstab的内容如下：
+proc            /proc   proc    defaults    0   0
+sysfs           /sys    sysfs   defaults    0   0
+
+
+#修改 vim etc/inittab 的内容如下：
+::sysinit:/etc/init.d/rcS
+console::respawn:-/bin/sh
+::ctrlaltdel:/sbin/reboot
+::shutdown:/bin/umount -a -r
+
+etc/profile说明：
+profile通常是使用tty并进行登录时才会用到，profile是通常会调用~/.bashrc的配置修改用户环境变量。
+
+chmod 777 etc/init.d/rcS
+#修改 vim etc/init.d/rcS 的内容如下：（/bin/mount -a   #等价于运行/etc/fstab）
+#! /bin/sh
+/bin/mount -a
+#/bin/mount -t proc proc /proc
+#/bin/mount -t sysfs sysfs /sys
+
+echo "insmod sici depends driver"
+modprobe mptspi
+
+echo "detect and export hardware info"
+mdev -s
+
+
+###新建dev
+mknod dev/console c 5 1
+mknod dev/null c 1 3
+
+
+#根据具体编译内核版本需要uname -r可能不一样，需要适当调整，将kmod，移到initramfs（这里复用的的ubuntu虚拟机的内核和驱动）
+mkdir -p ./initramfs/lib/modules/$(uname -r)/kernel
+
+#删除不必要驱动（scsi驱动 /lib/modules/$(uname -r)/kernel/drivers/message/fusion）
+cp -r /lib/modules/$(uname -r)/kernel/* ./initramfs/lib/modules/$(uname -r)/kernel
+cp -r /lib/modules/$(uname -r)/modules.order ./initramfs/lib/modules/$(uname -r)/
+cp -r /lib/modules/$(uname -r)/modules.builtin ./initramfs/lib/modules/$(uname -r)/
+depmod -b ./initramfs $(uname -r)
+
+
+#打包
+find . |cpio -o -H newc|gzip >../initrd3.img
+cp ../initrd3.img /boot
+
+cp /boot/vmlinuz-5.15.0-122-generic /boot/vmlinux（测试用，用原来内核)
+
+#修改vim /boot/grub/grub.cfg 的添加内容如下：UUID为/dev/sdaXXX分区的
+menuentry 'vita' {
+        recordfail
+        load_video
+        gfxmode $linux_gfx_mode
+        insmod gzio
+        if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+        insmod part_msdos
+        insmod ext2
+        set root='hd0,msdos5'
+        if [ x$feature_platform_search_hint = xy ]; then
+          search --no-floppy --fs-uuid --set=root --hint-bios=hd0,msdos5 --hint-efi=hd0,msdos5 --hint-baremetal=ahci0,msdos5  4ccc15bc-9545-40cd-9e1e-66049eec97d8
+        else
+          search --no-floppy --fs-uuid --set=root 4ccc15bc-9545-40cd-9e1e-66049eec97d8
+        fi
+
+        linux   /boot/vmlinuz root=UUID=4ccc15bc-9545-40cd-9e1e-66049eec97d8 ro
+        initrd  /boot/initrd3.img
+}
+
+重启
+reboot
+------------------------
+（2）测试二：自定义/init脚本(grub和boot目录复用ubuntu系统，rootfs复用ubuntu)
+ 可以直接在上述基础上进行，也就是修改/init的内容（原有init程序启动后，会读取/etc/inittab文件，现在被干掉了，rcS不会执行了）
+rm init
+vim init
+
+#! /bin/sh
+/bin/mount -a
+#/bin/mount -t proc proc /proc
+#/bin/mount -t sysfs sysfs /sys
+
+echo "insmod sici depends driver"
+modprobe mptspi
+
+echo "detect and export hardware info"
+mdev -s
+
+echo "mount blk（/dev/sda5 ubuntu自带rootfs）"
+mount -t ext4 /dev/sda5 /mnt
+
+echo "Switch to read rootfs..."
+exec switch_root /mnt /sbin/init
+
+#给权限
+chmod 777 init
+
+#打包
+find . |cpio -o -H newc|gzip >../initrd3.img
+cp ../initrd3.img /boot
+
+（3）测试三：自定义/init脚本(grub和boot目录复用ubuntu系统，rootfs自己制作)
++++++++++++++++++++制作rootfs.img++++++++++++++++++++++++++++++++++++
+mkdir /vita 
+mkdir /vita/boot    
+1、虚机中扩展真实磁盘
+使用gparted新建分区，并挂载在/vita上
+apt-get install gparted
+sudo gparted
+① 新建/dev/sdaXXX分区(参考：https://blog.csdn.net/m0_65274357/article/details/131965463)
+mount /dev/sdaXXX /vita
+
+cp -R ../busybox-1.36.0/_install/* /vita
+cp -R ../busybox-1.36.0/examples/bootfloppy/etc  /vita
+
+cd /vita
+mkdir -p dev etc lib mnt/sysroot proc sys
+rm linuxrc
+
+修改：vim etc/fstab
+proc		/proc	proc	defaults    0	0
+sysfs		/sys	sysfs	defaults    0 0
+
+修改：vim etc/init.d/rcS
+'''
+#!/bin/sh
+/bin/mount -a
+mdev -s
+'''
+
+umount /vita
+
+######
+修改initrd.img的init文件，重新mount /dev/sdaXXX
+find . |cpio -o -H newc|gzip >../initrd3.img
+cp ../initrd3.img /boot
+
+reboot
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+在ubuntu20.04上的虚拟机上测试+使用qemu模拟
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ubuntu 20.04 (x86)
++++++++++++++++++++++++++++++++基于虚拟磁盘的操作系统(img)+++++++++++++++++++++++++++++++++++
+grub安装报错解决：
+(1)如果用的是VMware,则在虚拟机里设置这个选项
+(2)如果是实体机执行: ls /sys/firmware/efi/efivars 查看电脑是否支持efi
+https://blog.csdn.net/qq_41601836/article/details/105605123
+
+#这里创建了一个大小为3G的文件，可以根据实际情况适当调整。
+dd if=/dev/zero of=virtual_disk.img bs=1MiB count=3072 status=progress && sync
+创建分区表：parted virtual_disk.img mktable gpt   ===》 yes
+镜像分区：fdisk virtual_disk.img
+|***grub2(vfat-200M)***|***NULL(4M)***|***BOOT(ext4-500M)***|***ROOT(ext4-2.3G)***|
+          输入 p，查看分区信息，可以看到当前无分区
+
+          输入 n，创建 bootloader分区
+		  输入 1 或直接按 Enter，创建序号为 1 的分区
+          输入 64，输入第一个分区的起始扇区号
+          输入 +200M，输入第一个分区的末尾扇区号
+		  输入 p，查看当前分区情况，可以看到当前有一个分区  
+
+          输入 n，创建 trust 分区 
+		  输入 2 或直接按 Enter，创建序号为 2 的分区
+          输入 Enter，输入第三个分区的起始扇区号
+          输入 +4M，输入第三个分区的末尾扇区号
+		  输入 p，查看当前分区情况，可以看到当前有一个分区		  
+
+          输入 n，创建 boot 分区
+		  输入 3 或直接按 Enter，创建序号为 3 的分区
+          输入 Enter，输入第四个分区的起始扇区号
+          输入 +500M，输入第四个分区的末尾扇区号
+		  输入 p，查看当前分区情况，可以看到当前有一个分区	
+
+          输入 n，创建 root  分区
+		  输入 4 或直接按 Enter，创建序号为 4 的分区
+          输入 Enter，输入第五个分区的起始扇区号
+		  按 Enter，输入第五个分区的末尾扇区号，使用最后一个扇区号作为第五个分区的末尾扇区号。
+		  输入 p，查看当前分区情况，可以看到当前有一个分区	
+
+	      输入 p，查看当前分区情况，可以看到当前有五个分区
+		  输入 w，写入并退出
+
+#fdisk -l /home/test/virtual_disk.img 
+#parted /home/test/virtual_disk.img print
+#blkid   获取UUID
+
+使用 losetup 将磁盘镜像文件虚拟成块设备:losetup -f --show /home/test/virtual_disk.img 例如，显示结果为 /dev/loop9
+apt install kpartx
+yum install kpartx
+使用 kpartx 创建分区表 /dev/loop9 的设备映射:kpartx -va /dev/loop9
+                                              得到结果将 /dev/loop9 四个分区挂载了:
+											  add map loop9p1 ...
+                                              add map loop9p2 ...
+                                              add map loop9p3 ...
+                                              add map loop9p4 ...
+
+写入bootloader：
+mkfs.vfat -n efs /dev/mapper/loop9p1    #-n efs：为分区指定卷标 "efi"
+mkfs.ext4 -L boot /dev/mapper/loop9p3   #-L boot：为分区指定卷标 "efi"
+mkfs.ext4 -L rootfs /dev/mapper/loop9p4
+#(img文件写入方法)dd if=idbloader.img of=/dev/mapper/loop9p1
+
+apt-get install grub-efi-amd64（x86）
+yum install grub2-efi-x64 grub2-efi*（x86）
+yum install grub2-efi-aa64 grub2-efi*（arm64）
+
+mkdir -p /mnt/p1
+mkdir -p /mnt/p2
+mkdir -p /mnt/p3
+mkdir -p /mnt/p4
+mount /dev/mapper/loop9p1  /mnt/p1
+mount /dev/mapper/loop9p3  /mnt/p3
+mount /dev/mapper/loop9p4  /mnt/p4
+
+#从 grub2 >= 2.02-95 开始，调用 grub2-install
+在 EFI 分区上将失败：“此实用程序无法用于
+EFI 平台，因为它不支持 UEFI 安全启动。”
+（妈蛋，不能用grub2—install,arm64的可以借用ubuntu安装，或者grub源码编译安装）
+#(arm openEuler服务器)grub2-install --target=arm64-efi /dev/mapper/loop9p1 --boot-directory=/mnt/boot --efi-directory=/mnt
+(x86 ubuntu服务器)grub-install --no-floppy --force --target x86_64-efi --efi-directory=/mnt/p1 --boot-directory=/mnt/p3/boot
+				  #--boot-directory=/mnt/boot 指定boot目录
+				  #--efi-directory=/mnt 指定EFI目录
+                  (用不着、部署再同一个分区)grub-install --no-floppy --force --target x86_64-efi /dev/mapper/loop9p1  –root-directory=/xxx
+
+
+(x86 ubuntu服务器)apt install qemu qemu-kvm ovmf xorriso
+grub验证（两种方式都可以）：
+（方法一）qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -hda virtual_disk.img --nographic (只能用来验证grub)
+（方法二）
+qemu-system-x86_64 \
+	-bios /usr/share/ovmf/OVMF.fd \
+	-m 2048M \
+	-cpu kvm64,+smep,+smap \
+	-smp sockets=1,dies=1,cores=1,threads=2 \
+	--machine ubuntu \
+	-drive file=virtual_disk.img,format=raw,index=0,media=disk \
+	--nographic
+	
+OVMF.fd：完整的UEFI固件实现，支持多种高级特性，适用于需要完整UEFI功能的场景。
+QEMU_EFI.fd：简化版的UEFI固件，轻量级且启动速度快，适用于需要基本UEFI引导功能的场景。
+###-bios QEMU_EFI.fd(本处会有问题)
+
+touch /mnt/p3/boot/grub/grub.cfg
+修改cfg：vim /mnt/p3/boot/grub/grub.cfg（看情况自己修改）
+'''
+set timeout=10  # waiting time befo automatic booting
+set default=0   # default menu entry index
+
+insmod all_video
+
+menuentry 'testos' {
+        insmod gzio
+        insmod part_msdos
+        insmod ext2
+        set root='hd0,gpt3'
+        search --no-floppy --fs-uuid --set=root 59e39658-55f4-4655-b9ca-c8dcc7c0ebd1
+        linux   /boot/vmlinuz-5.15.0-122-generic root=UUID=b681a88f-fa19-436c-ae2a-a20ea1273da1 ro console=ttyS0
+        initrd  /boot/initrd.img-5.15.0-122-generic
+}
+
+menuentry "System Reboot" --class=reboot {
+	reboot
+}
+
+menuentry "System Shutdown" --class=halt {
+	halt
+}
+'''
+
+手动修改：/mnt/p1/EFI/ubuntu/grub.cfg，主要是添加 hd0,gpt3（指向boot的分区）
+'''
+search.fs_uuid 59e39658-55f4-4655-b9ca-c8dcc7c0ebd1 root hd0,gpt3
+set prefix=($root)'/boot/grub'
+configfile $prefix/grub.cfg
+'''
+ps：grub-mkconfig -o /mnt/boot/grub/grub.cfg会自动生成cfg（但是我还不知道怎么配置，感觉是切根后执行重新安装，后面验证试下）
+
+编译：linux内核，copy到/mnt/p3/boot
+制作：initrd.img，copy到/mnt/p3/boot
+制作：rootfs，copy到/mnt/p3/boot
+
+先验证下内核能不能启动
+qemu-system-x86_64 \
+	-m 2048M \
+	-cpu kvm64,+smep,+smap \
+	-smp sockets=1,dies=1,cores=1,threads=2 \
+	--machine ubuntu \
+	-kernel vmlinuz-5.15.0-122-generic \
+	-initrd initrd.img-5.15.0-122-generic \
+	-append "console=ttyS0" \
+	--nographic
+如何上述可以启动，把vmlinuz（vmlinuz-5.15.0-122-generic）和initrd.img（initrd.img-5.15.0-122-generic）放到/boot分区，也就是/mnt/p3
+cp /boot/vmlinuz-5.15.0-122-generic /mnt/p3
+cp /boot/initrd.img-5.15.0-122-generic /mnt/p3
+
+修改cfg：vim /mnt/p3/boot/grub/grub.cfg（console=ttyS0添加打印）
+'''
+set timeout=10  # waiting time befo automatic booting
+set default=0   # default menu entry index
+
+insmod all_video
+
+menuentry 'testos' {
+        insmod gzio
+        insmod part_msdos
+        insmod ext2
+        set root='hd0,gpt3'
+        search --no-floppy --fs-uuid --set=root 59e39658-55f4-4655-b9ca-c8dcc7c0ebd1
+        linux   /boot/vmlinuz-5.15.0-122-generic root=UUID=b681a88f-fa19-436c-ae2a-a20ea1273da1 ro console=ttyS0
+        initrd  /boot/initrd.img-5.15.0-122-generic
+}
+
+menuentry "System Reboot" --class=reboot {
+	reboot
+}
+
+menuentry "System Shutdown" --class=halt {
+	halt
+}
+'''
+
+再次运行：
+qemu-system-x86_64 \
+	-bios /usr/share/ovmf/OVMF.fd \
+	-m 2048M \
+	-cpu kvm64,+smep,+smap \
+	-smp sockets=1,dies=1,cores=1,threads=2 \
+	--machine ubuntu \
+	-drive file=virtual_disk.img,format=raw,index=0,media=disk \
+	-serial mon:stdio \
+	--nographic
+
+如何上述运行正常，自己制作rootfs，并拷贝到/mnt/p4。
+
+再次运行：
+qemu-system-x86_64 \
+	-bios /usr/share/ovmf/OVMF.fd \
+	-m 2048M \
+	-cpu kvm64,+smep,+smap \
+	-smp sockets=1,dies=1,cores=1,threads=2 \
+	--machine ubuntu \
+	-drive file=virtual_disk.img,format=raw,index=0,media=disk \
+	-serial mon:stdio \
+	--nographic
+
+kpartx -d /dev/loop9
+losetup -d /dev/loop9
+
++++++++++++++++++++++++++++++++方法和上面img一样，不做展开+++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++基于虚拟磁盘的操作系统(qcow2)+++++++++++++++++++++++++++++++++
+qemu-img create -f qcow2 hd.img 512M
+modprobe nbd max_part=8
+# max_part=8 指定虚拟设备数量这里指定为 8
+qemu-nbd --connect=/dev/nbd0 hd.img
+mkfs.ext4 /dev/nbd0
+mount -o rw /dev/nbd0 /mnt
+grub-install --no-floppy --force --target x86_64-efi /dev/nbd0  –root-directory=/mnt
+#(测试用)qemu-system-x86_64 -hda /dev/nbd0 --nographic
+# -hda 指定虚拟磁盘,这里指定了我们挂载后的nbd设备块文件
+# --nographic 由于没有图形界面,这里指定该选项可以通过命令行启动
+-------------
+# --boot-directory 指定启动目录
+# --no-floppy 设置没有软盘
+# --force 只要没有发生错误，就继续写入,如果不指定 --force 可能会安装报错
+# /dev/loop9 指定写入的磁盘文件，这里填刚刚通过 losetup -a 查询到的关联的回环设备文件
+# --target i386-pc 指定目标设备文件为 x86 系统
+# 移除关联挂载
+umount /mnt
+# 移除虚拟磁盘设备关联
+qemu-nbd --disconnect /dev/nbd0
+# 直接指定虚拟磁盘设备文件启动
+qemu-system-x86_64 -hda hd.img --nographic
+

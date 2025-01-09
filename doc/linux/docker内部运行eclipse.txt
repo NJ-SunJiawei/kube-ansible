@@ -1,0 +1,20 @@
+touch /tmp/.docker.xauth
+chmod 600 /tmp/.docker.xauth
+xauth nlist $DISPLAY | sed -e 's/^..../ffff/' | xauth -f /tmp/.docker.xauth nmerge -
+
+docker run --rm -it -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix  -v /tmp/.docker.xauth:/tmp/.docker.xauth -e XAUTHORITY=/tmp/.docker.xauth openeuler-22.03-lts-sp3:v1-tmp /bin/bash
+
+
+
+
+
+https://blog.csdn.net/dubochao_xinxi/article/details/139641957
+https://vip.kingdee.com/questions/315520827930397952/answers/315520827930397952?productLineId=8&isKnowledge=2&lang=zh-CN
+   普通用户报错，root用户不报错的解决方法：
+   cp /root/.Xauthority /home/xxx/
+
+   普通用户不报错，root用户报错的解决方法：
+    cp /home/xxx/.Xauthority /root/
+
+    xxx为用户名
+

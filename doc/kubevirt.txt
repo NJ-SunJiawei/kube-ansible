@@ -1,0 +1,25 @@
+#https://www.cnblogs.com/fsdstudy/p/18316979
+#https://github.com/kubevirt/kubevirt?tab=readme-ov-file
+#https://kubevirt.io/user-guide/
+#https://k8s.huweihuang.com/project/kvm/kubevirt/kubevirt-introduction
+
+1、前提需要支持cpu虚拟化，内核支持kvm
+1) dmesg | grep -i virtualization  ====》CPU features: detected: Virtualization Host Extensions ===》ARMv8 的虚拟化扩展（VHE，Virtualization Host Extensions）
+2) ls /dev/kvm                     ===》支持kvm
+   cat /boot/config-$(uname -r) | grep KVM  
+   zcat /proc/config.gz | grep KVM
+
+3) cat /proc/interrupts|grep kvm   ===》支持GIC3
+   dmesg |grep -i gic            
+
+如果你的系统上安装了 libvirt，可以使用 virt-host-validate 工具来检查。
+virt-host-validate | grep -i cpu
+
+2、安装必要依赖
+qemu-kvm（KVM 用户空间工具）
+libvirt（虚拟化管理工具）
+yum install qemu-kvm libvirt -y
+
+systemctl status libvirtd
+systemctl start libvirtd
+systemctl enable libvirtd

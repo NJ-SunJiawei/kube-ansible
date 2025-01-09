@@ -1,0 +1,40 @@
+dd if=/root/openEuler-22.03-LTS-aarch64.iso of=/dev/sda bs=1M
+dd if=/root/virtual_disk.img of=/dev/sda(假设4个分区)
+这个过程会将 .iso/img 文件内容完整地写入目标设备，相当于创建了一个完全相同的位级拷贝。
+因此，它不会解压 .iso/img 文件，而是直接将它的内容传输到指定设备。
+
+测试：将virtual_disk.img dd拷贝进disk_test.img，看下文件和分区，原封不动拷贝过来
+==>dd if=/dev/zero of=disk_test.img bs=1MiB count=4000
+
+==>losetup -f --show /home/test/disk_test.img ==》得到/dev/loop10
+
+==>dd if=/home/test/virtual_disk.img of=/dev/loop10
+
+==>losetup -d /dev/loop10
+
+==>（再次挂载）losetup -f --show /home/test/disk_test.img==》得到/dev/loop10
+->kpartx -va /dev/loop10
+->lsblk -f可以看到也是4个分区和virtual_disk.img一致
+
+->parted disk_test.img print
+->parted virtual_disk.img print
+->会发现分区完全一样，disk_test多余的部分也不会填充，所以嵌入式里运行时候会自动扩容的脚本
+
+
+
+dd if=/root/openEuler-22.03-LTS-aarch64.iso of=/dev/sda bs=1M
+Linux ISO镜像的安装原理并不需要手动解压ISO文件。ISO镜像本质上是一个光盘的映像文件，里面包含了操作系统的安装程序、文件系统和相关配置。在安装过程中，系统会自动从ISO镜像中读取并解压必要的文件并执行安装步骤。以下是具体的安装原理：
+
+1. **启动方式**：通常通过U盘、光盘或网络引导，将ISO镜像加载为启动介质。系统启动后会加载ISO内的引导程序，如`GRUB`或`ISOLINUX`。
+
+2. **内存映射**：系统会将ISO文件映射为只读文件系统，不需要手动解压。通过挂载（`mount`）操作，安装程序可以直接从ISO中读取数据。
+
+3. **引导安装程序**：ISO文件通常包含一个完整的安装程序（如`Anaconda`、`Ubuntu Ubiquity`等），当引导成功后，安装程序会被加载到内存中并开始运行。
+
+4. **文件系统安装**：安装程序会从ISO中提取需要的操作系统文件（如内核、驱动程序、软件包等），并将它们复制到目标磁盘上。
+
+5. **系统配置**：安装程序通常会要求用户输入一些配置参数（如磁盘分区、网络设置、用户信息等），然后自动完成安装过程。
+
+6. **引导安装完成**：文件拷贝完成后，安装程序会配置引导程序（如`GRUB`），并在目标磁盘上创建引导项，确保系统能从新安装的操作系统引导。
+
+整个安装过程中，系统会自动处理ISO文件的内容，因此不需要提前解压ISO文件。

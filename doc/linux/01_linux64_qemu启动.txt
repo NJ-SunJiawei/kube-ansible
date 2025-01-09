@@ -1,0 +1,214 @@
+apt-get install qemu-system-arrch64
+
+参考：https://zhuanlan.zhihu.com/p/626683569
+
+编译器下载地址：https://releases.linaro.org/components/toolchain/binaries/
+BusyBOX下载：https://busybox.net/downloads/
+u-boot下载地址：git clone https://source.denx.de/u-boot/u-boot.git
+u-boot下载地址：https://ftp.denx.de/pub/u-boot/
+linux下载网址：https://mirrors.edge.kernel.org/pub/linux/kernel/v5.x/
+linux说明：https://www.kernel.org/doc/html/
+################################################################
+################################################################
+全路径引用
+CC=/home/ctools/arm-2011.03/bin/arm-none-linux-gnueabi-
+make CROSS_COMPILE=$CC ARCH=arm uImage
+
+环境变量引用
+export PATH=$PATH:/usr/local/arm/3.3.2/bin
+export PATH=$PATH:/交叉编译器路径
+########################ROOTFS##################################
+################################################################
+busybox 1.36.0 + gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu 
+
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- ARCH=arm64 menuconfig
+#设置Busybox 
+Busybox Settings --->
+Build Options --->
+    [ *]Build BusyBox as a static binary (no shared libs)
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- ARCH=arm64 -j16
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- ARCH=arm64 install
+
+++++++++++++++++++++++++++++++++++++++++++
+cd busybox-1.36.0
+mkdir -p ~/rootfs 
+cp _install/* ~/rootfs/ -rf
+cd ~/rootfs/
+
+# 创建init文件
+rm linuxrc
+ln -s bin/busybox init
+
+# 创建控制台设备文件
+mkdir dev
+mkdir proc
+mkdir sys
+mkdir config
+mkdir debug
+sudo mknod -m 600 dev/console c 5 1
+sudo mknod dev/tty1 c 4 1
+sudo mknod dev/tty2 c 4 2
+sudo mknod dev/tty3 c 4 3
+sudo mknod dev/tty4 c 4 4
+
+# 创建配置文件目录及文件
+mkdir etc
+touch etc/inittab
+
+#修改 vim etc/inittab 的内容如下
+::sysinit:/etc/init.d/rcS
+::askfirst:-/bin/sh
+::restart:/sbin/init
+::ctrlaltdel:/sbin/reboot
+::shutdown:/bin/umount -a -r
+::shutdown:/sbin/swapoff -a
+
+#创建初始化脚本
+mkdir -p etc/init.d/
+touch etc/init.d/rcS
+chmod +x etc/init.d/rcS
+
+#初始化脚本 rcS 的内容为,注意sysfs,debugfs和configfs的mount
+
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/bin:/usr/sbin;
+echo "minisystem start..."
+mount -t sysfs sysfs /sys
+mount -t proc procfs /proc
+mount -t debugfs debugfsfs /debug
+mount -t configfs configfs /config
+mount -o rw,remount /
+
+#制作raw格式的最小根文件系统镜像,生成rootfs.img
+cd ~/rootfs 
+find . | cpio -o -H newc | gzip > ../rootfs.img
+
+#######################UBOOT+KERNEL#############################
+################################################################
+++++++++++++++++++++++++++++++++++++++++++
+u-boot-v2020.04 /u-boot-2019.10 + gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu 
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- ARCH=arm distclean
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- ARCH=arm qemu_arm64_defconfig 
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- ARCH=arm -j4
+
+ifconfig ens33 down
+brctl addbr br0
+brctl addif br0 ens33
+brctl stp br0 off
+brctl setfd br0 1
+brctl sethello br0 1
+ifconfig br0 0.0.0.0 promisc up
+ifconfig ens33 0.0.0.0 promisc up
+
+dhclient br0
+或者
+ifconfig br0 192.168.1.69 netmask 255.255.255.0
+route add -net 0.0.0.0 netmask 0.0.0.0 gw 192.168.1.255
+route add -net default gw 192.168.1.255
+
+tunctl -t tap0 -u root
+brctl addif br0 tap0
+ifconfig tap0 0.0.0.0 promisc up
+
+qemu-system-aarch64 -machine virt -cpu cortex-a57 -smp 2 -m 1024 -kernel u-boot -nographic \
+						-net nic -net tap,ifname=tap0,script=no,downscript=no
+
+++++++++++++++++++++++++++++++++++++++++++
+
+linux5.1.8 + gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- ARCH=arm64 distclean
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- ARCH=arm64 defconfig 
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- ARCH=arm64 Image -j4
+
+make CROSS_COMPILE=/media/sjw/111/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- ARCH=arm64 modules_install = ??? -j4
+
+make LOADADDR=0x60003000 uImage -j4 ????
+
+++++++++++++++++++++++++++++++++++++++++++
+
+qemu-system-aarch64 \
+-machine virt,virtualization=true,gic-version=3 \
+-m 1024M \
+-cpu cortex-a57 \
+-smp 1 \
+-kernel Image \
+-initrd rootfs.img \
+--append "console=ttyAMA0" \
+-nographic \
+-net nic -net user,hostfwd=tcp::2222-:22
+
+参考：https://zhuanlan.zhihu.com/p/681344251
+如果需要每次掉电文件不需要丢失，所以使用磁盘文件做文件系统
+如果不需要每次重启文件保存，只需要打包成ramfs即可
+#基于ramfs运行qemu
+#qemu-system-aarch64 -machine virt,virtualization=true,gic-version=3 -nographic -m size=1024M -cpu cortex-a57 -smp 4 -kernel arch/arm64/boot/Image -initrd rootfs.cpio.gz -append "root=/dev/ram console=ttyAMA0 rdinit=/linuxrc"
+#基于磁盘文件系统运行qemu
+#qemu-system-aarch64 -machine virt,virtualization=true,gic-version=3 -nographic -m size=1024M -cpu cortex-a57 -smp 4 -kernel arch/arm64/boot/Image -hda rootfs.img -append "root=/dev/vda"
+
+内核入口地址：0x40200000
+参考：https://zhuanlan.zhihu.com/p/631811875
+########################SD+UBOOT+KERNEL#########################
+################################################################
+全志参考：https://blog.csdn.net/m0_54251560/article/details/131706863
+u-boot>  setenv bootcmd 'fatload mmc 0:1 0x40200000 Image;fatload mmc 0:1 0x4fa00000 sun50i-h616-orangepi-zero2.dtb;booti 0x40200000 - 0x4fa00000'
+u-boot>  setenv bootargs 'console=ttyS0,115200 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait rw'
+u-boot>  saveenv
+++++++++++++++++++++++++++++++++++++++++++
+################################################################
+################################################################
+QEMU GDB调试环境: https://zhuanlan.zhihu.com/p/624878080
+
+本机安装：apt-get install gdb-multiarch
+
+1、打开kernel debug的内核配置选项CONFIG_DEBUG_INFO=y，并且重新编译内核
+
+2、qemu启动内核gdb调试
+qemu-system-aarch64 \
+-machine virt,virtualization=true,gic-version=3 \
+-m size=1024M \
+-cpu cortex-a57 \
+-smp 1 \
+-kernel ./Image \
+-initrd ./rootfs.img \
+--append "nokaslr console=ttyAMA0" \
+-nographic \
+-net nic -net user,hostfwd=tcp::2222-:22 \
+-s \
+-S \
+#-gdb tcp::1234
+
+-append "nokaslr console=ttyS0" ：附加参数，其中 nokaslr 参数必须添加进来，防止内核起始地址随机化，这样会导致 gdb 断点不能命中；
+-s ：监听在 gdb 1234 端口；
+-gdb tcp::8867和-s二选一
+
+-S ：表示启动后就挂起，等待 gdb 连接；
+
+
+3、本机运行：gdb-multiarch vmlinux
+	》》》》》target remote localhost:1234 连接到gdb的监听端口
+	
+	》》》》》layout asm打开汇编窗口，并且输入stepi或si单步调试
+################################################################
+################################################################
+kgdb调试
+1、
+CONFIG_KGDB_SERIAL_CONSOLE=y	使KGDB通过串口与主机通信(使用串口KGDB时必须打开)
+CONFIG_KGDB_KDB=y	            打开KGDB调试
+CONFIG_DEBUG_INFO=y	            使内核包含基本调试信息
+CONFIG_DEBUG_KERNEL=y	        包含驱动调试信息
+
+qemu-system-aarch64 \
+-machine virt,virtualization=true,gic-version=3 \
+-m size=1024M \
+-cpu cortex-a57 \
+-smp 1 \
+-kernel ./Image \
+-initrd ./rootfs.img \
+--append "nokaslr kgdboc=ttyXXX,115200 kgdbwait console=ttyAMA0" \
+-nographic \
+-net nic -net user,hostfwd=tcp::2222-:22 \
+
+
+连接串口线
+2、本机运行：gdb-multiarch vmlinux
+	》》》》》target remote /dev/ttyUSB0 连接到gdb的监听

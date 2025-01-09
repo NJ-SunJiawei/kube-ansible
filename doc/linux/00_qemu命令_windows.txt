@@ -1,0 +1,29 @@
+
+qemu-img create -f qcow2 D:\VM\qemu-CentOS\centos-arm64.qcow2 40G
+
+qemu-system-aarch64.exe -m 2048 -cpu cortex-a72 -smp 8,sockets=4,cores=2 -M virt -bios C:\D\openEuler\QEMU_EFI.fd -device VGA -device nec-usb-xhci -device usb-mouse -device usb-kbd -drive if=none,file=C:\D\openEuler\openEuler-22.03-LTS-SP1-aarch64.qcow2,id=hd0 -device virtio-blk-device,drive=hd0 -drive if=none,file=C:\D\openEuler\openEuler-22.03-LTS-SP3-aarch64-dvd.iso,id=cdrom,media=cdrom -device virtio-scsi-device -device scsi-cd,drive=cdrom  -net nic -net user,hostfwd=tcp::2222-:22
+
+qemu-system-aarch64.exe -m 2048 -cpu cortex-a72 -smp 4,sockets=2,cores=2 -M virt -bios C:\D\openEuler\QEMU_EFI.fd -device VGA -device nec-usb-xhci -device usb-mouse -device usb-kbd -drive if=none,file=C:\D\openEuler\openEuler-22.03-LTS-SP1-aarch64.qcow2,id=hd0 -device virtio-blk-device,drive=hd0 -net nic -net user,hostfwd=tcp::2222-:22 
+
+
+tap虚拟网卡下载：版本 tap-windows-9.21.2.exe 
+https://build.openvpn.net/downloads/releases/   
+
+如何添加多块网卡：设备管理器中添加过时硬件
+https://blog.csdn.net/wrzfeijianshen/article/details/138029344
+
+
+
+
+
+
+1、安装tap网卡，改名为tap0
+2、右击-》设置其他网络分享到tap网卡
+
+qemu-system-aarch64.exe -m 2048 -cpu cortex-a72 -smp 8,sockets=4,cores=2 -M virt -bios C:\D\openEuler\QEMU_EFI.fd -device VGA -device nec-usb-xhci -device usb-mouse -device usb-kbd -drive if=none,file=C:\D\openEuler\openEuler-22.03-LTS-SP1-aarch64.qcow2,id=hd0 -device virtio-blk-device,drive=hd0 -net nic -net tap,ifname=tap0,script=no,downscript=no
+
+
+centos源： https://cloud.centos.org/centos/7/images/
+
+qemu-system-aarch64.exe -m 2048 -cpu cortex-a72 -smp 4,sockets=2,cores=2 -M virt -bios C:\D\openEuler\QEMU_EFI.fd -device VGA -device nec-usb-xhci -device usb-mouse -device usb-kbd -drive if=none,file=C:\D\openEuler\CentOS-Userland-7-aarch64-generic-Minimal-2009-sda.raw,id=hd0 -device virtio-blk-device,drive=hd0 -net nic -net user,hostfwd=tcp::2222-:22 
+用户：root 密码：centos

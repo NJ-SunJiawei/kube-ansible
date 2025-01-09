@@ -1,0 +1,228 @@
+https://repo.openeuler.org/openEuler-20.03-LTS-SP1/virtual_machine_img/aarch64/
+https://github.com/openeuler-mirror/rockchip/blob/master/documents/openEuler%E9%95%9C%E5%83%8F%E7%9A%84%E6%9E%84%E5%BB%BA.md
+
+
+https://www.cnblogs.com/lvzh/p/14907592.html
+https://www.cnblogs.com/loongson-artc-lyc/p/16691993.html
+
+egrep -c '(vmx|svm)' /proc/cpuinfo
+cat /boot/config-$(uname -r) | grep KVM  
+zcat /proc/config.gz | grep KVM  
+ls /dev/kvm
+ls /sys/module/kvm
+dmesg|grep kvm
+dmesg |grep -i gic
+cat /proc/interrupts|grep kvm
+kvm-ok
+---------------------------------------------------------------------------------------------------
+1、
+dmesg | grep -i virtualization  ====》CPU features: detected: Virtualization Host Extensions ===》ARMv8 的虚拟化扩展（VHE，Virtualization Host Extensions）
+2、
+ls /dev/kvm ===》支持kvm
+3、
+cat /proc/interrupts|grep kvm
+dmesg |grep -i gic ===》支持GIC3
+
+
+如果你的系统上安装了 libvirt，可以使用 virt-host-validate 工具来检查硬件虚拟化支持。
+virt-host-validate | grep -i cpu
+
+-----------------------------------------------------------------------------------------------------
+方法一|
+arm64上编译内核，并fix kvm
+yum groupinstall "Development Tools"
+yum install ncurses-devel elfutils-libelf-devel openssl-devel rpm-build dwarves
+git clone https://gitee.com/openeuler/kernel.git
+cd kernel
+git checkout remotes/origin/openEuler-22.03-LTS-SP1
+cp /boot/config-$(uname -r) .config
+屏蔽#CONFIG_KVM_HISI_VIRT=y
+make oldconfig
+编译
+make Image
+make modules // make INSTALL_MOD_PATH=/opt/modules modules_install && depmod -b /opt/modules $(uname -r)
+make install
+编译
+make KVERSION=5.10.0-136.12.0.86.oe2203sp1 -j16 rpm-pkg //安装rpm宿主机执行grub2-mkconfig -o /boot/grub2/grub.cfg
+
+方法二|
+交叉编译内核
+apt install build-essential flex bison libelf-dev libssl-dev libncurses5-dev
+make CROSS_COMPILE=/home/test/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- ARCH=arm64 distclean
+make CROSS_COMPILE=/home/test/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- ARCH=arm64 openeuler_defconfig 
+make CROSS_COMPILE=/home/test/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- ARCH=arm64 Image -j4
+make CROSS_COMPILE=/home/test/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- ARCH=arm64 modules_install -j4
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+从欧拉系统里抛出来的
+
+CONFIG_EXT4_FS
+CONFIG_VIRTIO=y
+CONFIG_VIRTIO_PCI=y
+CONFIG_VIRTIO_BLK=y
+等等，内核打开所有的和虚拟化有关的配置cat /boot/config-$(uname -r) .config|grep KVM
+
+注意区分
+--append "console=ttyS0" \x86服务器
+--append "console=ttyAMA0" \arm64服务器
+否则无法打印日志。
+
+qemu-system-aarch64 \
+-machine virt,virtualization=true,gic-version=3 \
+-m 2048M \
+-cpu cortex-a57 \
+-smp 2 \
+-kernel Image \
+--append "console=ttyS0,1500000 root=/dev/vda rootfstype=ext4 init=/sbin/init rootwait  initcall_debug debug" \
+-drive file=rootfs.img,if=none,format=raw,id=hd0 \
+-device virtio-blk-device,drive=hd0 \
+-nographic \
+-net nic -net user,hostfwd=tcp::2222-:22
+
+-initrd initrd.img \ initramfs系统
+
+
+
+qemu-system-aarch64 \
+-machine virt,virtualization=true,gic-version=3 \
+-m 1024M \
+-cpu cortex-a57 \
+-smp 1 \
+-kernel Image \
+-initrd initrd.img \
+--append "console=ttyS0,1500000 root=/dev/vda rootfstype=ext4 init=/sbin/init rootwait  initcall_debug debug" \
+-drive file=rootfs.img,if=none,format=raw,id=hd0 \
+-device virtio-blk-device,drive=hd0 \
+-nographic \
+-net nic -net user,hostfwd=tcp::2222-:22
+
+++++++++++++++++++++++内核支持KVM++++++++++++++++++++++++++++++++++++++++++++++
+要在 Linux 内核中启用 KVM (Kernel-based Virtual Machine) 支持，必须确保内核配置中包含了正确的编译选项和驱动程序。这些选项可以通过内核配置文件（如 .config）来启用。以下是启用 KVM 支持所需的内核编译选项和驱动：
+
+1. 启用 KVM 支持
+KVM Core：KVM 的核心支持需要启用。
+CONFIG_KVM=y
+
+2. 启用 KVM 虚拟化模块
+KVM 对特定架构的支持：根据你的硬件架构（如 x86_64 或 ARM），你需要启用相应的 KVM 模块。
+
+x86_64（Intel 或 AMD 处理器）：
+CONFIG_KVM_INTEL=y  # 针对 Intel 处理器
+CONFIG_KVM_AMD=y    # 针对 AMD 处理器
+
+ARM（如基于 ARM 的虚拟化）：
+CONFIG_KVM_ARM=y
+CONFIG_KVM_ARM_HOST=y
+
+3. 硬件虚拟化支持
+KVM 需要硬件虚拟化支持，如 Intel 的 VT-x 或 AMD 的 AMD-V。因此，必须确保内核启用了相应的硬件虚拟化支持。
+
+Intel VT-x 支持：
+CONFIG_KVM_INTEL=y
+CONFIG_INTEL_IOMMU=y     # 如果需要 IOMMU 支持
+CONFIG_INTEL_VMX=y       # 启用 Intel VT-x（虚拟化扩展）
+
+AMD-V 支持：
+CONFIG_KVM_AMD=y
+CONFIG_AMD_IOMMU=y       # 如果需要 IOMMU 支持
+CONFIG_AMD_VI=y          # 启用 AMD-V（虚拟化扩展）
+
+4. 启用内存管理和 I/O 设备支持
+
+内存管理：
+CONFIG_KVM_MEMORY_HOTPLUG=y  # 支持动态内存插拔
+
+I/O 支持（如 virtio 网络和存储设备）：
+CONFIG_VIRTIO=y              # 启用 virtio 设备支持
+CONFIG_VIRTIO_NET=y          # 启用 virtio 网络设备支持
+CONFIG_VIRTIO_BLK=y          # 启用 virtio 块设备支持
+
+5. KVM 驱动程序
+KVM 需要一些额外的驱动程序来管理虚拟机（如虚拟机的管理接口）。这些驱动程序通常是模块化的，或者是直接集成到内核中。
+
+KVM 模块（如果需要内核模块）：
+CONFIG_KVM=m
+
+这表示 KVM 驱动程序作为模块进行编译，而不是直接集成到内核中。如果编译为模块，内核启动时会加载这些模块，或者使用 modprobe 手动加载它们：
+modprobe kvm
+modprobe kvm-intel   # 或者 kvm-amd
+
+6. 其他有用的 KVM 选项
+虚拟化扩展支持：
+Intel CPU 虚拟化支持：
+CONFIG_X86_VMX=y  # Intel VT-x 虚拟化支持
+
+AMD CPU 虚拟化支持：
+CONFIG_X86_SVM=y  # AMD-V 虚拟化支持
+
+KVM 设备支持：
+例如，支持 Vhost-Virtio 和 KVM 的设备管理：
+CONFIG_VHOST_NET=y    # Vhost-Net 支持
+CONFIG_VHOST_VSOCK=y  # Vhost-VSOCK 支持
+
+支持虚拟机监控：
+例如 virtio 驱动支持：
+CONFIG_VIRTIO_PCI=y   # virtio PCI 设备支持
+
+7. 启用用户空间接口（QEMU 和 Libvirt 使用）
+在 KVM 环境中，QEMU 和 Libvirt 通常与内核进行交互，因此你还需要确保相关的用户空间工具能够正确与内核通信。
+QEMU 和 Libvirt 的支持： 如果你想运行 QEMU 来管理虚拟机，确保你的系统已经安装了 QEMU 和 Libvirt 工具。内核编译选项中并不直接包含 QEMU 和 Libvirt，配置这些工具通常需要在用户空间中安装。
+
+++++++++++++++++++++++从ISO制作根文件++++++++++++++++++++++++++++++++++++++++++++++
+openEuler iso文件解析：
+1、initrd（初始化RAM磁盘）或 initramfs（初始化RAM文件系统）
+file initrd.img
+#initrd.img: XZ compressed data, checksum
+方法1：mv initrd.img initrd.img.xz   / xz -d initrd.img.xz   ###windows使用解压工具解压得到initrd
+       cpio -idmv < initrd.img 到当前目录
+
+方法2：指定目录执行：xzcat /mnt/images/initrd.img | cpio -idmv
+###我理解就是根文件系统，package和install.img都是直接安装到initrd里
+
+file initramfs-5.10.0-136.12.0.86.oe2203sp1.aarch64.img
+#initramfs-5.10.0-136.12.0.86.oe2203sp1.aarch64.img: gzip
+方法1：
+gunzip -c /boot/initramfs-5.10.0-136.12.0.86.oe2203sp1.aarch64.img | cpio -idmv
+
+
+rpm --root=/path/to/chroot -ivh package_name.rpm
+yum install --installroot=/path/to/chroot package_name
+
+2、rootfs.img在磁盘上的真实根文件（initramfs引导到rootfs.img）
+
+
+
+
+
+
++++++++++++++++++++切根+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+要将 initramfs overmount 到真实的 rootfs，通常涉及以下步骤：
+
+引导加载：系统启动时，bootloader（如GRUB）加载内核和initramfs。
+
+initramfs挂载：内核启动时，initramfs会被挂载为初始根文件系统（rootfs），提供一个最小的环境来进行文件系统检查和设备初始化。
+
+查找真实根文件系统：
+
+initramfs中的脚本（通常位于/init）会尝试找到真实的根文件系统。它会检查 /dev 中的设备文件，以查找可用的块设备（如硬盘分区）。
+挂载真实根文件系统：
+
+一旦找到真实的根文件系统（通常是通过UUID或LABEL），脚本会使用 mount 命令挂载它到一个临时目录（例如 /mnt）。
+切换根文件系统：
+
+通过 pivot_root 或 switch_root 命令，将根文件系统切换到新的挂载点。这将使新的根文件系统成为活动的根文件系统。
+在切换之后，initramfs中的临时目录（如/mnt）可以被卸载。
+执行 /sbin/init：
+
+切换后，initramfs会执行真实根文件系统中的/sbin/init，开始正常的系统启动过程。
+示例命令
+在initramfs中，挂载和切换的示例命令如下：
+
+bash
+复制代码
+# 假设真实根文件系统在 /dev/sda1
+mount /dev/sda1 /mnt
+# 切换根文件系统
+pivot_root /mnt /mnt/initramfs
+exec /sbin/init

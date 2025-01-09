@@ -1,0 +1,98 @@
+egrep -c '(vmx|svm)' /proc/cpuinfo
+cat /boot/config-$(uname -r) | grep KVM  
+zcat /proc/config.gz | grep KVM  
+ls /dev/kvm
+ls /sys/module/kvm
+dmesg|grep kvm
+dmesg |grep -i gic
+cat /proc/interrupts|grep kvm
+sudo kvm-ok
+
+qemu-kvm 通常用于 x86_64 主机上运行 x86_64 虚拟机，或在 ARM64 主机上运行 ARM64 虚拟机。
+要支持跨架构（如在 x86 主机上运行 ARM64 虚拟机），仍需使用完整的 QEMU 模拟（如 qemu-system-aarch64），但性能上会受限。
+
+# CentOS 7
+sudo yum install qemu-system-aarch64 qemu-kvm libvirt virt-install bridge-utils virt-manager
+
+# CentOS 8+ 或 Fedora
+sudo dnf install qemu-system-aarch64 qemu-kvm libvirt virt-install bridge-utils virt-manager
+
+#ubuntu
+sudo apt install qemu-system-aarch64 qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager
+qemu-kvm主要用于与主机架构相同的虚拟化环境，通常是 x86_64
+
+
+systemctl start libvirtd
+systemctl enable libvirtd
+
+sudo modprobe kvm
+sudo modprobe kvm_intel  # For Intel processors
+sudo modprobe kvm_amd    # For AMD processors
+
+lsmod | grep kvm
+
+使用 osinfo-query 列出支持的操作系统变体
+
+sudo virsh list --all         # 列出所有虚拟机
+sudo virsh start <vm-name>    # 启动虚拟机
+sudo virsh shutdown/destroy <vm-name> # 关闭虚拟机
+virsh suspend <vm-name>  #暂停
+virsh resume  <vm-name>  #恢复
+sudo virsh undefine <vm-name> #x86
+sudo virsh undefine --nvram <vm-name>  #arm64 uefi
+sudo virsh console <vm-name> 链接虚机
+#https://gitee.com/openeuler/docs/blob/master/docs/zh/docs/Virtualization/%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F%E8%B5%84%E6%BA%90.md
+virsh schedinfo <vm-name> 查看虚机份额
+virsh emulatorpin <vm-name> 查看QEMU进程当前绑定的物理CPU范围 持久化绑定：virsh emulatorpin openEulerVM --config 0-3,^1 在线绑定：virsh emulatorpin openEulerVM --live 2-3
+virsh vcpupin  <vm-name> 查看虚拟机的当前vCPU绑定信息   持久化调整：virsh vcpupin openEulerVM --config 0 0-3,^1  在线调整: virsh vcpupin openEulerVM  --live 0 2-3 
+
+在虚拟机启动后，你可以通过以下命令检查 KVM 是否被正确使用：
+ps -aux | grep qemu
+输出中应该包含 -enable-kvm，这表示虚拟机正在使用 KVM 加速。
+
+1、x86上部署x86机器
+virt-install \
+  --name my-vm-x86-kvm \
+  --ram 2048 \
+  --vcpus 2 \
+  --disk path=./openEuler-22.03-LTS-SP1-x86_64.qcow2,format=qcow2,bus=virtio \
+  --os-variant centos8 \
+  --import \
+  --network network=default,model=virtio \
+  --graphics none \
+  --console pty,target_type=serial\
+  --check all=off\
+  --virt-type kvm\
+  --accelerate
+ 默认bois引导
+
+
+2、x86上部署arm64机器
+   arm64上部署x86方案
+只能使用完整qemu方案
+x86_64 主机的 KVM 只能加速 x86_64 虚拟机。
+ARM64 主机的 KVM 只能加速 ARM64 虚拟机。
+
+3、arm64上部署arm64机器
+方案一、
+
+qemu-system-aarch64 -accel kvm -m 1024 -cpu cortex-a57 -smp 1 -M virt -bios QEMU_EFI.fd -nographic  -device virtio-scsi-device -drive if=none,file=openEuler-22.03-LTS-SP1-aarch64.qcow2,index=0,id=hd0 -device virtio-blk-device,drive=hd0 -net nic -net user,hostfwd=tcp::2222-:22
+qemu-system-aarch64 -enable-kvm -m 1024 -cpu cortex-a57 -smp 1 -M virt -bios QEMU_EFI.fd -nographic  -device virtio-scsi-device -drive if=none,file=openEuler-22.03-LTS-SP1-aarch64.qcow2,index=0,id=hd0 -device virtio-blk-device,drive=hd0 -net nic -net user,hostfwd=tcp::2222-:22
+方案二、
+virt-install \
+  --name my-vm-arm64-kvm \
+  --ram 8096 \
+  --arch aarch64\
+  --vcpus 4 \
+  --disk path=./openEuler-22.03-LTS-SP1-aarch64.qcow2,format=qcow2,bus=virtio \
+  --os-variant centos8 \
+  --import \
+  --network network=default,model=virtio \
+  --graphics none \
+  --console pty,target_type=serial\
+  --check all=off\
+  --virt-type kvm\
+  --accelerate\
+  --boot uefi      #,loader=/home/sjw/QEMU_EFI.fd  #yum install edk2-aarch64/apt-get install qemu-efi-aarch64  ？？？
+ 
+ARM64 系统通常使用 UEFI 启动,如果不指定 --boot uefi，virt-install 将自动使用 BIOS 引导方式启动虚拟机

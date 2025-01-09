@@ -1,0 +1,94 @@
+`initrd.img`（初始化内存文件系统，也称为 initramfs）在启动时加载哪些驱动程序，主要取决于以下几个因素：
+
+### 1. 内核命令行参数
+
+内核命令行参数可以指定在 `initrd` 环境中加载哪些模块。常见的参数包括 `rd.driver.pre`、`rd.driver.post` 和 `rd.driver.blacklist`。
+
+#### 示例
+假设内核命令行参数为：
+```plaintext
+root=/dev/sda1 rw quiet rd.driver.pre=vfat,nfs rd.driver.post=ext4 rd.driver.blacklist=nouveau
+```
+
+- **`rd.driver.pre=vfat,nfs`**：在 `initrd` 环境中预先加载 `vfat` 和 `nfs` 模块。
+- **`rd.driver.post=ext4`**：在 `initrd` 环境中后加载 `ext4` 模块。
+- **`rd.driver.blacklist=nouveau`**：在 `initrd` 环境中禁止加载 `nouveau` 模块。
+
+### 2. `initramfs` 生成工具配置
+
+`initramfs` 通常由生成工具（如 `dracut` 或 `mkinitcpio`）创建，这些工具可以根据配置文件自动包含特定的模块。
+
+#### 使用 `dracut`
+
+1. **编辑 `dracut.conf`**：
+   打开 `/etc/dracut.conf` 文件，添加或修改以下配置项：
+   ```plaintext
+   add_drivers+="vfat nfs ext4"
+   ```
+
+2. **重新生成 `initrd.img`**：
+   ```sh
+   sudo dracut -f /boot/initrd.img-5.10.0-136.12.0.86.oe2203sp1.aarch64 5.10.0-136.12.0.86.oe2203sp1.aarch64
+   ```
+
+#### 使用 `mkinitcpio`
+
+1. **编辑 `mkinitcpio.conf`**：
+   打开 `/etc/mkinitcpio.conf` 文件，确保 `MODULES` 数组中包含需要加载的模块：
+   ```plaintext
+   MODULES=(vfat nfs ext4)
+   ```
+
+2. **重新生成 `initramfs`**：
+   ```sh
+   sudo mkinitcpio -P
+   ```
+
+### 3. `initramfs` 脚本
+
+`initramfs` 中的脚本（如 `/usr/lib/dracut/modules.d/` 或 `/usr/lib/initcpio/hooks/` 目录下的脚本）也可以动态加载模块。
+
+#### 示例脚本
+
+假设你有一个脚本 `load_drivers.sh`，它在 `initramfs` 中加载特定的模块：
+
+```sh
+#!/bin/sh
+
+# 加载预定义的模块
+modprobe vfat
+modprobe nfs
+
+# 从内核命令行参数中获取需要加载的模块
+for i in $(getargs rd.driver.pre -d rdloaddriver=); do
+    (
+        IFS=,
+        for p in $i; do
+            modprobe "$p" 2>&1 | vinfo
+        done
+    )
+done
+
+# 从内核命令行参数中获取需要后加载的模块
+for p in $(getargs rd.driver.post -d rdinsmodpost=); do
+    modprobe "$p" 2>&1 | vinfo
+done
+```
+
+### 4. 模块依赖关系
+
+`initramfs` 会根据模块的依赖关系自动加载必要的模块。例如，如果 `ext4` 模块依赖于 `mbcache` 模块，`initramfs` 会自动加载 `mbcache`。
+
+### 5. 内核配置
+
+内核配置文件（如 `.config`）中指定的模块也会被编译进内核或作为模块包含在 `initramfs` 中。
+
+### 总结
+
+- **内核命令行参数**：使用 `rd.driver.pre`、`rd.driver.post` 和 `rd.driver.blacklist` 参数指定需要加载或禁止加载的模块。
+- **`initramfs` 生成工具配置**：通过 `dracut.conf` 或 `mkinitcpio.conf` 配置文件指定需要包含的模块。
+- **`initramfs` 脚本**：编写自定义脚本在 `initramfs` 中动态加载模块。
+- **模块依赖关系**：`initramfs` 会根据模块的依赖关系自动加载必要的模块。
+- **内核配置**：内核配置文件中指定的模块也会被包含在 `initramfs` 中。
+
+通过这些方法，你可以确保 `initrd.img` 在启动时加载所需的驱动程序。

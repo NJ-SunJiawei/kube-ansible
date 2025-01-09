@@ -1,0 +1,126 @@
+
+qemu-img create -f qcow2 openEuler.qcow2 40G
+
+qemu-system-aarch64 -m 4096 -cpu cortex-a72 -smp 4 -M virt -bios QEMU_EFI.fd -nographic -drive if=none,file=openEuler-22.03-LTS-SP3-aarch64-dvd.iso,id=cdrom,media=cdrom -device virtio-scsi-device -device scsi-cd,drive=cdrom -drive if=none,file=openEuler-20.03-LTS.aarch64.qcow2,id=hd0 -device virtio-blk-device,drive=hd0 -net nic -net user,hostfwd=tcp::2222-:22
+
+qemu-system-aarch64 -m 4096 -cpu cortex-a72 -smp 4 -M virt -bios QEMU_EFI.fd  -nographic -drive if=none,file=openEuler-22.03-LTS-SP3-aarch64-dvd.iso,id=cdrom,media=cdrom -device virtio-scsi-device -device scsi-cd,drive=cdrom -drive if=none,file=openEuler.qcow2,id=hd0 -device virtio-blk-device,drive=hd0 -net nic -net tap,ifname=tap0,script=no,downscript=no
+
+
+success20.03:
+qemu-system-aarch64 -m 4096 -cpu cortex-a57 -smp 4 -M virt -bios QEMU_EFI.fd -nographic  -device virtio-scsi-device -drive if=none,file=openEuler-20.03-LTS.aarch64.qcow2,index=0,id=hd0 -device virtio-blk-device,drive=hd0 -net nic -net user,hostfwd=tcp::2222-:22
+输入用户名：root，密码：openEuler12#$
+
+success22.03:
+qemu-system-aarch64 -enable-kvm -m 4096 -cpu cortex-a57 -smp 4 -M virt -bios QEMU_EFI.fd -nographic  -device virtio-scsi-device -drive if=none,file=openEuler-22.03-LTS-SP1-aarch64.qcow2,index=0,id=hd0 -device virtio-blk-device,drive=hd0 -net nic -net user,hostfwd=tcp::2222-:22
+
+qemu-system-aarch64 -m 4096 -cpu cortex-a57 -smp 4 -M virt -bios QEMU_EFI.fd -nographic  -device virtio-scsi-device -drive if=none,file=openEuler-22.03-LTS-SP1-aarch64.qcow2,index=0,id=hd0 -device virtio-blk-device,drive=hd0 -net nic -net tap,ifname=tap0,script=no,downscript=no
+输入用户名：root，密码：openEuler12#$
+
+
+ifconfig enp1s0 down
+brctl addbr br0
+brctl addif br0 enp1s0
+brctl stp br0 off
+brctl setfd br0 1
+brctl sethello br0 1
+ifconfig br0 0.0.0.0 promisc up
+ifconfig enp1s0 0.0.0.0 promisc up
+
+dhclient br0
+或者
+ifconfig br0 192.168.1.69 netmask 255.255.255.0
+route add -net 0.0.0.0 netmask 0.0.0.0 gw 192.168.1.255
+route add -net default gw 192.168.1.255
+
+tunctl -t tap0 -u root
+brctl addif br0 tap0
+ifconfig tap0 0.0.0.0 promisc up
+
+kubeadm init --apiserver-advertise-address=192.168.1.77 --apiserver-bind-port=6443 --kubernetes-version=v1.24.1 --pod-network-cidr=10.233.0.0/16 --service-cidr=172.30.0.0/16 --image-repository=registry.aliyuncs.com/google_containers --ignore-preflight-errors=swap
+
+diff
+libs install:
+yum install expect  tar zip ansible  ethtool ebtables iptables  libtool hostname  firewalld
+
+hostnamectl set-hostname master
+
+修改 /etc/containerd/config.toml   disable_apparmor = true
+虚拟机主节点添加默认网关 route add -net default gw 192.168.1.69 dev eth0
+
+修改calico.yml, 添加eth端口
+4189             # Cluster type to identify the deployment type
+4190             - name: CLUSTER_TYPE
+4191               value: "k8s,bgp"
+4192             - name: IP_AUTODETECTION_METHOD
+4193               value: "interface=ens.*"   
+4194             # Auto-detect the BGP IP address.
+4195             - name: IP
+4196               value: "autodetect"
+4197             # Enable IPIP
+4198             - name: CALICO_IPV4POOL_IPIP
+4199               value: "Always"
+4200             # Enable or Disable VXLAN on the default IP pool.
+4201             - name: CALICO_IPV4POOL_VXLAN
+4202               value: "Never"
+
+
+
+虚机性能和负载较高，修改calico.yaml探针时间：
+          livenessProbe:
+            exec:
+              command:
+              - /bin/calico-node
+              - -felix-live
+              - -bird-live
+            periodSeconds: 20
+            initialDelaySeconds: 30
+            failureThreshold: 10
+            timeoutSeconds: 20
+          readinessProbe:
+            exec:
+              command:
+              - /bin/calico-node
+              - -felix-ready
+              - -bird-ready
+            periodSeconds: 20
+            timeoutSeconds: 20
+            failureThreshold: 10
+
+虚机重启后：
+ifconfig eth0 192.168.1.77 netmask 255.255.255.0
+route add -net 192.168.1.0/24 dev eth0
+
+modprobe br_netfilter
+sysctl -p /etc/sysctl.d/k8s.conf
+
+systemctl restart kubelet
+systemctl restart containerd
+
+systemctl status kubelet
+systemctl status containerd
+journalctl -xeu kubelet
+
+
+卸载calico后：
+rm -rf /etc/cni/net.d/*
+rm -rf /var/lib/calico
+rm -rf /var/lib/cni
+
+systemctl restart containerd
+systemctl restart kubelet
+
+
+？？？--pod-network-cidr=10.244.0.0/16 
+
+
+
+
+
+
+
+
+
+
+
+
+

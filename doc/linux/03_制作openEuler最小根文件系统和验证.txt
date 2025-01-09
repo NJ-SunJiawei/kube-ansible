@@ -1,0 +1,213 @@
+参考：https://github.com/openeuler-mirror/rockchip/blob/master/documents/openEuler%E9%95%9C%E5%83%8F%E7%9A%84%E6%9E%84%E5%BB%BA.md
+
+#########构建 rootfs 镜像##############
+export WORKDIR=/home/sjw
+
+1、创建 RPM 数据库
+cd $WORKDIR
+mkdir rootfs
+mkdir -p rootfs/var/lib/rpm
+rpm --root  $WORKDIR/rootfs/ --initdb
+
+2、下载安装 openEuler 发布包
+rpm -ivh --nodeps --root $WORKDIR/rootfs/ http://repo.openeuler.org/openEuler-20.03-LTS/everything/aarch64/Packages/openEuler-release-20.03LTS-33.oe1.aarch64.rpm
+执行此操作会在/root/rootfs下生成3个文件夹：/etc ,/usr, /var
+
+3、添加 yum 源
+mkdir $WORKDIR/rootfs/etc/yum.repos.d
+curl -o $WORKDIR/rootfs/etc/yum.repos.d/openEuler-20.03-LTS.repo https://gitee.com/src-openeuler/openEuler-repos/raw/openEuler-20.03-LTS/generic.repo
+
+4、安装yum
+yum --installroot=$WORKDIR/rootfs/ install yum --nogpgcheck -y  --setopt=tsflags=nodocs --setopt=group_package_types=mandatory 
+
+5、安装必要软件
+yum --installroot=$WORKDIR/rootfs/ makecache
+yum --installroot=$WORKDIR/rootfs/ install -y vim net-tools iproute iputils NetworkManager openssh-server passwd hostname ntp
+
+6、添加配置文件
+设置 DNS：
+cp -L /etc/resolv.conf ${WORKDIR}/rootfs/etc/resolv.conf
+touch $WORKDIR/rootfs/etc/resolv.conf
+vim $WORKDIR/rootfs/etc/resolv.conf
+添加内容：
+'''
+nameserver 8.8.8.8
+nameserver 114.114.114.114
+'''
+设置 IP 自动获取：
+mkdir -p $WORKDIR/rootfs/etc/sysconfig/network-scripts
+touch $WORKDIR/rootfs/etc/sysconfig/network-scripts/ifup-eth0
+vim $WORKDIR/rootfs/etc/sysconfig/network-scripts/ifup-eth0
+内容：
+'''
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=eth0
+UUID=851a6f36-e65c-3a43-8f4a-78fd0fc09dc9
+ONBOOT=yes
+AUTOCONNECT_PRIORITY=-999
+DEVICE=eth0
+'''
+设置 NTP 服务器:
+sed -i 's/#NTP=/NTP=0.cn.pool.ntp.org/g' $WORKDIR/rootfs/etc/systemd/timesyncd.conf
+sed -i 's/#FallbackNTP=/FallbackNTP=1.asia.pool.ntp.org 2.asia.pool.ntp.org/g' $WORKDIR/rootfs/etc/systemd/timesyncd.conf
+
+
+????添加第一次开机扩容脚本(用在嵌入式)
+在 $WORKDIR/rootfs/etc/rc.d/init.d/expand-rootfs.sh 写入以下内容：
+echo "#!/bin/bash
+# chkconfig: - 99 10
+# description: expand rootfs
+
+ROOT_PART="$(findmnt / -o source -n)"  # /dev/mmcblk1p5
+ROOT_DEV="/dev/$(lsblk -no pkname "$ROOT_PART")"  # /dev/mmcblk1
+PART_NUM="$(echo "$ROOT_PART" | grep -o "[[:digit:]]*$")"  # 5
+
+cat << EOF | gdisk $ROOT_DEV
+p
+w
+Y
+Y
+EOF
+
+parted -s $ROOT_DEV -- resizepart $PART_NUM 100%
+resize2fs $ROOT_PART
+
+ln -s /system/etc/firmware /etc/firmware
+
+if [ -f /etc/rc.d/init.d/expand-rootfs.sh ];then rm /etc/rc.d/init.d/expand-rootfs.sh; fi" >> ${WORKDIR}/rootfs/etc/rc.d/init.d/expand-rootfs.sh
+设置可执行权限：chmod +x $WORKDIR/rootfs/etc/rc.d/init.d/expand-rootfs.sh
+
+7、rootfs 设置
+挂载必要的路径：
+mkdir -p $WORKDIR/rootfs{/dev,/sys,/proc}
+mount --bind /dev $WORKDIR/rootfs/dev
+mount -t proc /proc $WORKDIR/rootfs/proc
+mount -t sysfs /sys $WORKDIR/rootfs/sys
+运行chroot:
+chroot $WORKDIR/rootfs /bin/bash
+	设置 root 密码：
+	passwd root  #输入要设置的 root 密码
+	设置主机名：
+	echo openEuler > /etc/hostname
+	设置默认时区为东八区：
+	ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+	？？？设置第一次开机扩容脚本，然后退出（嵌入式）
+	chkconfig --add expand-rootfs.sh
+	chkconfig expand-rootfs.sh on
+退出chroot:
+exit
+取消临时挂载的目录：
+umount -l $WORKDIR/rootfs/dev
+umount -l $WORKDIR/rootfs/proc
+umount -l $WORKDIR/rootfs/sys
+
+
+修改 fstab：
+vim $WORKDIR/rootfs/etc/fstab
+内容：
+'''
+UUID=3c1ec069-3a9b-461f-be6c-6f6a7184c3c5    /    ext4    defaults  0 0
+UUID=6FBC-596A /boot vfat defaults 0 0
+'''
+
+################制作镜像###############################
+
+dd 创建镜像：
+dd if=/dev/zero of=rootfs.img bs=1M count=3000
+
+格式化镜像：
+mkfs.ext4 rootfs.img
+
+创建挂载目录
+mkdir rootfsimg
+
+挂载镜像
+mount rootfs.img rootfsimg/
+
+rootfs 拷贝到挂载目录
+cp -rfp rootfs/* rootfsimg/
+
+卸载镜像
+umount rootfsimg/
+
+修复文件系统
+e2fsck -p -f rootfs.img  
+resize2fs -M rootfs.img
+
+
+#######################################################
+注意区分
+--append "console=ttyS0" \x86服务器
+--append "console=ttyAMA0" \arm64服务器
+否则无法打印日志。
+
+cat /boot/config-$(uname -r)查看编译选项
+
+测试下：
+命令1：
+qemu-system-aarch64 \
+-machine virt,virtualization=true,gic-version=3 \
+-m 1024M \
+-cpu cortex-a57 \
+-smp 1 \
+-kernel vmlinuz \
+-initrd initrd2.img \
+--append "console=ttyAMA0,1500000 root=/dev/vda rootfstype=ext4 init=/sbin/init rootwait  initcall_debug debug" \
+-drive file=rootfs.img,if=none,format=raw,id=hd0 \
+-device virtio-blk-device,drive=hd0 \
+-nographic \
+-net nic -net user,hostfwd=tcp::2222-:22
+
+命令2：
+qemu-system-aarch64 \
+-machine virt,virtualization=true,gic-version=3 \
+-m 1024M \
+-cpu cortex-a57 \
+-smp 1 \
+-kernel vmlinuz \
+-initrd initrd2.img \
+--append "console=ttyAMA0,1500000 root=/dev/sda rootfstype=ext4 init=/sbin/init rootwait  initcall_debug debug" \
+-drive file=rootfs.img,format=raw,index=0,media=disk \
+-nographic \
+-net nic -net user,hostfwd=tcp::2222-:22
+跑不起来，无法找到rootfs位置，怀疑initrd.img有问题，有部分驱动没引导（大概率是virtio相关驱动，可以用自己做的initrd.img试试）
+
+新方法：
+复用openEuler-22.03-LTS-SP1-aarch64.qcow2镜像，把rootfs替换了试试
+modprobe nbd max_part=8 #max_part=8 指定虚拟设备数量这里指定为 8
+qemu-nbd --connect=/dev/nbd0 openEuler-22.03-LTS-SP1-aarch64.qcow2
+lsblk -f可以看到/dev/nbd0p1和/dev/nbd0p2
+mount -o rw /dev/nbd0p1 /mnt/n1
+mount -o rw /dev/nbd0p2 /mnt/n2
+配置/mnt/n1中grub.conf参数 在内核启动参数中添加rd.driver.pre=vfat，virtio_net
+把/mnt/n2里的rootfs替换了
+***此外需要安装linux对应版本的modules到/lib/module/目录（编译内核会生成kernel和modules的rpm包）
+还要修改/etc/fstab
+'''
+UUID=3c1ec069-3a9b-461f-be6c-6f6a7184c3c5    /    ext4    defaults  0 0
+UUID=6FBC-596A /boot vfat defaults 0 0
+'''
+umount /mnt/n1
+umount /mnt/n2
+qemu-nbd --disconnect /dev/nbd0
+
+ps：查看日志
+在grub.cfg中加上console=ttyAMA0 initcall_debug debug loglevel=7 （initcall_debug debug会输出大量日志）
+在qemu加上 -serial mon:stdio（加上会导致切不到shell，stdio控制台变成只打印日志；也可以不加这个，也能打日志）
+
+ps：initrd引导时候加载指定驱动（getargs 命令通常用于在 initramfs 脚本中获取启动时传递的参数：如：getargs rd.driver.pre -d rdloaddriver=）
+在内核启动参数中添加rd.driver.pre=vfat，virtio_net
+rd.driver.post 参数用于指定在 initrd 环境中需要在其他模块加载之后再加载的模块。这些模块通常是在根文件系统挂载之后才需要的，或者依赖于其他已经加载的模块
+rd.driver.blacklist 参数用于指定在 initrd 环境中需要禁止加载的模块。
+
+qemu-system-aarch64  -m 1024 -cpu cortex-a57 -smp 1 -M virt -bios QEMU_EFI.fd -nographic  -device virtio-scsi-device -drive if=none,file=openEuler-22.03-LTS-SP1-aarch64.qcow2,index=0,id=hd0 -device virtio-blk-device,drive=hd0 -netdev user,id=net0,hostfwd=tcp::2222-:22  -device virtio-net-device,netdev=net0 （-serial mon:stdio）

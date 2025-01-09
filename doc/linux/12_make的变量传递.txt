@@ -1,0 +1,145 @@
+`make -e` 是 `make` 命令的一个选项，用于指定环境变量应覆盖 Makefile 中的变量定义。通常情况下，Makefile 中定义的变量优先级高于环境变量。但是，当使用 `-e` 选项时，情况就会反转，环境变量将具有更高的优先级。
+
+### 使用场景
+
+1. **测试不同的配置**：你可以在运行 `make` 时临时更改某些配置，而无需修改 Makefile 文件。这对于快速测试不同的构建选项非常有用。
+
+2. **自动化脚本**：在自动化构建脚本中，你可能希望根据不同的环境条件动态地设置某些变量。使用 `-e` 选项可以确保这些环境变量在构建过程中生效。
+
+### 示例
+
+假设你有一个简单的 Makefile：
+
+```makefile
+# Makefile
+CC = gcc
+CFLAGS = -Wall -O2
+
+all: program
+
+program: main.o
+	$(CC) $(CFLAGS) -o program main.o
+
+main.o: main.c
+	$(CC) $(CFLAGS) -c main.c
+```
+
+#### 默认行为
+
+如果你直接运行 `make`，`CC` 和 `CFLAGS` 将使用 Makefile 中定义的值：
+
+```sh
+make
+```
+
+输出可能是：
+
+```sh
+gcc -Wall -O2 -c main.c
+gcc -Wall -O2 -o program main.o
+```
+
+#### 使用 `-e` 选项
+
+现在，假设你想使用 `clang` 作为编译器，并且想关闭优化：
+
+```sh
+CC=clang CFLAGS=-g make -e
+```
+
+输出将是：
+
+```sh
+clang -g -c main.c
+clang -g -o program main.o
+```
+
+可以看到，环境变量 `CC` 和 `CFLAGS` 覆盖了 Makefile 中的定义。
+
+### 注意事项
+
+- **优先级**：使用 `-e` 选项时，环境变量的优先级最高，其次是命令行变量，最后是 Makefile 中定义的变量。
+- **副作用**：确保你了解所有环境变量的影响，因为它们可能会意外地改变构建行为。
+
+### 总结
+
+`make -e` 是一个强大的工具，可以在不修改 Makefile 的情况下临时更改构建配置。然而，使用时要小心，以避免意外的副作用。
+
+
+在使用 `make` 时，如果你希望将某些变量传递到所有嵌套的 `make` 调用中，可以使用以下几种方法来实现。这些方法确保在顶层 `make` 调用中定义的变量能够传递到所有子 `make` 调用中。
+
+### 方法一：使用 `.EXPORT_ALL_VARIABLES`
+
+`make` 提供了一个特殊的伪目标 `.EXPORT_ALL_VARIABLES`，它可以将所有当前定义的变量导出到所有子 `make` 调用中。你只需要在顶层 Makefile 中添加这一行即可：
+
+```makefile
+# 顶层 Makefile
+.EXPORT_ALL_VARIABLES:
+
+VAR1 = value1
+VAR2 = value2
+
+all:
+    $(MAKE) -C subdir1
+    $(MAKE) -C subdir2
+```
+
+在这个例子中，`VAR1` 和 `VAR2` 将会被导出到 `subdir1` 和 `subdir2` 的 Makefile 中。
+
+### 方法二：手动传递变量
+
+如果你不想使用 `.EXPORT_ALL_VARIABLES`，也可以手动将变量传递到每个子 `make` 调用中。这种方法更加灵活，但需要更多的手动工作：
+
+```makefile
+# 顶层 Makefile
+VAR1 = value1
+VAR2 = value2
+
+all:
+    $(MAKE) -C subdir1 VAR1=$(VAR1) VAR2=$(VAR2)
+    $(MAKE) -C subdir2 VAR1=$(VAR1) VAR2=$(VAR2)
+```
+
+### 方法三：使用递归变量传递
+
+你可以定义一个递归变量来简化变量传递的过程。这样，你只需在一个地方定义变量传递逻辑：
+
+```makefile
+# 顶层 Makefile
+VAR1 = value1
+VAR2 = value2
+
+MAKE_FLAGS = VAR1=$(VAR1) VAR2=$(VAR2)
+
+all:
+    $(MAKE) -C subdir1 $(MAKE_FLAGS)
+    $(MAKE) -C subdir2 $(MAKE_FLAGS)
+```
+
+### 方法四：使用环境变量
+
+你也可以将变量设置为环境变量，这样它们会在所有子 `make` 调用中自动可用。这种方法适用于简单的场景：
+
+```sh
+export VAR1=value1
+export VAR2=value2
+make
+```
+
+在顶层 Makefile 中，你可以使用这些环境变量：
+
+```makefile
+# 顶层 Makefile
+all:
+    $(MAKE) -C subdir1
+    $(MAKE) -C subdir2
+```
+
+### 总结
+
+- **.EXPORT_ALL_VARIABLES**：简单方便，适用于大多数情况。
+- **手动传递变量**：灵活性高，适合复杂的场景。
+- **递归变量传递**：简化变量传递逻辑，提高可维护性。
+- **环境变量**：适用于简单的场景，不需要修改 Makefile。
+
+选择哪种方法取决于你的具体需求和项目的复杂性。希望这些方法能帮助你在 `make` 调用中有效地传递变量。
