@@ -12,6 +12,7 @@ kubectl get pods -n sset-5g-simulation -o wide 查看pod信息
 
 
 kubectl get nodes 查看nodes
+kubectl get no --show-labels
 
 kubectl get cm amf.yaml --from-file=amf.yml   基于amf.yml文件创建ConfigMap
 kubectl edit cm sriovdp-config -n kube-system
@@ -55,5 +56,8 @@ kubectl get pods -n [namespace] | grep ContainerStatusUnknown | awk '{print $1}'
 
 获取所有非 Running 状态下的 pod，并删除:
 kubectl get pods -A  | grep -v Running | awk '{print $2}' | xargs kubectl delete pod -n kubesphere-system
+
+强制删除pod
+kubectl delete pod --force --grace-period=0 <mypod>
 
 mongo                 4.4.9

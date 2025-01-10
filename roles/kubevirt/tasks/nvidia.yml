@@ -1,0 +1,14 @@
+---
+- name: 创建临时images目录
+  file: dest={{ tmp_dir }}/images state=directory
+- name: 分发镜像（需要花费一些时间...）
+  copy: src={{ software_dir }}/images/gpu dest={{ tmp_dir }}/images
+- name: 导入nvidia镜像（需要花费一些时间...）
+  shell: cd {{ tmp_dir }}/images/gpu/nvidia && \
+         for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;done
+
+- include_tasks: nvidia-containerd-update.yml
+  loop: "{{ gpu_interfaces }}"
+  when:
+    - inventory_hostname == item.ip
+    - item.gpu_label == 'sp_t4'

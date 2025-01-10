@@ -1,0 +1,68 @@
+virtctl controls virtual machine related operations on your kubernetes cluster.
+
+Available Commands:
+  addvolume         add a volume to a running VM
+  adm               Administrate KubeVirt configuration.
+  completion        Generate the autocompletion script for the specified shell
+  console           Connect to a console of a virtual machine instance.
+  create            Create a manifest for the specified Kind.
+  credentials       Manipulate credentials on a virtual machine.
+  expand            Return the VirtualMachine object with expanded instancetype and preference.
+  expose            Expose a virtual machine instance, virtual machine, or virtual machine instance replica set as a new service.
+  fslist            Return full list of filesystems available on the guest machine.
+  guestfs           Start a shell into the libguestfs pod
+  guestosinfo       Return guest agent info about operating system.
+  help              Help about any command
+  image-upload      Upload a VM image to a DataVolume/PersistentVolumeClaim.
+  memory-dump       Dump the memory of a running VM to a pvc
+  migrate           Migrate a virtual machine.
+  migrate-cancel    Cancel migration of a virtual machine.
+  pause             Pause a virtual machine
+  permitted-devices List the permitted devices for vmis.
+  port-forward      Forward local ports to a virtualmachine or virtualmachineinstance.
+  removevolume      remove a volume from a running VM
+  restart           Restart a virtual machine.
+  scp               SCP files from/to a virtual machine instance.
+  soft-reboot       Soft reboot a virtual machine instance
+  ssh               Open a SSH connection to a virtual machine instance.
+  start             Start a virtual machine.
+  stop              Stop a virtual machine.
+  unpause           Unpause a virtual machine
+  usbredir          Redirect an USB device to a virtual machine instance.
+  userlist          Return full list of logged in users on the guest machine.
+  version           Print the client and server version information.
+  vmexport          Export a VM volume.
+  vnc               Open a vnc connection to a virtual machine instance.
+
+#https://kubevirt.io/labs/kubernetes/lab1.html
+
+kubectl apply -f https://kubevirt.io/labs/manifests/vm.yaml
+kubectl get vm
+kubectl get vmis
+kubectl get vm  testvm -o yaml
+kubectl get vmis testvm
+
+# 启动虚拟机
+virtctl start testvm
+# 关闭虚拟机
+virtctl stop testvm
+
+# Start the virtual machine:
+kubectl patch virtualmachine testvm --type merge -p \
+    '{"spec":{"runStrategy": "Always"}}'
+
+# Stop the virtual machine:
+kubectl patch virtualmachine testvm --type merge -p \
+    '{"spec":{"runStrategy": "Halted"}}'
+
+
+# 进入虚拟机
+virtctl console testvm
+
+virtctl ssh root@testvm
+
+
+kubectl delete -f vmi.yaml
+# OR
+kubectl delete vm testvm
+kubectl delete vmis testvm

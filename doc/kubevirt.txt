@@ -47,5 +47,64 @@ ps：virt 会自动拉起dev-hugepages.mount，需要禁用，不然会影响dpd
 
 
 3、安装kubevirt
+Kubernetes apiserver 必须具备--allow-privileged=true才能运行 KubeVirt 的特权 DaemonSet。
 
+# Point at latest release
+$ export RELEASE=$(curl https://storage.googleapis.com/kubevirt-prow/release/kubevirt/kubevirt/stable.txt) #v1.4.0
+# Deploy the KubeVirt operator
+$ kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/${RELEASE}/kubevirt-operator.yaml
+# Create the KubeVirt CR (instance deployment request) which triggers the actual installation
+$ kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/${RELEASE}/kubevirt-cr.yaml
+# wait until all KubeVirt components are up
+$ kubectl -n kubevirt wait kv kubevirt --for condition=Available
 
+检查：kubectl logs -n kubevirt virt-handler-xxxx virt-launcher
+
+限制 virt-controller 和 virt-api pod 仅在控制平面节点上运行：
+kubectl patch -n kubevirt kubevirt kubevirt --type merge --patch '{"spec": {"infra": {"nodePlacement": {"nodeSelector": {"node-role.kubernetes.io/control-plane": ""}}}}}'
+要限制 virt-handler pod 仅在具有“region=primary”标签的节点上运行：
+kubectl patch -n kubevirt kubevirt kubevirt --type merge --patch '{"spec": {"workloads": {"nodePlacement": {"nodeSelector": {"region": "primary"}}}}}'
+
+如果硬件虚拟化不可用，则可以通过在 KubeVirt CR 中进行如下设置来启用软件模拟回退：spec.configuration.developerConfiguration.useEmulationtrue
+
+4、安装virtctl
+VERSION=$(kubectl get kubevirt.kubevirt.io/kubevirt -n kubevirt -o=jsonpath="{.status.observedKubeVirtVersion}")
+ARCH=$(uname -s | tr A-Z a-z)-$(uname -m | sed 's/x86_64/amd64/') || windows-amd64.exe
+echo ${ARCH}
+curl -L -o virtctl https://github.com/kubevirt/kubevirt/releases/download/${VERSION}/virtctl-${VERSION}-${ARCH}
+chmod +x virtctl
+sudo install virtctl /usr/local/bin
+
+5、删除：
+要删除 KubeVirt，您应该首先删除KubeVirt自定义资源，然后删除 KubeVirt 操作员。
+$ export RELEASE=v1.4.0
+$ kubectl delete -n kubevirt kubevirt kubevirt --wait=true # --wait=true should anyway be default
+$ kubectl delete apiservices v1.subresources.kubevirt.io # this needs to be deleted to avoid stuck terminating namespaces
+$ kubectl delete mutatingwebhookconfigurations virt-api-mutator # not blocking but would be left over
+$ kubectl delete validatingwebhookconfigurations virt-operator-validator # not blocking but would be left over
+$ kubectl delete validatingwebhookconfigurations virt-api-validator # not blocking but would be left over
+$ kubectl delete -f https://github.com/kubevirt/kubevirt/releases/download/${RELEASE}/kubevirt-operator.yaml --wait=false
+注意：如果您错误地先删除了操作符，则 KV 自定义资源将卡在该Terminating状态，要修复此问题，请从资源中手动删除终结器。
+
+注意：由于存在错误，需要手动删除apiservice和。webhookconfigurations
+
+$ kubectl -n kubevirt patch kv kubevirt --type=json -p '[{ "op": "remove", "path": "/metadata/finalizers" }]'
+
+当 virt-handler 无响应时删除卡住的 VMI：
+kubectl delete vmi <myvmi>
+
+当整个节点无响应时删除卡住的 VMI:
+kubectl delete pod --force --grace-period=0 <mypod>
+
+6、标签：
+如果你想查看所有带有 kubevirt.io=virt-launcher 标签的 Pod，可以使用以下命令：
+kubectl get pods -l kubevirt.io=virt-launcher --all-namespaces
+
+假设你有一个名为 k8s-node1 的节点，并且你想确保它可以用于调度虚拟机实例。你可以给该节点添加 kubevirt.io/schedulable=true 标签：
+kubectl label nodes k8s-node1 kubevirt.io/schedulable=true
+
+此命令将标签 kubevirt.io/schedulable=true 应用到节点 k8s-node1 上，表示该节点可以接收新的虚拟机实例调度。
+如果你不希望在该节点上调度虚拟机实例，可以将标签设置为 false：
+kubectl label nodes k8s-node1 kubevirt.io/schedulable=false
+
+kubectl describe node k8s-node1 | grep kubevirt.io/heartbeat

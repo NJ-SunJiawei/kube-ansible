@@ -1,0 +1,17 @@
+---
+apiVersion: kubevirt.io/v1
+kind: KubeVirt
+metadata:
+  name: kubevirt
+  namespace: kubevirt
+spec:
+  certificateRotateStrategy: {}
+  configuration:
+    developerConfiguration:
+      featureGates: []
+      #useEmulation: true
+  customizeComponents: {}
+  imagePullPolicy: IfNotPresent
+  workloadUpdateStrategy: {}
+
+#如果硬件虚拟化不可用，则 可以通过在 KubeVirt CR 中进行如下设置来启用软件模拟回退：spec.configuration.developerConfiguration.useEmulationtrue

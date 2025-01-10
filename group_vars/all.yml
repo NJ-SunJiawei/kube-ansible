@@ -93,6 +93,12 @@ gpu_interfaces:
     gpu_share_label: sp_mps
 
 ############################
+# kubevirt
+############################
+kubevirt_install: "yes"
+kubevirt_ver: "v1.4.0"
+
+############################
 # network
 ############################
 multus_install: "yes"
@@ -195,7 +201,6 @@ nfs_default_path: "/data/k8s"
 
 ############################
 #metrics-server
-#和kubesphere二选一
 ############################
 metrics_server_install: "yes"
 
@@ -232,6 +237,7 @@ kubesphere_clusterRole_host: "yes"
 kubesphere_clusterRole_others: "none" #no:member(从集群) | yes:none(主机群) |no:none(default)
 kubesphere_jwtSecret: "" #从集群时候填充
 #查询jwtSecret： kubectl -n kubesphere-system get cm kubesphere-config -o yaml | grep -v "apiVersion" | grep jwtSecret
+
 ############################
 # helm charts
 #和kubeconfig部署在一起
