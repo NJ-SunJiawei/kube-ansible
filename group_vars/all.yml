@@ -96,7 +96,6 @@ gpu_interfaces:
 # network
 ############################
 multus_install: "yes"
-multus_net_install: "no"
 metallb_install: "yes"
 ingress_install: "yes"
 dpdk_pre_install: "yes"

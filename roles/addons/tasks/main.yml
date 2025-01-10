@@ -29,7 +29,6 @@
     - addons_metrics
     - addons_dashboard
     - addons_multus
-    - addons_multus_net
     - addons_prometheus
     - addons_nfs
     - addons_metallb
@@ -136,18 +135,6 @@
   when:
     - kubesphere_install == "yes"
 #    - '"kubesphere" not in pod_info.stdout'
-
-- import_tasks: multus-net.yml
-  tags:
-    - addons_multus_net
-  when:
-    - multus_net_install == "yes"
-
-- import_tasks: multus-demo.yml
-  tags:
-    - addons_demo
-  when:
-    - multus_net_install == "yes"
 
 - name: 查看Pod状态
   shell: kubectl get all --all-namespaces

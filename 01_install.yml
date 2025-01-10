@@ -56,12 +56,13 @@
     - master
   tasks:
     - name: 打label标签
-      shell: >
+      shell: |
              kubectl label nodes {{ hostvars[item].node_name }} model={{ hostvars[item].node_label }} --overwrite
       with_items: ["{{ groups.master }}", "{{ groups.node }}"]
     - name: 打role标签
-      shell: >
+      shell: |
               kubectl label node {{ node_name }} kubernetes.io/role=master  --overwrite
+              kubectl label node {{ node_name }} node-role.kubernetes.io/control-plane=""  --overwrite
 
 - name: 8.导入离线镜像
   gather_facts: false

@@ -99,3 +99,18 @@ echo "0000:2b:10.7" >> /sys/bus/pci/drivers/vfio-pci/bind
 
 python3 dpdk-devbind.py -b vfio-pci enp11s0f0v0
 python3 dpdk-devbind.py -b iavf     0000:0b:02.0
+
+
+----------------------------------------
+如何开启虚拟网卡的混杂模式
+PF：
+ip link set dev enp11s0f0 promisc on
+ip link set dev enp11s0f0 promisc off
+
+VF：
+ip link set dev enp11s0f0 vf 0 trust on
+ip link set dev enp11s0f0 vf 0 promisc on(失败)
+ip link set dev enp11s0f0v0 promisc on
+验证：
+ip link show dev enp11s0f0
+

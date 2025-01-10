@@ -1,0 +1,72 @@
+---
+#如果需要给类型资源如 Deployment，StatefulSet 绑定子网，需要将 ovn.kubernetes.io/logical_switch Annotation 设置在 spec.template.metadata.annotations。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-web-sriov-net2
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2 # 指定Pod副本数
+  template:
+    metadata:
+      labels:
+        app: nginx
+# Deployment类型放此处
+#NG处于两个不同的ns空间(ip netns)，无法直接互通, 需要借助外部交换机arp
+      annotations:
+        k8s.v1.cni.cncf.io/networks: '[
+             { "name" : "sriov-ngnet",
+               "namespace": "default"
+             }
+        ]'
+    spec:
+      containers:
+      - name: nginx-sriov-net2
+        image: docker.io/library/nginx:latest
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/bash", "-c", "while true; do echo hello; sleep 3600000; done"]
+        ports:
+         - containerPort: 80
+        securityContext:
+          privileged: true
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: 2            
+            intel.com/intel_sriov_ngnet: '1'
+          limits:
+            memory: 4Gi
+            cpu: 2  
+            intel.com/intel_sriov_ngnet: '1'
+      #nodeSelector:
+        #model: c5000
+        #kubernetes.io/hostname: k8s-node1  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nginx
+  name: nginx-service-sriov-net2
+  namespace: default
+spec:
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - nodePort: 31218
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: nginx
+  sessionAffinity: None
+  type: NodePort
+status:
+  loadBalancer: {}
+

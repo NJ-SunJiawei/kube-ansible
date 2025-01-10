@@ -40,6 +40,8 @@ kubectl get node k8s-node1 -o json | jq '.status.allocatable'
 
 docker inspect 容器名  -- 查询k8s emptyDir{}
 
+kubectl get net-attach-def 查看NetworkAttachmentDefinition
+
 headless服务    多个pod副本   1、gnb-deploy-1.gnb-svc-pool.sset-5g-simulation.svc.cluster.local     DNS别名指定IP
                               2、gnb-svc-pool      iptables、ipvs负载均衡
                 单个pod          gnb-svc-pool

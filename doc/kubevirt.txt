@@ -14,12 +14,38 @@
 
 如果你的系统上安装了 libvirt，可以使用 virt-host-validate 工具来检查。
 virt-host-validate | grep -i cpu
+virt-host-validate qemu
 
-2、安装必要依赖
+2、对于arm64的兼容
+https://kubevirt.io/user-guide/cluster_admin/device_status_on_Arm64/
+内核必须支持
+virtio总线、virtio-net-device等等
+CONFIG_VIRTIO=y
+CONFIG_VIRTIO_PCI=y
+CONFIG_VIRTIO_BLK=y
+'''
+CONFIG_VIRTIO*全部打开
+
+3、安装必要依赖
 qemu-kvm（KVM 用户空间工具）
 libvirt（虚拟化管理工具）
-yum install qemu-kvm libvirt -y
+virt-install(???)
+yum install qemu qemu-system-aarch64 qemu-system-x86_64 libvirt -y
+yum install qemu qemu-system-aarch64 qemu-system-x86_64 libvirt --downloadonly --downloaddir=/home/sjw/rpm-virt
+  yum remove qemu qemu-system-aarch64 qemu-system-x86_64 libvirt -y
+  yum list installed "libvirt*"
+  rpm -qa | grep libvirt
 
 systemctl status libvirtd
 systemctl start libvirtd
 systemctl enable libvirtd
+
+ps：virt 会自动拉起dev-hugepages.mount，需要禁用，不然会影响dpdk。
+    systemctl stop dev-hugepages.mount
+    systemctl disable dev-hugepages.mount
+    检查mount|grep huge   ===》  不能有/dev/hugepages
+
+
+3、安装kubevirt
+
+

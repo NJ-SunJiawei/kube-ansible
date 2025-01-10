@@ -1,0 +1,5 @@
+https://www.cnblogs.com/ryanyangcs/p/14079144.html
+https://blog.csdn.net/qq_42895490/article/details/143470105
+https://kubevirt.io/2022/KubeVirt-installing_Microsoft_Windows_11_from_an_iso.html
+https://www.ctyun.cn/developer/article/474398127136837
+ perf kvm stat
