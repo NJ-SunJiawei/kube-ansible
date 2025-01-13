@@ -1,2 +1,23 @@
 ---
-- import_tasks: nvidia.yml
+- name: 创建临时目录
+  file: dest={{ tmp_dir }} state=directory
+
+- name: 分发依赖包
+  copy: src={{ software_dir }}/{{ item }} dest={{ tmp_dir }}
+  with_items:
+    - rpm-virt
+
+- name: 安装rpm-virt包
+  shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
+  with_items:
+    - rpm-virt
+
+- name: 创建临时目录
+  copy: src=calico dest={{ tmp_dir }}/kubevirt
+  with_items:
+  - kubevirt-cr.yaml
+  - kubevirt-operator.yaml
+  tags:
+    - addons_delete
+    - addons_delete_kubevirt
+

@@ -8,4 +8,6 @@ spec:
   configuration:
     developerConfiguration: 
       featureGates:
-        - LiveMigration
+        - LiveMigration          #VMI 工作负载更新
+        - VMLiveUpdateFeatures   #启用 CPU/Memory 热插拔
+        - "VSOCK"                #VM Sockets (vsock) 是一种快速高效的客户机-主机通信机制

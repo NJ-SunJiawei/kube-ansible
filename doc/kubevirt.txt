@@ -66,6 +66,14 @@ kubectl patch -n kubevirt kubevirt kubevirt --type merge --patch '{"spec": {"inf
 kubectl patch -n kubevirt kubevirt kubevirt --type merge --patch '{"spec": {"workloads": {"nodePlacement": {"nodeSelector": {"region": "primary"}}}}}'
 
 如果硬件虚拟化不可用，则可以通过在 KubeVirt CR 中进行如下设置来启用软件模拟回退：spec.configuration.developerConfiguration.useEmulationtrue
+$ kubectl edit -n kubevirt kubevirt kubevirt
+将以下内容添加到kubevirt.yaml文件
+spec:
+    ...
+    configuration:
+    developerConfiguration:
+        useEmulation: true
+
 
 4、安装virtctl
 VERSION=$(kubectl get kubevirt.kubevirt.io/kubevirt -n kubevirt -o=jsonpath="{.status.observedKubeVirtVersion}")
@@ -102,9 +110,79 @@ kubectl get pods -l kubevirt.io=virt-launcher --all-namespaces
 
 假设你有一个名为 k8s-node1 的节点，并且你想确保它可以用于调度虚拟机实例。你可以给该节点添加 kubevirt.io/schedulable=true 标签：
 kubectl label nodes k8s-node1 kubevirt.io/schedulable=true
+kubectl label node k8s-master1 kubevirt.io/schedulable=false  --overwrite
 
 此命令将标签 kubevirt.io/schedulable=true 应用到节点 k8s-node1 上，表示该节点可以接收新的虚拟机实例调度。
 如果你不希望在该节点上调度虚拟机实例，可以将标签设置为 false：
 kubectl label nodes k8s-node1 kubevirt.io/schedulable=false
 
 kubectl describe node k8s-node1 | grep kubevirt.io/heartbeat
+
+
+7、kubevirt外部boot和kernel
+------------------------------------------------------------------
+https://kubevirt.io/user-guide/user_workloads/boot_from_external_source/
+当安装新的客户虚拟机操作系统时，直接从存储在主机物理机操作系统中的内核和 initrd 启动通常很有用，这样就可以将命令行参数直接传递给安装程序。
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: ext-kernel-boot-vm
+spec:
+  runStrategy: Manual
+  template:
+    spec:
+      domain:
+        devices: {}
+        firmware:
+          kernelBoot:
+            container:
+              image: vmi_ext_boot/kernel_initrd_binaries_container:latest
+              initrdPath: /boot/initramfs-virt
+              kernelPath: /boot/vmlinuz-virt
+              imagePullPolicy: Always
+              imagePullSecret: IfNotPresent
+            kernelArgs: console=ttyS0
+        resources:
+          requests:
+            memory: 1Gi
+			
+BIOS/UEFI
+https://kubevirt.io/user-guide/compute/virtual_hardware/
+
+
+
+8、虚机初始化
+------------------------------------------------------------------
+https://kubevirt.io/user-guide/user_workloads/startup_scripts/
+
+9、cpu热拔插和专用CPU
+-------------------------------------------------------------------
+https://kubevirt.io/user-guide/compute/cpu_hotplug/
+https://kubevirt.io/user-guide/compute/dedicated_cpu_resources/
+https://kubevirt.io/user-guide/compute/virtual_hardware/
+
+10、PCI直通和GPU
+--------------------------------------------------------------------
+https://kubevirt.io/user-guide/compute/host-devices/
+https://kubevirt.io/user-guide/compute/mediated_devices_configuration/
+
+11、实时迁移
+--------------------------------------------------------------------
+https://kubevirt.io/user-guide/compute/live_migration/
+
+12、PVC存储
+--------------------------------------------------------------------
+https://kubevirt.io/user-guide/compute/memory_dump/
+
+13、VM Sockets (vsock)
+--------------------------------------------------------------------
+https://kubevirt.io/user-guide/compute/vsock/
+
+
+14、网络接口和热拔插
+--------------------------------------------------------------------
+https://kubevirt.io/user-guide/network/hotplug_interfaces/
+
+15、热拔插卷
+-------------------------------------------------------------------
+https://kubevirt.io/user-guide/storage/hotplug_volumes/

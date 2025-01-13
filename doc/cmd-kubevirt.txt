@@ -37,6 +37,8 @@ Available Commands:
 #https://kubevirt.io/labs/kubernetes/lab1.html
 
 kubectl apply -f https://kubevirt.io/labs/manifests/vm.yaml
+kubectl wait --for=condition=Ready vmis/testvm （等待虚机创建完毕）
+kubectl wait --timeout=180s --for=condition=Available -n kubevirt kv/kubevirt
 kubectl get vm
 kubectl get vmis
 kubectl get vm  testvm -o yaml
@@ -46,22 +48,34 @@ kubectl get vmis testvm
 virtctl start testvm
 # 关闭虚拟机
 virtctl stop testvm
+#强制关闭虚机
+virtctl stop testvm --grace-period 0 --force
 
-# Start the virtual machine:
+# 启动虚拟机
 kubectl patch virtualmachine testvm --type merge -p \
     '{"spec":{"runStrategy": "Always"}}'
 
-# Stop the virtual machine:
+# 关闭虚拟机
 kubectl patch virtualmachine testvm --type merge -p \
     '{"spec":{"runStrategy": "Halted"}}'
 
+#暂停和取消暂停虚拟机
+virtctl pause vm testvm
+virtctl unpause vm testvm
 
-# 进入虚拟机
+# 访问串行控制台
 virtctl console testvm
+# 访问图形控制台 (VNC)
+virtctl vnc testvm 
+virtctl vnc testvm -v 4
+virtctl vnc --proxy-only testvm 创建一个代理，可以通过网页访问
 
+# SSH 访问
 virtctl ssh root@testvm
+https://kubevirt.io/user-guide/user_workloads/accessing_virtual_machines/
+https://kubevirt.io/user-guide/user_workloads/startup_scripts/
 
-
+#删除虚机
 kubectl delete -f vmi.yaml
 # OR
 kubectl delete vm testvm

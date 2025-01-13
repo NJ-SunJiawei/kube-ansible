@@ -14,4 +14,4 @@ spec:
   imagePullPolicy: IfNotPresent
   workloadUpdateStrategy: {}
 
-#如果硬件虚拟化不可用，则 可以通过在 KubeVirt CR 中进行如下设置来启用软件模拟回退：spec.configuration.developerConfiguration.useEmulationtrue
+#如果硬件虚拟化不可用，则可以通过在 KubeVirt CR 中进行如下设置来启用软件模拟回退：spec.configuration.developerConfiguration.useEmulationtrue
