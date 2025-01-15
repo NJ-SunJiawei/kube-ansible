@@ -32,7 +32,7 @@
              rm -rf /etc/cni/net.d/calico-kubeconfig || echo true
              rm -rf /etc/cni/net.d/calico-tls || echo true
       delegate_to: "{{ item }}"
-      with_items: ["{{ groups.k8s }}"]
+      with_items: "{{ groups.k8s }}"
       ignore_errors: true
       tags:
         - addons_delete

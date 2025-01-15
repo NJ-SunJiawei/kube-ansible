@@ -38,7 +38,7 @@
     - name: 打label标签
       shell: |
              kubectl label nodes {{ hostvars[item].node_name }} model={{ hostvars[item].node_label }} --overwrite
-      with_items: ["{{ groups.newnode }}"]
+      with_items: "{{ groups.newnode }}"
 
 - name: 5.导入离线镜像
   gather_facts: false

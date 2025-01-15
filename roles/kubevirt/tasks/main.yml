@@ -1,19 +1,9 @@
 ---
 - name: 创建临时目录
-  file: dest={{ tmp_dir }} state=directory
+  file: dest={{ tmp_dir }}/kubevirt state=directory
 
-- name: 分发依赖包
-  copy: src={{ software_dir }}/{{ item }} dest={{ tmp_dir }}
-  with_items:
-    - rpm-virt
-
-- name: 安装rpm-virt包
-  shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
-  with_items:
-    - rpm-virt
-
-- name: 创建临时目录
-  copy: src=calico dest={{ tmp_dir }}/kubevirt
+- name: 拷贝文件
+  copy: src={{ item }} dest={{ tmp_dir }}/kubevirt/
   with_items:
   - kubevirt-cr.yaml
   - kubevirt-operator.yaml
@@ -21,3 +11,27 @@
     - addons_delete
     - addons_delete_kubevirt
 
+- name: 删除kubevirt部署
+  shell: "kubectl delete -f {{ tmp_dir }}/kubevirt/kubevirt-cr.yaml || echo true; sleep 5"
+  tags:
+    - addons_delete
+    - addons_delete_kubevirt
+
+- name: 删除kubevirt部署
+  shell: "kubectl delete -f {{ tmp_dir }}/kubevirt/kubevirt-operator.yaml || echo true; sleep 5"
+  tags:
+    - addons_delete
+    - addons_delete_kubevirt
+
+- name: 创建kubevirt部署
+  shell: "kubectl apply -f {{ tmp_dir }}/kubevirt/kubevirt-operator.yaml"
+
+- name: 创建kubevirt部署
+  shell: "kubectl apply -f {{ tmp_dir }}/kubevirt/kubevirt-cr.yaml"
+
+- name: 等待 KubeVirt 部署完毕
+  shell: >
+    kubectl -n kubevirt wait --for condition=Available kv/kubevirt --timeout=600s
+
+- name: 安装virtctl二进制文件
+  shell: cd {{ tmp_dir }}/images/kubevirt && mv virtctl-{{ kubevirt_ver }}-linux-arm64 /usr/local/bin/virtctl && chmod +x /usr/local/bin/virtctl

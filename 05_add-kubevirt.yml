@@ -1,0 +1,86 @@
+- name: 00安装kubevirt依赖
+  gather_facts: false
+  hosts: 
+    - master
+    - node
+  tasks:
+    - name: 创建临时目录
+      file: dest={{ tmp_dir }} state=directory
+
+    - name: 分发依赖包
+      copy: src={{ software_dir }}/{{ item }} dest={{ tmp_dir }}
+      with_items:
+        - rpm-virt
+
+    - name: 安装rpm-virt包
+      shell: rpm -ivh --replacepkgs --force --nodeps  {{ tmp_dir }}/{{ item }}/*.rpm
+      with_items:
+        - rpm-virt
+
+    - name: 启用libvirtd
+      shell: |
+             systemctl start libvirtd
+             systemctl enable libvirtd
+
+    - name: 禁用virt大页
+      shell: |
+             systemctl stop dev-hugepages.mount
+             systemctl disable dev-hugepages.mount
+
+    - block:
+        - name: 创建临时目录
+          file: dest={{ tmp_dir }}/images state=directory
+        - name: 分发镜像（需要花费一些时间...）
+          copy: src={{ software_dir }}/images/kubevirt dest={{ tmp_dir }}/images
+        - name: 导入kubevirt镜像（需要花费一些时间...）
+          shell: cd {{ tmp_dir }}/images/kubevirt && \
+                 for image in $(ls *.tar*);do ctr -n=k8s.io image import $image;sleep 0.5;done
+      tags: addons_kubevirt
+  tags:
+    - kubevirt-pre
+
+- name: 01安装kubevirt
+  gather_facts: false
+  hosts: master
+  roles:
+    - kubevirt
+  tags: kubevirt
+
+- name: 02收集kubevirt信息
+  gather_facts: false
+  hosts: 
+    - master
+    - node
+  tasks:
+    - name: 检查 dmesg 输出中是否包含虚拟化扩展
+      shell: "dmesg | grep -i 'Virtualization Host Extensions'"
+      register: dmesg_output
+      ignore_errors: yes  # 忽略命令失败的情况，以便继续执行后续任务
+
+    - name: 检查 /dev/kvm 是否存在
+      stat:
+        path: /dev/kvm
+      register: kvm_stat
+
+    - name: 设置变量以标记是否满足条件
+      set_fact:
+        virt_supported: "{{ ('detected: Virtualization Host Extensions' in dmesg_output.stdout) and (kvm_stat.stat.exists) }}"
+  tags: kubevirt-labels
+
+- name: 03更新kubevirt标签
+  gather_facts: false
+  hosts: 
+    - master
+  tasks:
+    - name: 在主节点上为符合条件的节点打标签1
+      shell: |
+              kubectl label node {{ hostvars[item].node_name }} kubevirt.io/schedulable=false --overwrite
+      when: not hostvars[item].virt_supported | bool
+      loop: "{{ groups.master + groups.node}}"
+
+    - name: 在主节点上为符合条件的节点打标签2
+      shell: |
+              kubectl label node {{ hostvars[item].node_name }} kubevirt.io/schedulable=false --overwrite
+      when: not hostvars[item].virt_supported | bool
+      loop: "{{ groups.master + groups.node}}"
+  tags: kubevirt-labels

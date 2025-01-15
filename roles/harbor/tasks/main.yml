@@ -3,7 +3,7 @@
   file: dest={{ k8s_work_dir }}/ssl/harbor state=directory
 
 - name: 分发自签名证书
-  copy: src=harbor_cert/{{ item }} dest={{ k8s_work_dir }}/ssl/harbor
+  copy: src=harbor_cert/{{ item }} dest={{ k8s_work_dir }}/ssl/harbor/
   with_items:
   - ca.pem
   - harbor.pem

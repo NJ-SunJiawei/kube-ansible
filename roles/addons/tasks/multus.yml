@@ -17,7 +17,7 @@
           rm -rf /etc/cni/net.d/00-multus.conf
           rm -rf /etc/cni/net.d/multus.d
   delegate_to: "{{ item }}"
-  with_items: ["{{ groups.k8s }}"]
+  loop: "{{ groups.k8s }}"
   tags:
     - addons_delete
     - addons_delete_multus

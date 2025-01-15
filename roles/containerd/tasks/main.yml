@@ -53,7 +53,7 @@
 
     #好像没啥用
     #- name: 分发containerd证书
-    #  copy: src=harbor_cert/{{ item }} dest=/etc/containerd/certs.d/{{ HARBOR_REGISTRY }}
+    #  copy: src=harbor_cert/{{ item }} dest=/etc/containerd/certs.d/{{ HARBOR_REGISTRY }}/
     #  with_items:
     #    - ca.pem
     #    - harbor.pem

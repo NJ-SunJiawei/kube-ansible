@@ -58,7 +58,7 @@
     - name: 打label标签
       shell: |
              kubectl label nodes {{ hostvars[item].node_name }} model={{ hostvars[item].node_label }} --overwrite
-      with_items: ["{{ groups.master }}", "{{ groups.node }}"]
+      with_items: "{{ groups.master + groups.node }}"
     - name: 打role标签
       shell: |
               kubectl label node {{ node_name }} kubernetes.io/role=master  --overwrite

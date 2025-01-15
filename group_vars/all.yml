@@ -96,7 +96,6 @@ gpu_interfaces:
 # kubevirt
 ############################
 kubevirt_ver: "v1.4.0"
-kubevirt_kvm_support: "yes"
 
 ############################
 # network

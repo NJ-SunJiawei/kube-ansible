@@ -53,7 +53,7 @@
              rm -rf /etc/cni/net.d/05-cilium.conflist
              mv /etc/cni/net.d/10-kube-ovn.conflist.cilium_bak /etc/cni/net.d/10-kube-ovn.conflist || echo true
       delegate_to: "{{ item }}"
-      with_items: ["{{ groups.k8s }}"]
+      loop: "{{ groups.k8s }}"
       ignore_errors: true
       tags:
         - addons_delete
@@ -87,7 +87,7 @@
       shell: |
              rm -rf /etc/cni/net.d/10-kube-ovn.conflist
       delegate_to: "{{ item }}"
-      with_items: ["{{ groups.k8s }}"]
+      loop: "{{ groups.k8s }}"
       ignore_errors: true
       tags:
         - addons_delete

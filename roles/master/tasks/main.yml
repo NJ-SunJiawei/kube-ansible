@@ -23,7 +23,7 @@
          cp -rf {{ tmp_dir }}/kubernetes/server/bin/kubectl /usr/bin
 
 - name: 分发k8s证书
-  copy: src=k8s_cert/{{ item }} dest={{ k8s_work_dir }}/ssl
+  copy: src=k8s_cert/{{ item }} dest={{ k8s_work_dir }}/ssl/
   with_items:
     - ca.pem
     - ca-key.pem
@@ -38,7 +38,7 @@
   tags: master_k8s_dist
 
 - name: 分发etcd证书
-  copy: src=etcd_cert/{{ item }} dest={{ k8s_work_dir }}/ssl/etcd
+  copy: src=etcd_cert/{{ item }} dest={{ k8s_work_dir }}/ssl/etcd/
   with_items:
     - ca.pem
     - server.pem

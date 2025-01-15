@@ -72,7 +72,7 @@
         - dcgm-exporter-helm-values.yaml.j2
 
     - name: copy nvidia-device-plugin tool
-      copy: src=roles/gpu/files/{{ item }} dest={{ tmp_dir }}/nvidia
+      copy: src=roles/gpu/files/{{ item }} dest={{ tmp_dir }}/nvidia/
       with_items:
         - nvidia-device-plugin-{{ nvidia_gpu_plugin_ver }}.tgz
         - dcgm-exporter-3.5.0.tgz

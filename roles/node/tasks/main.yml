@@ -31,7 +31,7 @@
   shell: cp -rf {{ tmp_dir }}/kubernetes/server/bin/{kubelet,kube-proxy} {{ k8s_work_dir }}/bin
 
 - name: 分发k8s证书
-  copy: src=k8s_cert/{{ item }} dest={{ k8s_work_dir }}/ssl
+  copy: src=k8s_cert/{{ item }} dest={{ k8s_work_dir }}/ssl/
   with_items:
     - ca.pem
     - kube-proxy.pem

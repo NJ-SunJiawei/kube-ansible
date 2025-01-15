@@ -18,7 +18,7 @@
   shell: cp -rf {{ tmp_dir }}/etcd-v*/{etcd,etcdctl} {{ etcd_work_dir }}/bin
 
 - name: 分发证书
-  copy: src=etcd_cert/{{ item }} dest={{ etcd_work_dir }}/ssl
+  copy: src=etcd_cert/{{ item }} dest={{ etcd_work_dir }}/ssl/
   with_items:
     - ca.pem
     - server.pem
